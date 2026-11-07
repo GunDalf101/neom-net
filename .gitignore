@@ -9,3 +9,6 @@ apps/web/dist/
 apps/server/dist/
 packages/shared/dist/
 apps/server/uploads/
+
+# vite-plugin-pwa dev service worker output
+apps/web/dev-dist/

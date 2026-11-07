@@ -95,6 +95,10 @@ By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): 
 
 **Armor class without items.** The DM can set a character's unarmored base AC (default 10) and a flat adjustment from the Combat panel on the sheet or from the HP tab of the dashboard live controls. Both show up as their own lines in the AC breakdown, and gear, cyberware and conditions still add on top. Temporary changes are better done as a DM override (Override tab), which keeps the calculated value visible.
 
+## Moving a campaign between databases
+
+`npm run campaign:export-migration -w @neom/server -- "<campaign id or name>" [migrationName]` writes an idempotent Prisma data migration (`apps/server/prisma/migrations/<stamp>_<name>/migration.sql`) containing the campaign, its memberships, characters (with items, conditions, effects, overrides) and event log. Users are referenced by **email** and resolved when the migration runs: an existing account is reused, otherwise a claimable placeholder is created (empty password hash, cannot log in) and the first registration with that email takes it over, keeping the campaign attached. No password hashes are exported. Because every insert is `ON CONFLICT DO NOTHING`, re-running it (or applying it to the source database) changes nothing, and it ships to Render with the next deploy through `prisma migrate deploy`. The data becomes part of the repository history, so only use it for campaigns you are happy to commit; a per-campaign JSON export/import stays on the roadmap for anything sensitive.
+
 ## UI golden rules, PWA and notifications
 
 - `docs/UI_GOLDEN_RULES.md` is the contract every screen is held to (ten rules, a feature coverage matrix, and the manual checklist). `npm run test:ui` runs the automated part with Playwright on phone, tablet, laptop and desktop viewports as player and DM: no page or console errors, no horizontal overflow, page landmarks present, a player action reaching the DM dashboard live, phone tap targets, and the manifest + service worker on a production build. Run `npm run pw:install -w @neom/web` once to fetch Chromium, then `SEED_PASSWORD=… WEB_URL=http://localhost:5174 npm run test:ui`.

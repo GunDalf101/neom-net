@@ -22,6 +22,17 @@ authRouter.post(
     let username = (input.username || email.split("@")[0] || "user").replace(/[^a-zA-Z0-9_\-.]/g, "").slice(0, 32) || "user";
     if (username.length < 2) username = `${username}1`;
     const exists = await prisma.user.findFirst({ where: { OR: [{ email }, { username: { equals: username, mode: "insensitive" } }] } });
+    if (exists?.email === email && exists.passwordHash === "") {
+      // Claimable account: created by a data migration that imported a campaign for this email before the
+      // person registered. Registering with that email sets the password and keeps everything attached.
+      const claimed = await prisma.user.update({
+        where: { id: exists.id },
+        data: { passwordHash: await hashPassword(input.password), username: input.username ? username : exists.username },
+      });
+      setSessionCookie(res, signToken(claimed));
+      res.status(201).json({ user: publicUser(claimed), claimed: true });
+      return;
+    }
     if (exists?.email === email) throw conflict("An account with this email already exists. Log in instead.");
     if (exists) {
       // Handle taken: suffix a short random tag so registration still succeeds.

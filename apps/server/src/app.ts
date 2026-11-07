@@ -36,7 +36,8 @@ export function createApp(): Express {
   app.use(cookieParser());
   app.use(attachUser);
 
-  app.get("/api/health", (_req, res) => res.json({ ok: true, env: config.nodeEnv }));
+  // `commit` comes from Render (RENDER_GIT_COMMIT) so a deploy can be confirmed from outside.
+  app.get("/api/health", (_req, res) => res.json({ ok: true, env: config.nodeEnv, commit: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? null }));
 
   app.use("/api/auth", authRouter);
   app.use("/api/campaigns", campaignsRouter);

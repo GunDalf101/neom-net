@@ -16,7 +16,8 @@
     "db:seed": "node scripts/with-env.mjs tsx prisma/seed.ts",
     "db:reset": "node scripts/with-env.mjs prisma migrate reset --force --skip-seed && npm run db:seed",
     "db:studio": "node scripts/with-env.mjs prisma studio",
-    "user:create": "node scripts/with-env.mjs tsx scripts/create-user.ts"
+    "user:create": "node scripts/with-env.mjs tsx scripts/create-user.ts",
+    "campaign:export-migration": "node scripts/with-env.mjs tsx scripts/export-campaign-migration.ts"
   },
   "dependencies": {
     "@neom/shared": "*",
