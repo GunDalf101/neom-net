@@ -116,6 +116,51 @@ try {
   roInstall = e.status === 403;
 }
 check(roInstall, "Read-only player cannot remove cyberware (403)");
+const status = async (fn) => {
+  try {
+    await fn();
+    return 200;
+  } catch (e) {
+    return e.status ?? -1;
+  }
+};
+
+console.log("    Portraits: owners upload their own picture even in DM-controlled mode");
+const PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+const portraitBefore = view.character.portraitUrl;
+check(view.permissions.canChangePortrait === true, "Read-only player view allows changing the portrait");
+view = await player.call("PUT", `/api/characters/${charId}/portrait`, { portraitUrl: PIXEL });
+check(view.character.portraitUrl === PIXEL, "Read-only player uploaded a portrait");
+check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { name: "Hacked" }))) === 403, "Other identity fields stay DM-only (403)");
+check((await status(() => player.call("PUT", `/api/characters/${charId}/portrait`, { portraitUrl: "javascript:alert(1)" }))) === 400, "Non-image portrait URLs are rejected (400)");
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersManagePortrait: false } });
+check((await status(() => player.call("PUT", `/api/characters/${charId}/portrait`, { portraitUrl: null }))) === 403, "DM can take portraits back (403 when playersManagePortrait is off)");
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersManagePortrait: true } });
+view = await dm.call("PUT", `/api/characters/${charId}/portrait`, { portraitUrl: portraitBefore ?? null });
+check(view.character.portraitUrl === (portraitBefore ?? null), "DM restored the original portrait");
+
+console.log("    Share links: a signed-in user with the link can read the sheet");
+const outsider = new Session("OUTSIDER");
+if ((await status(() => outsider.call("POST", "/api/auth/register", { email: "outsider-e2e@neom.local", username: "outsider-e2e", password: PASSWORD }))) !== 200) {
+  await outsider.call("POST", "/api/auth/login", { identifier: "outsider-e2e@neom.local", password: PASSWORD });
+}
+view = await player.call("POST", `/api/characters/${charId}/share`, {});
+const token1 = view.shareToken;
+check(typeof token1 === "string" && token1.length >= 24 && view.permissions.canShare, "Owner created a share link");
+check((await player.call("POST", `/api/characters/${charId}/share`, {})).shareToken === token1, "Creating again returns the same link");
+check((await status(() => new Session("ANON").call("GET", `/api/shared/${token1}`))) === 401, "Unauthenticated share-link read is rejected (401)");
+const sharedView = await outsider.call("GET", `/api/shared/${token1}`);
+check(sharedView.isMember === false && sharedView.sheet.character.name === "Antonio Ettoro" && sharedView.derived.ac.value > 0, "Non-member reads the sheet with derived stats");
+check((await player.call("GET", `/api/shared/${token1}`)).isMember === true, "Campaign member is pointed at the live HUD");
+check((await status(() => outsider.call("GET", `/api/characters/${charId}`))) === 403, "The link does not open the live sheet to non-members (403)");
+check((await status(() => outsider.call("POST", `/api/characters/${charId}/share`, {}))) === 403, "Non-members cannot create share links (403)");
+check((await status(() => outsider.call("GET", "/api/shared/not*a*token"))) === 400, "Malformed tokens are rejected (400)");
+const token2 = (await player.call("POST", `/api/characters/${charId}/share`, { rotate: true })).shareToken;
+check(token2 !== token1 && (await status(() => outsider.call("GET", `/api/shared/${token1}`))) === 404, "Rotating the link kills the old one (404)");
+view = await dm.call("DELETE", `/api/characters/${charId}/share`);
+check(view.shareToken === null && (await status(() => outsider.call("GET", `/api/shared/${token2}`))) === 404, "Revoked link returns 404");
+check((await player.call("GET", `/api/characters/${charId}`)).shareToken === null, "Owner view shows no active link after revoke");
+
 // The rest of the workflow exercises player-side actions, so the DM switches the campaign to player-editable.
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: false } });
 view = await player.call("GET", `/api/characters/${charId}`);
@@ -379,7 +424,7 @@ check(rollRes.expression.replace(/\s/g, "") === "1d20+9" && rollRes.total >= 1 +
 console.log("15. The event history records what happened");
 const events = await dm.call("GET", `/api/campaigns/${cid}/events?limit=100`);
 const types = new Set(events.map((e) => e.type));
-for (const t of ["item.granted", "augmentation.installed", "hp.damage", "rule.applied", "override.set", "override.revoked", "encounter.started", "effect.expired", "condition.applied"]) {
+for (const t of ["item.granted", "augmentation.installed", "hp.damage", "rule.applied", "override.set", "override.revoked", "encounter.started", "effect.expired", "condition.applied", "character.shared", "character.unshared"]) {
   check(types.has(t), `event log contains ${t}`);
 }
 

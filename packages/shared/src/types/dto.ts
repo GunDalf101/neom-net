@@ -209,6 +209,8 @@ export interface CharacterView {
   overrides: OverrideDto[];
   unlocks: CharacterUnlockDto[];
   abilities: AbilityDto[];
+  /** Active share-link token (`/s/<token>`); only sent to the owner and the DM. */
+  shareToken: string | null;
   permissions: {
     canEdit: boolean;
     canEditAttributes: boolean;
@@ -216,6 +218,10 @@ export interface CharacterView {
     canLevelUp: boolean;
     /** Equip / unequip / use / drop / rename own items. True for owners even in read-only mode when the campaign allows it. */
     canManageInventory: boolean;
+    /** Upload / clear the portrait. True for owners in read-only mode when the campaign allows it. */
+    canChangePortrait: boolean;
+    /** Create, copy or revoke the read-only share link (owner or DM). */
+    canShare: boolean;
     isDm: boolean;
     isOwner: boolean;
     /** True for players when the campaign's "players are read-only" rule is on. */
@@ -508,6 +514,27 @@ export interface DmDashboardDto {
   pendingRollRequests: RollRequestDto[];
   liveSession: LiveSessionDto | null;
   onlineUserIds: string[];
+}
+
+/** A sheet opened through its share link. `isMember` means the viewer can open the live HUD instead. */
+export interface SharedSheetDto {
+  campaignId: string;
+  campaignName: string;
+  characterId: string;
+  ownerUsername: string;
+  isMember: boolean;
+  /** Calculated on the server so the read-only view shows the same numbers as the HUD (G1). */
+  derived: DerivedStats;
+  sheet: {
+    format: "neom-net/character";
+    version: 1;
+    exportedAt: string;
+    character: CharacterCore & {
+      items: { definitionName: string; definitionId: string; quantity: number; status: string; installedSlot: string | null; equippedSlot: string | null; charges: number | null; customName: string | null }[];
+      conditions: { key: string; level: number | null; note: string | null }[];
+      unlocks: { nodeKey: string; rank: number }[];
+    };
+  };
 }
 
 export interface ApiError {

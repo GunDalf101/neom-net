@@ -1,14 +1,15 @@
 import { HIT_DIE_SIZES, hitDieForClass, levelForXp, xpForLevel, type CharacterView, type HitDieSize } from "@neom/shared";
 import { useState } from "react";
-import { useUpdateCharacter } from "@/api/hooks";
+import { useSetPortrait, useUpdateCharacter } from "@/api/hooks";
 import { Bar, Button, Field, Icon, Input, Modal, Select, Textarea } from "@/components/ui";
 import { StatBreakdown } from "@/components/StatBreakdown";
 import { fmtMod } from "@/lib/format";
-import { Portrait } from "./Portrait";
+import { Portrait, PortraitPicker } from "./Portrait";
 
 export function IdentityCard({ view, compact }: { view: CharacterView; compact?: boolean }) {
   const { character: c, derived, permissions } = view;
   const [edit, setEdit] = useState(false);
+  const setPortrait = useSetPortrait(c.id);
   const nextLevelXp = c.level >= 20 ? xpForLevel(20) : xpForLevel(c.level + 1);
   const curLevelXp = xpForLevel(c.level);
   const impliedLevel = levelForXp(c.xp);
@@ -17,7 +18,11 @@ export function IdentityCard({ view, compact }: { view: CharacterView; compact?:
   return (
     <section className="hud-panel p-3" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
       <div className="flex gap-3">
-        <Portrait url={c.portraitUrl} name={c.name} size={size} className="border-cyan/40" />
+        {permissions.canChangePortrait ? (
+          <PortraitPicker url={c.portraitUrl} name={c.name} size={size} className="border-cyan/40" busy={setPortrait.isPending} onChange={(url) => setPortrait.mutate(url)} />
+        ) : (
+          <Portrait url={c.portraitUrl} name={c.name} size={size} className="border-cyan/40" />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <h1 className="font-display text-[1.05rem] font-black uppercase leading-tight tracking-[0.06em] text-text">{c.name}</h1>
@@ -95,17 +100,6 @@ function IdentityEditor({ view, open, onClose }: { view: CharacterView; open: bo
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const setClass = (v: string) => setForm((f) => ({ ...f, characterClass: v, hitDieSize: dieTouched ? f.hitDieSize : hitDieForClass(v) }));
 
-  const onFile = (file: File | undefined) => {
-    if (!file) return;
-    if (file.size > 1_000_000) {
-      alert("Portrait must be under 1 MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => set("portraitUrl", String(reader.result));
-    reader.readAsDataURL(file);
-  };
-
   return (
     <Modal open={open} onClose={onClose} title="Identity">
       <form
@@ -123,17 +117,10 @@ function IdentityEditor({ view, open, onClose }: { view: CharacterView; open: bo
         }}
       >
         <div className="flex items-center gap-3">
-          <Portrait url={form.portraitUrl} name={form.name} size={72} />
-          <div className="space-y-1 text-xs">
-            <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} className="block text-xs text-muted" />
-            <div className="flex gap-2">
-              <Input placeholder="…or image URL" value={form.portraitUrl?.startsWith("data:") ? "" : form.portraitUrl ?? ""} onChange={(e) => set("portraitUrl", e.target.value || null)} />
-              {form.portraitUrl && (
-                <Button size="xs" variant="ghost" onClick={() => set("portraitUrl", null)}>
-                  Clear
-                </Button>
-              )}
-            </div>
+          <PortraitPicker url={form.portraitUrl} name={form.name} size={96} onChange={(url) => set("portraitUrl", url)} />
+          <div className="min-w-0 flex-1 space-y-1 text-xs">
+            <div className="text-muted">Upload or drop an image (any size, resized automatically), or paste a link.</div>
+            <Input placeholder="https://… image URL" value={form.portraitUrl?.startsWith("data:") ? "" : form.portraitUrl ?? ""} onChange={(e) => set("portraitUrl", e.target.value || null)} />
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

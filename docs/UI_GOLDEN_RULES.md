@@ -55,7 +55,15 @@ secondary chips at least 28px. Nothing important hides behind hover.
 
 **G10 — Installable and reachable.** The app ships a web manifest and a service worker, installs as a
 PWA on phone and desktop, and can deliver push notifications for status changes, roll requests and
-sheets sent by the DM.
+sheets sent by the DM. The manifest asks for link capturing (`handle_links: "preferred"`,
+`launch_handler`), so links into the app open in the installed PWA where the platform allows it, and a
+browser tab on a device with the app installed offers "Open in app".
+
+**G11 — Links land where they point.** A deep link (shared sheet `/s/<token>`, notification URL)
+survives sign-in: a signed-out visitor is sent to login with a note saying why, and lands on the link
+after authenticating, including via the register page. Sessions slide, so a device that keeps using
+the app stays signed in and later links open directly. Members following a share link land on the
+live HUD; everyone else sees a read-only copy they can download or import.
 
 ## Feature coverage matrix
 
@@ -74,6 +82,8 @@ sheets sent by the DM.
 | Progression: skill trees, abilities, missions, journal | HUD Skills · Missions · Journal · DM Missions & lore | G5, G7 |
 | Export / import / reset | HUD System menu | G3, G6 |
 | Ownership transfer ("send sheet") | HUD System menu (DM) · DM live controls | G4, G7, G10 |
+| Share link (create, copy/share, rotate, revoke) and shared read-only sheet | HUD System menu (owner, DM) · `/s/:token` | G3, G5, G7, G11 |
+| Portrait upload (resized in the browser; owners even when read-only, DM setting) | HUD identity card · Identity editor · New character · DM NPCs · DM Settings | G3, G6 |
 | Event log with field diffs | HUD Log tab · DM Event log · dashboard recent events | G7 |
 | Push notifications, PWA install | HUD System menu · DM sidebar · manifest + service worker | G10 |
 | DM-controlled mode, player-managed inventory, settings | DM Settings · read-only banner | G3 |
@@ -88,7 +98,10 @@ and fails on:
 3. a missing landmark on a page (each route lists the text that proves it rendered),
 4. a player action that does not reach a second, DM session within three seconds (G4),
 5. a primary button under 40px tall on the phone viewport (G9, reported as warnings with the element),
-6. a missing or invalid `manifest.webmanifest` when the target serves a production build (G10).
+6. a missing or invalid `manifest.webmanifest`, or one without link capturing, when the target serves a production build (G10),
+7. a portrait upload by the read-only owner that does not persist (G3, G6),
+8. a share link that does not survive sign-in for a non-member on phone and desktop, does not open
+   directly once signed in, or does not send a member to the live HUD (G11).
 
 Run it against the dev server (`WEB_URL=http://localhost:5174`) or a production build
 (`WEB_URL=http://localhost:4100`); `SEED_PASSWORD` must match the seeded accounts. Browser binaries:
@@ -102,3 +115,6 @@ Run it against the dev server (`WEB_URL=http://localhost:5174`) or a production 
 - Phone: Character → Sheet / Cyberware / Combat switcher; Inventory list and detail; Log tab.
 - Install the PWA, enable notifications, press Test, then background the app and have the DM apply
   a condition.
+- Create a share link, send it through a chat app to a phone with the PWA installed: Android opens
+  it in the app; iOS opens Safari (Home Screen apps cannot capture links there).
+- Upload a full-size phone photo as a portrait: it appears within a second or two and stays sharp.

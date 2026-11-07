@@ -54,7 +54,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     jwtSecret,
     corsOrigins: (env.CORS_ORIGINS ?? "http://localhost:5173,http://localhost:5174").split(",").map((s) => s.trim()).filter(Boolean),
     cookieName: "neom_session",
-    sessionDays: 7,
+    // Sessions slide: any authenticated request after a day re-issues the cookie, so an active
+    // device (browser or installed PWA) stays signed in until it is idle for this many days.
+    sessionDays: Math.max(1, Number(env.SESSION_DAYS ?? 30)),
   };
 }
 

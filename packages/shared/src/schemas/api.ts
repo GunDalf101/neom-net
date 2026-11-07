@@ -48,6 +48,7 @@ export const CampaignSettingsSchema = z.object({
   proficiencyTable: z.array(z.number().int().min(0).max(20)).length(20).optional(),
   playersReadOnly: z.boolean(),
   playersManageInventory: z.boolean(),
+  playersManagePortrait: z.boolean(),
   playersEditAttributes: z.boolean(),
   playersInstallCyberware: z.boolean(),
   playersLevelUp: z.boolean(),
@@ -432,6 +433,10 @@ export const UnlockNodeSchema = z.object({ nodeId: z.string().min(1) });
 
 /** DM hands a sheet to another campaign member (ownership transfer). */
 export const AssignCharacterSchema = z.object({ userId: z.string().min(1) });
+/** Portrait only: allowed for owners in DM-controlled mode when `playersManagePortrait` is on. */
+export const SetPortraitSchema = z.object({ portraitUrl: PortraitSchema });
+/** Create (or with `rotate`, replace) the character's read-only share link. */
+export const ShareLinkSchema = z.object({ rotate: z.boolean().default(false) });
 
 // ---------- Export / import ----------
 export const CharacterExportSchema = z.object({

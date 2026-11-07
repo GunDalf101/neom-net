@@ -129,6 +129,9 @@ model Character {
   background     String   @default("")
   biography      String   @default("")
   portraitUrl    String?
+  /// Read-only share link (`/s/<token>`). Null when the sheet is not shared; rotating replaces it.
+  shareToken     String?   @unique
+  shareCreatedAt DateTime?
 
   // Sheet data read/written together, validated by shared zod schemas.
   attributes        Json

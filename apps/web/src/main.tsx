@@ -5,9 +5,11 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import "./styles.css";
 import { registerSW } from "virtual:pwa-register";
+import { trackInstallState } from "./lib/pwa";
 
 // PWA: precache the app shell and take over immediately; push handlers come from public/push-sw.js.
 registerSW({ immediate: true });
+trackInstallState();
 
 const queryClient = new QueryClient({
   defaultOptions: {

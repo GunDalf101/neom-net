@@ -25,7 +25,12 @@ export type AuthedRequest = Request & { user: AuthUser };
 interface TokenPayload {
   sub: string;
   username: string;
+  /** Issued-at (seconds), set by jsonwebtoken; drives the sliding refresh. */
+  iat?: number;
 }
+
+/** Re-issue the session cookie once it is this old, so active devices never hit the expiry. */
+const REFRESH_AFTER_SECONDS = 24 * 60 * 60;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -53,7 +58,7 @@ export function verifyToken(token: string): TokenPayload | null {
       audience: "neom-net-web",
     });
     if (typeof decoded !== "object" || !decoded || typeof decoded.sub !== "string") return null;
-    return { sub: decoded.sub, username: String((decoded as TokenPayload).username ?? "") };
+    return { sub: decoded.sub, username: String((decoded as TokenPayload).username ?? ""), iat: typeof decoded.iat === "number" ? decoded.iat : undefined };
   } catch {
     return null;
   }
@@ -73,6 +78,10 @@ export function parseCookies(header: string | undefined): Record<string, string>
 }
 
 export async function userFromToken(token: string | undefined): Promise<AuthUser | null> {
+  return (await sessionFromToken(token))?.user ?? null;
+}
+
+async function sessionFromToken(token: string | undefined): Promise<{ user: AuthUser; issuedAt: number | undefined } | null> {
   if (!token) return null;
   const payload = verifyToken(token);
   if (!payload) return null;
@@ -80,7 +89,7 @@ export async function userFromToken(token: string | undefined): Promise<AuthUser
     where: { id: payload.sub },
     select: { id: true, username: true, email: true },
   });
-  return user;
+  return user ? { user, issuedAt: payload.iat } : null;
 }
 
 export function setSessionCookie(res: Response, token: string): void {
@@ -97,12 +106,20 @@ export function clearSessionCookie(res: Response): void {
   res.clearCookie(config.cookieName, { path: "/" });
 }
 
-/** Attaches req.user when a valid session cookie is present; never rejects. */
-export async function attachUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
+/**
+ * Attaches req.user when a valid session cookie is present; never rejects. Sliding session: a
+ * token older than a day is re-issued on the response, so a device that keeps using the app
+ * (including an installed PWA opened from a shared link) stays authenticated by default.
+ */
+export async function attachUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const cookies = parseCookies(req.headers.cookie);
-    const user = await userFromToken(cookies[config.cookieName]);
-    if (user) req.user = user;
+    const session = await sessionFromToken(cookies[config.cookieName]);
+    if (session) {
+      req.user = session.user;
+      const age = Math.floor(Date.now() / 1000) - (session.issuedAt ?? 0);
+      if (age > REFRESH_AFTER_SECONDS) setSessionCookie(res, signToken(session.user));
+    }
     next();
   } catch (err) {
     next(err);

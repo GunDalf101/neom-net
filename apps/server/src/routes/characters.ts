@@ -1,4 +1,4 @@
-import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, UnlockNodeSchema, UpdateCharacterSchema } from "@neom/shared";
+import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, SetPortraitSchema, ShareLinkSchema, UnlockNodeSchema, UpdateCharacterSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -68,6 +68,9 @@ charactersRouter.post("/:characterId/assign", wrap<AuthedRequest>(async (req, re
   const body = parseBody(AssignCharacterSchema, req.body);
   res.json(await characters.assignCharacter(cid(req), req.user.id, body.userId));
 }));
+charactersRouter.put("/:characterId/portrait", wrap<AuthedRequest>(async (req, res) => res.json(await characters.setPortrait(cid(req), req.user.id, parseBody(SetPortraitSchema, req.body).portraitUrl))));
+charactersRouter.post("/:characterId/share", wrap<AuthedRequest>(async (req, res) => res.json(await characters.createShareLink(cid(req), req.user.id, parseBody(ShareLinkSchema, req.body).rotate))));
+charactersRouter.delete("/:characterId/share", wrap<AuthedRequest>(async (req, res) => res.json(await characters.revokeShareLink(cid(req), req.user.id))));
 charactersRouter.get("/:characterId/export", wrap<AuthedRequest>(async (req, res) => res.json(await characters.exportCharacter(cid(req), req.user.id))));
 charactersRouter.post("/:characterId/import", wrap<AuthedRequest>(async (req, res) => {
   const body = parseBody(z.object({ format: z.literal("neom-net/character"), version: z.literal(1), character: z.record(z.unknown()) }), req.body);

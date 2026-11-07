@@ -85,6 +85,7 @@ export function SettingsPage() {
           </div>
           <div className="flex flex-col items-start gap-1.5">
             <Toggle on={s.playersManageInventory} onChange={(v) => set("playersManageInventory", v)} label="Players manage their own inventory even when read-only (equip, use, drop, rename)" />
+            <Toggle on={s.playersManagePortrait} onChange={(v) => set("playersManagePortrait", v)} label="Players upload their own character portrait even when read-only" />
             <Toggle on={s.specialExpertiseEnabled} onChange={(v) => set("specialExpertiseEnabled", v)} label="Allow expertise on cyberpunk skills" />
             <Toggle on={s.nat20AutoSuccess} onChange={(v) => set("nat20AutoSuccess", v)} label="House rule: natural 20 / 1 auto-succeed / fail on checks with a DC" />
             <Toggle on={s.tempHpStacks} onChange={(v) => set("tempHpStacks", v)} label="Temporary HP stacks (default: highest value wins)" />

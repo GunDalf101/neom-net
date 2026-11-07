@@ -30,6 +30,15 @@ export default defineConfig({
           { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
         shortcuts: [{ name: "Campaigns", url: "/", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] }],
+        // Links into the app (shared sheets `/s/…`, notification deep links) open in the installed
+        // PWA where the platform supports link capturing (Android WebAPK, desktop Chromium), reusing
+        // an open app window instead of a browser tab. Not in vite-plugin-pwa's types yet.
+        ...({
+          launch_handler: { client_mode: ["navigate-existing", "auto"] },
+          handle_links: "preferred",
+          capture_links: "existing-client-navigate",
+          related_applications: [{ platform: "webapp", url: "/manifest.webmanifest" }],
+        } as Record<string, unknown>),
       },
       workbox: {
         // Push + notification click handlers live in public/push-sw.js and are pulled into the generated worker.

@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { useConditionDefinitions, useDeleteNpc, useNpcs, useSaveNpc } from "@/api/hooks";
 import { InstantEffectListEditor, PassiveEffectListEditor } from "@/components/editors/EffectEditors";
-import { Portrait } from "@/components/hud/Portrait";
+import { Portrait, PortraitPicker } from "@/components/hud/Portrait";
 import { Badge, Button, ConfirmButton, Empty, Field, Input, NumberStepper, Panel, Select, Textarea } from "@/components/ui";
 import { Section } from "./WorkshopPage";
 import { useDm } from "./DmShell";
@@ -69,6 +69,10 @@ export function NpcsPage() {
               setEditing(null);
             }}
           >
+            <div className="flex items-center gap-3">
+              <PortraitPicker url={form.portraitUrl} name={form.name || "NPC"} size={80} onChange={(url) => setForm({ ...form, portraitUrl: url })} />
+              <div className="min-w-0 flex-1 text-xs text-muted">Upload or drop a portrait (resized automatically), or paste an image link below.</div>
+            </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
               <Field label="Name" className="md:col-span-2">
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -77,7 +81,7 @@ export function NpcsPage() {
                 <Input value={form.faction} onChange={(e) => setForm({ ...form, faction: e.target.value })} />
               </Field>
               <Field label="Portrait URL">
-                <Input value={form.portraitUrl ?? ""} onChange={(e) => setForm({ ...form, portraitUrl: e.target.value || null })} />
+                <Input value={form.portraitUrl?.startsWith("data:") ? "" : form.portraitUrl ?? ""} placeholder={form.portraitUrl?.startsWith("data:") ? "(uploaded image)" : "https://…"} onChange={(e) => setForm({ ...form, portraitUrl: e.target.value || null })} />
               </Field>
               <Field label="Max HP">
                 <Input type="number" min={1} value={form.hpMax} onChange={(e) => setForm({ ...form, hpMax: Number(e.target.value) })} />
