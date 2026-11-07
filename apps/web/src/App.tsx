@@ -20,6 +20,7 @@ import { CyberwarePage } from "@/pages/hud/CyberwarePage";
 import { SkillsPage } from "@/pages/hud/SkillsPage";
 import { JournalPage } from "@/pages/hud/JournalPage";
 import { MissionsPage } from "@/pages/hud/MissionsPage";
+import { LogPage } from "@/pages/hud/LogPage";
 
 function RequireAuth() {
   const me = useMe();
@@ -45,6 +46,7 @@ export function App() {
             <Route path="skills" element={<SkillsPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="missions" element={<MissionsPage />} />
+            <Route path="log" element={<LogPage />} />
           </Route>
           <Route path="/c/:campaignId/dm" element={<DmShell />}>
             <Route index element={<DashboardPage />} />

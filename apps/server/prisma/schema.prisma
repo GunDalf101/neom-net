@@ -28,6 +28,7 @@ model User {
   sentMessages Message[]           @relation("MessageFrom")
   receivedMessages Message[]       @relation("MessageTo")
   sessionsStarted LiveSession[]
+  pushSubscriptions PushSubscription[]
 }
 
 enum CampaignRole {
@@ -65,6 +66,21 @@ model Campaign {
   rollRequests    RollRequest[]
   messages        Message[]
   sessions        LiveSession[]
+}
+
+/// Web Push subscription (one browser/device). Deleted when the push service reports it gone (404/410).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model CampaignMembership {

@@ -12,6 +12,7 @@ import { logger } from "./logger.js";
 import { authRouter } from "./routes/auth.js";
 import { campaignsRouter } from "./routes/campaigns.js";
 import { charactersRouter } from "./routes/characters.js";
+import { pushRouter } from "./routes/push.js";
 import { contentRouter } from "./routes/content.js";
 import { dmRouter } from "./routes/dm.js";
 import { encountersRouter } from "./routes/encounters.js";
@@ -45,13 +46,24 @@ export function createApp(): Express {
   app.use("/api/campaigns", encountersRouter);
   app.use("/api/campaigns", storyRouter);
   app.use("/api/characters", charactersRouter);
+  app.use("/api/push", pushRouter);
 
   app.use("/api", (_req, _res, next) => next(notFound("Endpoint")));
 
   // Production: serve the built web app from the same origin (Render runs a single service).
   const webDist = process.env.WEB_DIST ?? resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
   if (existsSync(webDist)) {
-    app.use(express.static(webDist, { index: false, maxAge: "1h", immutable: false }));
+    // Service worker + manifest must never be served stale, or installed PWAs keep old precache lists.
+    app.use(
+      express.static(webDist, {
+        index: false,
+        maxAge: "1h",
+        immutable: false,
+        setHeaders: (res, filePath) => {
+          if (/(?:^|\/)(sw\.js|push-sw\.js|registerSW\.js|manifest\.webmanifest|workbox-[^/]+\.js)$/.test(filePath)) res.setHeader("Cache-Control", "no-cache");
+        },
+      }),
+    );
     app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => {
       res.setHeader("Cache-Control", "no-cache");
       res.sendFile(resolve(webDist, "index.html"));

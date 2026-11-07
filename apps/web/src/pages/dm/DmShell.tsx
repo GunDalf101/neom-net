@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Link, NavLink, Navigate, Outlet, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useMe, usePending, useSession, useSessionControl } from "@/api/hooks";
 import { Button, Icon, Spinner } from "@/components/ui";
+import { PushToggle } from "@/components/PushToggle";
 import { useCampaignRealtime } from "@/realtime/socket";
 
 export interface DmContext {
@@ -56,6 +57,7 @@ export function DmShell() {
           ))}
         </nav>
         <div className="mt-auto space-y-2">
+          <PushToggle />
           <div className={clsx("flex items-center gap-1 font-display text-[0.55rem] tracking-[0.2em]", connected ? "text-ok" : "text-amber")}>
             <span className={clsx("inline-block h-1.5 w-1.5 rounded-full", connected ? "bg-ok pulse-ok" : "bg-amber")} />
             {connected ? "UPLINK ACTIVE" : "LINK LOST"}

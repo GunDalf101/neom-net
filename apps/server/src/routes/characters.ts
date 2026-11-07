@@ -1,4 +1,4 @@
-import { ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, UnlockNodeSchema, UpdateCharacterSchema } from "@neom/shared";
+import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, UnlockNodeSchema, UpdateCharacterSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -64,6 +64,10 @@ charactersRouter.post("/:characterId/abilities/:abilityId/use", wrap<AuthedReque
   res.json(await useAbility(cid(req), actor(req, membership.isDm), req.params.abilityId as string));
 }));
 
+charactersRouter.post("/:characterId/assign", wrap<AuthedRequest>(async (req, res) => {
+  const body = parseBody(AssignCharacterSchema, req.body);
+  res.json(await characters.assignCharacter(cid(req), req.user.id, body.userId));
+}));
 charactersRouter.get("/:characterId/export", wrap<AuthedRequest>(async (req, res) => res.json(await characters.exportCharacter(cid(req), req.user.id))));
 charactersRouter.post("/:characterId/import", wrap<AuthedRequest>(async (req, res) => {
   const body = parseBody(z.object({ format: z.literal("neom-net/character"), version: z.literal(1), character: z.record(z.unknown()) }), req.body);

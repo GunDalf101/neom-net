@@ -1,4 +1,5 @@
 import type { CampaignEventDto, RuleTraceDto } from "@neom/shared";
+import { ChangeList, isChangeList } from "@/components/ChangeList";
 import clsx from "clsx";
 import { useState } from "react";
 import { useEvents, useRolls, useTraces } from "@/api/hooks";
@@ -64,7 +65,12 @@ export function EventRow({ e, compact }: { e: CampaignEventDto; compact?: boolea
         {e.visibility !== "public" && <Badge color="crimson" className={clsx("shrink-0", compact && "hidden @md:inline-flex")}>{e.visibility}</Badge>}
         <span className={clsx("max-w-[7rem] shrink-0 truncate text-dim", compact && "hidden @sm:inline")}>{e.actorName ?? "SYSTEM"}</span>
       </button>
-      {open && Object.keys(e.payload).length > 0 && <pre className="num mt-1 max-h-48 overflow-auto border border-line bg-bg-0 p-2 text-[0.65rem] text-muted">{JSON.stringify(e.payload, null, 2)}</pre>}
+      {open && isChangeList(e.payload.changes) && (
+        <div className="mt-1 border border-line bg-bg-0 p-2">
+          <ChangeList changes={e.payload.changes} />
+        </div>
+      )}
+      {open && !isChangeList(e.payload.changes) && Object.keys(e.payload).length > 0 && <pre className="num mt-1 max-h-48 overflow-auto border border-line bg-bg-0 p-2 text-[0.65rem] text-muted">{JSON.stringify(e.payload, null, 2)}</pre>}
     </li>
   );
 }

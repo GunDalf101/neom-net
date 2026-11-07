@@ -2,7 +2,7 @@
   "name": "neom-net",
   "private": true,
   "version": "0.1.0",
-  "description": "NEOM//NET — cyberpunk tabletop RPG campaign operating system",
+  "description": "NEOM//NET \u2014 cyberpunk tabletop RPG campaign operating system",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -21,7 +21,8 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate -w @neom/server",
     "db:seed": "npm run db:seed -w @neom/server",
-    "db:reset": "npm run db:reset -w @neom/server"
+    "db:reset": "npm run db:reset -w @neom/server",
+    "test:ui": "npm run test:ui -w @neom/web"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",

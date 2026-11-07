@@ -127,6 +127,47 @@ check(view.derived.skills.stealth.value === 9, `Stealth = ${view.derived.skills.
 check(view.derived.specialSkills.hacking.value === 8, `Hacking = ${view.derived.specialSkills.hacking.value} (3 + rank 2 + prof 2 + deck 1)`);
 check(view.permissions.isOwner && !view.permissions.isDm, "Player permissions are owner-level, not DM");
 
+console.log("    Sheet changes are logged field by field");
+await dm.call("PATCH", `/api/characters/${charId}`, { background: "Street Courier (E2E)" });
+await dm.call("PATCH", `/api/characters/${charId}`, { background: "Street Courier" });
+const logRows = await dm.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`);
+const upd = logRows.find((e) => e.type === "character.updated" && Array.isArray(e.payload.changes) && e.payload.changes.some((c) => c.field === "background"));
+check(upd && upd.payload.changes[0].from !== upd.payload.changes[0].to && /background/.test(upd.summary), `Change log entry: ${upd?.summary}`);
+
+console.log("    DM sends a sheet to another player and back");
+const members = (await dm.call("GET", `/api/campaigns/${cid}`)).members;
+const dmUser = members.find((m) => m.role === "DM");
+const antonioUser = members.find((m) => m.username === "antonio");
+let assignDenied = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/assign`, { userId: dmUser.userId });
+} catch (e) {
+  assignDenied = e.status === 403;
+}
+check(assignDenied, "Players cannot reassign sheets (403)");
+view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: dmUser.userId });
+check(view.character.ownerUserId === dmUser.userId, "Sheet handed to the DM account");
+let lostAccess = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/items/${pistol.id}/action`, { action: "unequip" });
+} catch (e) {
+  lostAccess = e.status === 403;
+}
+check(lostAccess, "Previous owner can no longer act on it");
+view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: antonioUser.userId });
+check(view.character.ownerUserId === antonioUser.userId, "Sheet handed back to antonio");
+const assignedEvt = (await dm.call("GET", `/api/campaigns/${cid}/events?limit=5&characterId=${charId}`)).find((e) => e.type === "character.assigned");
+check(Boolean(assignedEvt), "character.assigned event logged");
+
+console.log("    Push subscriptions register per device");
+const pushCfg = await player.call("GET", "/api/push/config");
+check(typeof pushCfg.enabled === "boolean" && (pushCfg.enabled ? typeof pushCfg.publicKey === "string" : true), `Push config: enabled=${pushCfg.enabled}`);
+const fakeEndpoint = `https://push.invalid/neom-e2e/${Date.now()}`;
+const subRes = await player.call("POST", "/api/push/subscribe", { endpoint: fakeEndpoint, keys: { p256dh: "BPubKeyE2E", auth: "authE2E" } });
+check(subRes.ok === true && subRes.devices >= 1, `Subscribed (${subRes.devices} device)`);
+const unsubRes = await player.call("POST", "/api/push/unsubscribe", { endpoint: fakeEndpoint });
+check(unsubRes.devices === subRes.devices - 1, "Unsubscribed");
+
 console.log("    Hit die follows the class");
 const barb = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Krak (E2E)", characterClass: "Barbarian // Street Brawler", attributes: { str: 16, dex: 12, con: 14, int: 8, wis: 10, cha: 8 } });
 check(barb.character.hitDieSize === 12 && barb.character.hpMaxBase === 14, `Barbarian starts with d12 and ${barb.character.hpMaxBase} HP (12 + CON 2)`);

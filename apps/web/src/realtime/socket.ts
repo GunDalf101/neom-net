@@ -125,6 +125,14 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
       if (key) invalidate(key);
     };
 
+    const onSheetSent: ServerToClientEvents["sheet.sent"] = (p) => {
+      invalidate(qk.characters(p.campaignId));
+      invalidate(qk.campaigns);
+      invalidate(qk.dashboard(p.campaignId));
+      toast("success", `${p.fromName} sent you ${p.characterName}'s sheet`, "Open it from the campaign roster.");
+    };
+
+    s.on("sheet.sent", onSheetSent);
     s.on("character.updated", onCharacter);
     s.on("character.deleted", onCharacter);
     s.on("campaign.updated", onCampaign);
@@ -143,6 +151,7 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
     return () => {
       s.emit("campaign.leave", campaignId);
       s.off("connect", join);
+      s.off("sheet.sent", onSheetSent);
       s.off("character.updated", onCharacter);
       s.off("character.deleted", onCharacter);
       s.off("campaign.updated", onCampaign);

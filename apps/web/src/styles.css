@@ -528,3 +528,11 @@ select.hud-input option {
 }
 
 } /* end @layer components */
+
+/* Golden rule G9: primary actions are thumb-sized on phones (secondary chips may stay compact). */
+@media (max-width: 640px) {
+  .hud-btn-solid,
+  button[type="submit"].hud-btn {
+    min-height: 40px;
+  }
+}

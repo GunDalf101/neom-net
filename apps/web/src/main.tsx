@@ -4,6 +4,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import "./styles.css";
+import { registerSW } from "virtual:pwa-register";
+
+// PWA: precache the app shell and take over immediately; push handlers come from public/push-sw.js.
+registerSW({ immediate: true });
 
 const queryClient = new QueryClient({
   defaultOptions: {

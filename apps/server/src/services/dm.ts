@@ -4,6 +4,7 @@ import type { DmGrantSchema, DmMessageSchema, RollRequestCreateSchema } from "@n
 import { prisma } from "../db.js";
 import { notFound } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign, emitToDmAndUser, emitToUser, onlineUserIds } from "../realtime/io.js";
+import { pushToUsers } from "./push.js";
 import { getActiveSession, getCampaign } from "./campaigns.js";
 import { fullInclude, loadFull, toSummary } from "./characters.js";
 import { listRolls } from "./dice.js";
@@ -72,6 +73,9 @@ export async function sendMessage(campaignId: string, fromUserId: string, input:
   const dto = toMessageDto(row);
   if (input.kind === "broadcast") emitToCampaign(campaignId, "message.created", dto);
   else if (toUserId) emitToDmAndUser(campaignId, toUserId, "message.created", dto);
+  if (toUserId && toUserId !== fromUserId && !onlineUserIds(campaignId).includes(toUserId)) {
+    void pushToUsers([toUserId], { title: `${dto.fromName} (${input.kind})`, body: input.message, url: `/c/${campaignId}`, tag: `message:${campaignId}`, kind: "message" });
+  }
   return dto;
 }
 

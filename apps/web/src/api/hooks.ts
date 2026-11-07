@@ -49,6 +49,7 @@ import type {
 } from "@neom/shared";
 import { useMutation, useQuery, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
 import { api, errorMessage } from "./client";
+import { subscribePush, unsubscribePush } from "@/lib/push";
 import { toast } from "@/store/ui";
 
 export const qk = {
@@ -77,6 +78,7 @@ export const qk = {
   messages: (cid: string) => ["messages", cid] as const,
   session: (cid: string) => ["session", cid] as const,
   overrides: (cid: string) => ["overrides", cid] as const,
+  pushConfig: ["push", "config"] as const,
 };
 
 function withToast<TData, TVars>(opts?: UseMutationOptions<TData, Error, TVars>): UseMutationOptions<TData, Error, TVars> {
@@ -214,6 +216,55 @@ export const useUnlockNode = (id: string) => characterMutation<string>(id, (node
 export const useUseAbility = (id: string) => characterMutation<string>(id, (abilityId) => api.post(`/characters/${id}/abilities/${abilityId}/use`))();
 export const useClearEffect = (id: string) => characterMutation<string>(id, (effectId) => api.delete(`/characters/${id}/effects/${effectId}`))();
 export const useResetCharacter = (id: string) => characterMutation<void>(id, () => api.post(`/characters/${id}/reset`, { confirm: true }), "Character reset")();
+/** DM hands the sheet to another campaign member (ownership transfer + notification). */
+export const useAssignCharacter = (id: string) => characterMutation<string>(id, (userId) => api.post(`/characters/${id}/assign`, { userId }), "Sheet sent")();
+
+// ---------- Push notifications ----------
+export interface PushConfigDto {
+  enabled: boolean;
+  publicKey: string | null;
+  devices: number;
+}
+export const usePushConfig = () => useQuery({ queryKey: qk.pushConfig, queryFn: () => api.get<PushConfigDto>("/push/config"), staleTime: 60_000 });
+export function usePushSubscribe() {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: async (publicKey: string) => {
+        const sub = await subscribePush(publicKey);
+        return api.post<{ ok: true; devices: number }>("/push/subscribe", sub);
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.pushConfig });
+        toast("success", "Notifications enabled on this device");
+      },
+    }),
+  );
+}
+export function usePushUnsubscribe() {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: async () => {
+        const endpoint = await unsubscribePush();
+        if (endpoint) await api.post("/push/unsubscribe", { endpoint });
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.pushConfig });
+        toast("info", "Notifications turned off on this device");
+      },
+    }),
+  );
+}
+export function usePushTest() {
+  return useMutation(
+    withToast({
+      mutationFn: () => api.post<{ delivered: number }>("/push/test"),
+      onSuccess: (d) => toast(d.delivered ? "success" : "error", d.delivered ? `Test notification sent to ${d.delivered} device${d.delivered === 1 ? "" : "s"}` : "No device received it", d.delivered ? undefined : "Re-enable notifications on this device and try again."),
+    }),
+  );
+}
+
 export const useImportCharacter = (id: string) => characterMutation<unknown>(id, (payload) => api.post(`/characters/${id}/import`, payload), "Character imported")();
 
 export function useDeleteCharacter() {

@@ -21,6 +21,7 @@ import {
 } from "@/api/hooks";
 import { ROLL_TARGETS, STAT_TARGETS, TargetSelect } from "@/components/editors/EffectEditors";
 import { Badge, Bar, Button, Field, Icon, Input, Panel, Select, Spinner, Textarea } from "@/components/ui";
+import { SendSheet } from "@/components/SendSheet";
 import { fmtMod } from "@/lib/format";
 
 type Tab = "hp" | "status" | "grant" | "override" | "comms" | "cyber";
@@ -49,9 +50,12 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
       icon="joystick"
       color="crimson"
       actions={
-        <Link to={`/c/${campaignId}/hud/${c.id}`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]">
-          <Icon name="scan-face" size={12} /> Sheet
-        </Link>
+        <>
+          <SendSheet view={v} compact />
+          <Link to={`/c/${campaignId}/hud/${c.id}`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]">
+            <Icon name="scan-face" size={12} /> Sheet
+          </Link>
+        </>
       }
     >
       <div className="mb-2 grid grid-cols-4 gap-2 text-xs sm:grid-cols-6">

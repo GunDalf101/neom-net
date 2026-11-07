@@ -430,6 +430,9 @@ export const AbilityInputSchema = z.object({
 
 export const UnlockNodeSchema = z.object({ nodeId: z.string().min(1) });
 
+/** DM hands a sheet to another campaign member (ownership transfer). */
+export const AssignCharacterSchema = z.object({ userId: z.string().min(1) });
+
 // ---------- Export / import ----------
 export const CharacterExportSchema = z.object({
   format: z.literal("neom-net/character"),

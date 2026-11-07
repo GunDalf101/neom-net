@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useCharacter, useCharacters, useImportCharacter, useLogout, useMe, useResetCharacter, useRoll, useRollRequests } from "@/api/hooks";
 import { Button, ConfirmButton, Icon, Modal, Spinner } from "@/components/ui";
+import { PushToggle } from "@/components/PushToggle";
+import { SendSheet } from "@/components/SendSheet";
 import { downloadSheet, readSheetFile } from "@/lib/sheetFile";
 import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
 import { toast, useUi } from "@/store/ui";
@@ -25,6 +27,7 @@ const TABS = [
   { to: "skills", label: "Skills", icon: "git-branch" },
   { to: "journal", label: "Journal", icon: "book-open" },
   { to: "missions", label: "Missions", icon: "target" },
+  { to: "log", label: "Log", icon: "scroll-text" },
 ];
 
 function useClock() {
@@ -102,7 +105,7 @@ export function HudShell() {
           <Link to={`/c/${campaignId}`} className="flex items-baseline gap-1 font-display text-xl font-black tracking-[0.08em] text-cyan glow-text">
             NEOM<span className="text-crimson">//</span>NET <span className="ml-1 text-[0.55rem] font-normal tracking-widest text-muted">v0.1.0</span>
           </Link>
-          <nav className="mx-auto hidden items-center gap-1.5 md:flex">
+          <nav className="mx-auto hidden items-center gap-1.5 lg:flex">
             {TABS.map((t) => (
               <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box", isActive && "active")}>
                 {t.label}
@@ -122,7 +125,7 @@ export function HudShell() {
             </button>
           </div>
         </div>
-        <nav className="flex items-center gap-1 overflow-x-auto px-2 pb-1.5 md:hidden">
+        <nav className="flex items-center gap-1 overflow-x-auto px-2 pb-1.5 lg:hidden">
           {TABS.map((t) => (
             <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box !px-2.5 !py-1 !text-[0.58rem]", isActive && "active")}>
               <Icon name={t.icon} size={12} />
@@ -182,6 +185,17 @@ export function HudShell() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          <div>
+            <div className="hud-title mb-1 text-[0.6rem]">Notifications</div>
+            <PushToggle />
+            <p className="mt-1 text-[0.65rem] text-muted">Damage, conditions, items, DM roll requests and sheets sent to you arrive as push notifications when this device is away from the table. Install the app (browser menu → Add to Home Screen / Install) for the full experience.</p>
+          </div>
+          {isDm && (
+            <div>
+              <div className="hud-title mb-1 text-[0.6rem]">Hand this sheet to a player</div>
+              <SendSheet view={view.data} />
             </div>
           )}
           <div>

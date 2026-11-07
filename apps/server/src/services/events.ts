@@ -2,6 +2,7 @@ import type { CampaignEventDto } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma, type Db } from "../db.js";
 import { emitToCampaign, emitToDm, emitToDmAndUser } from "../realtime/io.js";
+import { notifyForEvent } from "./push.js";
 
 export interface LogEventInput {
   campaignId: string;
@@ -56,7 +57,9 @@ export async function logEvent(input: LogEventInput, db: Db = prisma): Promise<C
     include: eventInclude,
   });
   const dto = toEventDto(row);
-  broadcastEvent(dto, input.ownerUserId ?? row.character?.ownerUserId ?? null);
+  const ownerUserId = input.ownerUserId ?? row.character?.ownerUserId ?? null;
+  broadcastEvent(dto, ownerUserId);
+  void notifyForEvent(dto, ownerUserId);
   return dto;
 }
 

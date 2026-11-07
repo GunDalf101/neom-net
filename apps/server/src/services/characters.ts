@@ -25,11 +25,12 @@ import {
   type SpecialSkillKey,
   type SkillKey,
   type ProficiencyMultiplier,
+  type SheetChange,
 } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma, type Db } from "../db.js";
 import { badRequest, conflict, forbidden, notFound, ruleViolation } from "../errors.js";
-import { emitCharacterUpdated } from "../realtime/io.js";
+import { emitCharacterUpdated, emitToUser } from "../realtime/io.js";
 import { campaignSettings, getMembership, requireCharacterAccess, requireCharacterEdit, requireMember } from "./access.js";
 import { findConditionDefinition } from "./conditions.js";
 import { logEvent } from "./events.js";
@@ -282,6 +283,39 @@ export async function createCharacter(userId: string, input: CreateCharacterInpu
   return buildView(full, { userId, isDm: membership.isDm });
 }
 
+const SHEET_LABELS: Record<string, string> = {
+  name: "name", species: "species", characterClass: "class", subclass: "subclass", faction: "faction", alignment: "alignment",
+  background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
+  baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
+  acBase: "base AC", acBonus: "AC adjustment",
+};
+
+/** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
+function diffSheet(before: Prisma.CharacterGetPayload<Record<string, never>>, data: Prisma.CharacterUpdateInput): SheetChange[] {
+  const out: SheetChange[] = [];
+  const prev = before as unknown as Record<string, unknown>;
+  for (const [k, v] of Object.entries(data)) {
+    if (k === "version") continue;
+    if (k === "attributes" || k === "saveProficiencies" || k === "skills" || k === "specialSkills") {
+      const a = (prev[k] ?? {}) as Record<string, unknown>;
+      const b = (v ?? {}) as Record<string, unknown>;
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) out.push({ field: `${k}.${key}`, from: a[key] ?? null, to: b[key] ?? null });
+      }
+      continue;
+    }
+    if (prev[k] !== v) out.push({ field: k, from: k === "portraitUrl" ? (prev[k] ? "(image)" : null) : prev[k] ?? null, to: k === "portraitUrl" ? (v ? "(image)" : null) : (v as unknown) ?? null });
+  }
+  return out;
+}
+
+function describeChanges(changes: SheetChange[]): string {
+  if (changes.length === 0) return "no changes";
+  const fmt = (v: unknown) => (typeof v === "object" && v !== null ? JSON.stringify(v) : String(v ?? "—"));
+  const parts = changes.slice(0, 4).map((c) => `${SHEET_LABELS[c.field] ?? c.field} ${fmt(c.from)} → ${fmt(c.to)}`);
+  return parts.join(", ") + (changes.length > 4 ? ` (+${changes.length - 4} more)` : "");
+}
+
 export async function updateCharacter(characterId: string, userId: string, input: UpdateCharacterInput): Promise<CharacterView> {
   const { character, membership, isOwner } = await requireCharacterEdit(characterId, userId);
   const settings = campaignSettings(character.campaign);
@@ -329,6 +363,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   if (input.expectedVersion !== undefined && input.expectedVersion !== character.version) {
     throw conflict("This character was changed by someone else. Reload and try again.", { currentVersion: character.version });
   }
+  const changes = diffSheet(character, data);
   await prisma.character.update({ where, data });
 
   // Clamp current HP if the max went down.
@@ -343,7 +378,8 @@ export async function updateCharacter(characterId: string, userId: string, input
     type: "character.updated",
     actorUserId: userId,
     characterId,
-    summary: `${full.name}'s sheet was updated (${Object.keys(input).filter((k) => k !== "expectedVersion").join(", ")})`,
+    summary: `${full.name}'s sheet was updated: ${describeChanges(changes)}`,
+    payload: { changes },
     visibility: "owner",
   });
   emitCharacterUpdated(character.campaignId, characterId);
@@ -776,4 +812,36 @@ export async function resetCharacter(characterId: string, userId: string): Promi
   emitCharacterUpdated(character.campaignId, characterId);
   const full = await loadFull(characterId);
   return buildView(full, { userId, isDm: membership.isDm });
+}
+
+// ---------- Ownership ----------
+
+/** DM hands a sheet to another member: ownership moves, the recipient is notified (socket + push). */
+export async function assignCharacter(characterId: string, dmUserId: string, targetUserId: string): Promise<CharacterView> {
+  const character = await prisma.character.findUnique({ where: { id: characterId }, include: { campaign: true } });
+  if (!character) throw notFound("Character");
+  const dm = await getMembership(character.campaignId, dmUserId);
+  if (!dm?.isDm) throw forbidden("Only the DM can send sheets");
+  const target = await prisma.campaignMembership.findUnique({
+    where: { campaignId_userId: { campaignId: character.campaignId, userId: targetUserId } },
+    include: { user: { select: { username: true } } },
+  });
+  if (!target) throw badRequest("That user is not a member of this campaign");
+  const sender = await prisma.user.findUnique({ where: { id: dmUserId }, select: { username: true } });
+  const previousOwner = character.ownerUserId;
+  await prisma.character.update({ where: { id: characterId }, data: { ownerUserId: targetUserId, version: { increment: 1 } } });
+  await logEvent({
+    campaignId: character.campaignId,
+    type: "character.assigned",
+    actorUserId: dmUserId,
+    characterId,
+    summary: `${sender?.username ?? "DM"} sent ${character.name}'s sheet to ${target.user.username}`,
+    payload: { fromUserId: previousOwner, toUserId: targetUserId },
+    visibility: "owner",
+    ownerUserId: targetUserId,
+  });
+  emitToUser(targetUserId, "sheet.sent", { campaignId: character.campaignId, characterId, characterName: character.name, fromName: sender?.username ?? "DM" });
+  emitCharacterUpdated(character.campaignId, characterId);
+  const full = await loadFull(characterId);
+  return buildView(full, { userId: dmUserId, isDm: true });
 }

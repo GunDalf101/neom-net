@@ -263,6 +263,13 @@ export interface DiceRollDto {
   createdAt: string;
 }
 
+/** One field-level change recorded in a `character.updated` event payload (`payload.changes`). */
+export interface SheetChange {
+  field: string;
+  from: unknown;
+  to: unknown;
+}
+
 export interface CampaignEventDto {
   id: string;
   campaignId: string;
@@ -525,6 +532,8 @@ export interface ServerToClientEvents {
   "presence.updated": (payload: { campaignId: string; onlineUserIds: string[] }) => void;
   "session.updated": (payload: { campaignId: string; session: LiveSessionDto | null }) => void;
   "content.updated": (payload: { campaignId: string; kind: string }) => void;
+  /** The DM handed a character sheet to this user. */
+  "sheet.sent": (payload: { campaignId: string; characterId: string; characterName: string; fromName: string }) => void;
 }
 
 export interface ClientToServerEvents {

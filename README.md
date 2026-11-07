@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (71 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (83 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -94,6 +94,14 @@ By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): 
 **Hit dice.** A new character's hit die follows its class (d12 barbarian; d10 fighter, paladin, ranger; d6 sorcerer, wizard; d8 for everything else, including custom classes), matched on the first word so "Rogue // Netrunner" is a rogue. The New character form and the Identity editor both expose the die, so the DM can override it for homebrew classes. Level 1 HP defaults to the die plus the CON modifier.
 
 **Armor class without items.** The DM can set a character's unarmored base AC (default 10) and a flat adjustment from the Combat panel on the sheet or from the HP tab of the dashboard live controls. Both show up as their own lines in the AC breakdown, and gear, cyberware and conditions still add on top. Temporary changes are better done as a DM override (Override tab), which keeps the calculated value visible.
+
+## UI golden rules, PWA and notifications
+
+- `docs/UI_GOLDEN_RULES.md` is the contract every screen is held to (ten rules, a feature coverage matrix, and the manual checklist). `npm run test:ui` runs the automated part with Playwright on phone, tablet, laptop and desktop viewports as player and DM: no page or console errors, no horizontal overflow, page landmarks present, a player action reaching the DM dashboard live, phone tap targets, and the manifest + service worker on a production build. Run `npm run pw:install -w @neom/web` once to fetch Chromium, then `SEED_PASSWORD=… WEB_URL=http://localhost:5174 npm run test:ui`.
+- The web app is an installable PWA (manifest, icons, Workbox service worker with precached shell and cached fonts). Install it from the browser menu; on iPhone use Share → Add to Home Screen.
+- Push notifications: each device opts in from the HUD gear menu or the DM sidebar ("Notifications"). Owners are notified when the DM or a rule changes their character (damage, healing, conditions, items, overrides, sheet edits) while they are away from the table, and always for roll requests and sheets sent to them; the DM is notified of rule approvals waiting while away. Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in production (`npx web-push generate-vapid-keys`); development generates a throwaway pair in the OS temp dir.
+- Send a sheet: the DM hands a character to a player from the live controls ("Send") or the HUD gear menu. Ownership moves, the player gets a toast and a push notification with a link, and the transfer is logged.
+- Change log: every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
 
 ## What works / what is next
 
