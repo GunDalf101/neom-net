@@ -1,0 +1,528 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+@theme {
+  --font-display: "Orbitron", "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-bg-0: #04060a;
+  --color-bg-1: #090d14;
+  --color-bg-2: #0f1520;
+  --color-bg-3: #151d2b;
+  --color-line: #1c2a3c;
+  --color-line-2: #28394f;
+  --color-text: #d8e4ef;
+  --color-muted: #7f90a6;
+  --color-dim: #52627a;
+
+  --color-cyan: #19e3ff;
+  --color-blue: #3b82f6;
+  --color-crimson: #ff2d55;
+  --color-magenta: #ff3df2;
+  --color-amber: #ffb020;
+  --color-lime: #7cff5a;
+  --color-violet: #a855f7;
+  --color-ok: #35e39a;
+
+  --shadow-glow-cyan: 0 0 12px rgba(25, 227, 255, 0.35), 0 0 2px rgba(25, 227, 255, 0.8);
+  --shadow-glow-crimson: 0 0 12px rgba(255, 45, 85, 0.35), 0 0 2px rgba(255, 45, 85, 0.8);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(25, 227, 255, 0.07), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(255, 45, 85, 0.06), transparent 60%),
+    var(--color-bg-0);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(25, 227, 255, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(25, 227, 255, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(25, 227, 255, 0.3);
+  border-radius: 0;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+html {
+  scroll-behavior: auto;
+  overscroll-behavior-y: none;
+}
+
+/* ---------- HUD primitives ----------
+   Kept in the components layer so Tailwind utilities (hidden, lg:block, …) still win. */
+@layer components {
+
+.hud-clip {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.hud-clip-sm {
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.hud-panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(13, 19, 30, 0.94), rgba(7, 11, 18, 0.97));
+  border: 1px solid color-mix(in srgb, var(--panel-accent, var(--color-cyan)) 32%, var(--color-line));
+  box-shadow:
+    inset 0 0 24px color-mix(in srgb, var(--panel-accent, var(--color-cyan)) 5%, transparent),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.hud-panel.lit {
+  border-color: color-mix(in srgb, var(--panel-accent, var(--color-cyan)) 70%, transparent);
+  box-shadow:
+    inset 0 0 24px color-mix(in srgb, var(--panel-accent, var(--color-cyan)) 8%, transparent),
+    0 0 14px color-mix(in srgb, var(--panel-accent, var(--color-cyan)) 22%, transparent);
+}
+
+/* Octagonal glowing icon tile */
+.tile {
+  --tile-color: var(--color-cyan);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--tile-color);
+  border: 1px solid var(--tile-color);
+  background: color-mix(in srgb, var(--tile-color) 14%, rgba(4, 6, 10, 0.9));
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--tile-color) 45%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--tile-color) 25%, transparent);
+  clip-path: polygon(22% 0, 78% 0, 100% 22%, 100% 78%, 78% 100%, 22% 100%, 0 78%, 0 22%);
+}
+.tile-sm {
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tile-color) 40%, transparent);
+}
+.tile-lg {
+  width: 64px;
+  height: 64px;
+}
+
+/* Bordered value box */
+.valbox {
+  --val-color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--val-color) 70%, transparent);
+  color: var(--val-color);
+  background: rgba(4, 6, 10, 0.75);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--val-color) 12%, transparent);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+input.valbox {
+  text-align: center;
+  outline: none;
+  width: 3.2rem;
+}
+input.valbox:focus {
+  border-color: var(--color-cyan);
+}
+
+/* Boxed navigation tab (top bar) */
+.nav-box {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.4rem;
+  color: var(--color-text);
+  border: 1px solid rgba(25, 227, 255, 0.45);
+  background: rgba(25, 227, 255, 0.05);
+  box-shadow: inset 0 0 10px rgba(25, 227, 255, 0.06);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  white-space: nowrap;
+}
+.nav-box:hover {
+  background: rgba(25, 227, 255, 0.14);
+}
+.nav-box.active {
+  background: var(--color-crimson);
+  border-color: var(--color-crimson);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 45, 85, 0.55);
+}
+
+/* Segmented tabs inside a panel */
+.seg {
+  display: flex;
+  border: 1px solid rgba(25, 227, 255, 0.35);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.seg > button {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.6rem;
+  color: var(--color-muted);
+  border-right: 1px solid rgba(25, 227, 255, 0.2);
+}
+.seg > button:last-child {
+  border-right: 0;
+}
+.seg > button.active {
+  background: var(--color-crimson);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 45, 85, 0.5);
+}
+.seg.cyan > button.active {
+  background: var(--color-cyan);
+  color: #04060a;
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+/* Square check (D&D style) */
+.sq-check {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-muted);
+  display: inline-block;
+  flex: none;
+  background: transparent;
+}
+.sq-check.on {
+  background: var(--check-color, var(--color-cyan));
+  border-color: var(--check-color, var(--color-cyan));
+  box-shadow: 0 0 8px var(--check-color, var(--color-cyan));
+}
+
+/* Rarity frame for item/slot cards */
+.rarity-card {
+  --rc: var(--color-muted);
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--rc) 85%, transparent);
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--rc) 12%, transparent), transparent 60%),
+    linear-gradient(180deg, rgba(13, 19, 30, 0.96), rgba(6, 9, 15, 0.98));
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--rc) 35%, transparent),
+    inset 0 0 14px color-mix(in srgb, var(--rc) 10%, transparent);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.rarity-card.selected {
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--rc) 70%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--rc) 20%, transparent);
+}
+.rarity-pill {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.68rem;
+  color: var(--rc);
+  border: 1px solid color-mix(in srgb, var(--rc) 70%, transparent);
+  background: rgba(4, 6, 10, 0.8);
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+
+/* Segmented capacity meter */
+.seg-meter {
+  display: flex;
+  gap: 2px;
+}
+.seg-meter > span {
+  flex: 1;
+  height: 10px;
+  border: 1px solid rgba(25, 227, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+  clip-path: polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%);
+}
+.seg-meter > span.on {
+  background: var(--meter-color, var(--color-cyan));
+  border-color: var(--meter-color, var(--color-cyan));
+  box-shadow: 0 0 6px var(--meter-color, var(--color-cyan));
+}
+.hud-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--panel-accent, var(--color-cyan)) 0, transparent 30%);
+  opacity: 0.08;
+  mask: linear-gradient(180deg, #000 0, transparent 2px);
+}
+.hud-panel::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 42px;
+  height: 2px;
+  background: var(--panel-accent, var(--color-cyan));
+  box-shadow: 0 0 10px var(--panel-accent, var(--color-cyan));
+  pointer-events: none;
+}
+
+.hud-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-cyan);
+}
+
+.scanlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+
+.glow-text {
+  text-shadow: 0 0 8px currentColor;
+}
+
+@keyframes hud-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
+.hud-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 25%;
+  background: linear-gradient(180deg, transparent, rgba(25, 227, 255, 0.08), transparent);
+  animation: hud-scan 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(53, 227, 154, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(53, 227, 154, 0);
+  }
+}
+.pulse-ok {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.6;
+  }
+  94% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 0.7;
+  }
+}
+.flicker {
+  animation: flicker 7s infinite;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-input {
+  background: rgba(4, 6, 10, 0.8);
+  border: 1px solid var(--color-line-2);
+  color: var(--color-text);
+  padding: 0.35rem 0.55rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  outline: none;
+  width: 100%;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.hud-input:focus {
+  border-color: var(--color-cyan);
+  box-shadow: inset 0 0 0 1px rgba(25, 227, 255, 0.4);
+}
+.hud-input:disabled {
+  opacity: 0.55;
+}
+select.hud-input option {
+  background: var(--color-bg-2);
+}
+
+.hud-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--btn-color, var(--color-cyan));
+  color: var(--btn-color, var(--color-cyan));
+  background: color-mix(in srgb, var(--btn-color, var(--color-cyan)) 8%, transparent);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  transition: background 120ms, box-shadow 120ms, transform 60ms;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hud-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--btn-color, var(--color-cyan)) 20%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--btn-color, var(--color-cyan)) 35%, transparent);
+}
+.hud-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.hud-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.hud-btn-solid {
+  background: var(--btn-color, var(--color-cyan));
+  color: #04060a;
+}
+.hud-btn-solid:hover:not(:disabled) {
+  background: var(--btn-color, var(--color-cyan));
+  filter: brightness(1.1);
+}
+.hud-btn-ghost {
+  border-color: var(--color-line-2);
+  color: var(--color-muted);
+  background: transparent;
+}
+.hud-btn-ghost:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-text);
+  box-shadow: none;
+}
+
+.hud-tab {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.55rem 1.1rem;
+  color: var(--color-muted);
+  border: 1px solid transparent;
+  border-bottom-color: var(--color-line);
+  position: relative;
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+}
+.hud-tab:hover {
+  color: var(--color-text);
+}
+.hud-tab.active {
+  color: #04060a;
+  background: var(--color-cyan);
+  box-shadow: var(--shadow-glow-cyan);
+}
+.hud-tab.active.danger {
+  background: var(--color-crimson);
+  box-shadow: var(--shadow-glow-crimson);
+}
+
+.bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-line);
+  overflow: hidden;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--bar-color, var(--color-cyan)), color-mix(in srgb, var(--bar-color, var(--color-cyan)) 60%, white));
+  box-shadow: 0 0 10px var(--bar-color, var(--color-cyan));
+  transition: width 300ms ease;
+}
+
+.hex-check {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-line-2);
+  display: inline-block;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: transparent;
+  flex: none;
+}
+.hex-check.on {
+  background: var(--check-color, var(--color-cyan));
+  box-shadow: 0 0 8px var(--check-color, var(--color-cyan));
+  border-color: var(--check-color, var(--color-cyan));
+}
+.hex-check.expert {
+  background: var(--color-amber);
+  border-color: var(--color-amber);
+  box-shadow: 0 0 8px var(--color-amber);
+}
+
+/* React Flow theming */
+.react-flow {
+  --xy-background-color: var(--color-bg-0);
+  --xy-edge-stroke: #3a5068;
+  --xy-edge-stroke-selected: var(--color-cyan);
+  --xy-handle-background-color: var(--color-cyan);
+  --xy-controls-button-background-color: var(--color-bg-2);
+  --xy-controls-button-color: var(--color-text);
+  --xy-controls-button-border-color: var(--color-line);
+  --xy-minimap-background-color: var(--color-bg-1);
+}
+.react-flow__node {
+  font-family: var(--font-ui);
+}
+.react-flow__attribution {
+  display: none;
+}
+
+} /* end @layer components */

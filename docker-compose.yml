@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: neom-net-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: neom
+      POSTGRES_PASSWORD: neom_dev_password
+      POSTGRES_DB: neom_net
+    ports:
+      - "5433:5432"
+    volumes:
+      - neom_net_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neom -d neom_net"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  neom_net_pgdata:

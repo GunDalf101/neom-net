@@ -1,0 +1,181 @@
+import type { CampaignDto, CharacterView, UserDto } from "@neom/shared";
+import clsx from "clsx";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useCampaign, useCharacter, useCharacters, useLogout, useMe, useRoll, useRollRequests } from "@/api/hooks";
+import { Button, Icon, Modal, Spinner } from "@/components/ui";
+import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
+import { useUi } from "@/store/ui";
+
+export interface HudContext {
+  view: CharacterView;
+  campaign: CampaignDto;
+  me: UserDto;
+  isDm: boolean;
+  connected: boolean;
+}
+
+export const useHud = () => useOutletContext<HudContext>();
+
+const TABS = [
+  { to: "", label: "Character", icon: "scan-face", end: true },
+  { to: "inventory", label: "Inventory", icon: "package" },
+  { to: "cyberware", label: "Cyberware", icon: "cpu" },
+  { to: "skills", label: "Skills", icon: "git-branch" },
+  { to: "journal", label: "Journal", icon: "book-open" },
+  { to: "missions", label: "Missions", icon: "target" },
+];
+
+function useClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return { date: `2077.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`, time: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
+}
+
+export function HudShell() {
+  const { campaignId = "", characterId = "" } = useParams();
+  const me = useMe();
+  const nav = useNavigate();
+  const campaign = useCampaign(campaignId);
+  const view = useCharacter(characterId);
+  const characters = useCharacters(campaignId);
+  const logout = useLogout();
+  const { connected } = useCampaignRealtime(campaignId, me.data?.id);
+  const remember = useUi((s) => s.rememberCharacter);
+  const clock = useClock();
+  const requests = useRollRequests(campaignId);
+  const roll = useRoll(campaignId);
+  const [menu, setMenu] = useState(false);
+
+  useEffect(() => {
+    if (characterId) remember(campaignId, characterId);
+  }, [campaignId, characterId, remember]);
+
+  if (me.isLoading || campaign.isLoading || view.isLoading) return <Spinner label="Loading HUD" />;
+  if (!me.data || !campaign.data) return <div className="p-6 text-crimson">Campaign unavailable.</div>;
+  if (!view.data) return <div className="p-6 text-crimson">Character unavailable: {view.error instanceof Error ? view.error.message : ""}</div>;
+
+  const isDm = campaign.data.role === "DM";
+  const ctx: HudContext = { view: view.data, campaign: campaign.data, me: me.data, isDm, connected };
+  const myRequests = (requests.data ?? []).filter((r) => r.characterId === characterId);
+  const base = `/c/${campaignId}/hud/${characterId}`;
+
+  return (
+    <div className="flex min-h-full flex-col lg:h-screen lg:overflow-hidden">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-cyan/20 bg-bg-0/92 backdrop-blur lg:static">
+        <div className="flex items-center gap-3 px-3 py-1.5">
+          <Link to={`/c/${campaignId}`} className="flex items-baseline gap-1 font-display text-xl font-black tracking-[0.08em] text-cyan glow-text">
+            NEOM<span className="text-crimson">//</span>NET <span className="ml-1 text-[0.55rem] font-normal tracking-widest text-muted">v0.1.0</span>
+          </Link>
+          <nav className="mx-auto hidden items-center gap-1.5 md:flex">
+            {TABS.map((t) => (
+              <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box", isActive && "active")}>
+                {t.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="nav-box num hidden !px-3 !py-1.5 !text-[0.68rem] !tracking-normal text-text/80 lg:inline">
+              {clock.date} <span className="ml-2">{clock.time}</span>
+            </span>
+            <span className={clsx("nav-box flex items-center gap-1.5 !px-3 !py-1.5 !text-[0.62rem]", connected ? "text-ok" : "text-amber")} style={{ borderColor: connected ? "rgba(53,227,154,0.5)" : "rgba(255,176,32,0.5)" }}>
+              <span className={clsx("inline-block h-2 w-2 rounded-full", connected ? "bg-ok pulse-ok" : "bg-amber")} />
+              {connected ? "CONNECTED" : "LINK LOST"}
+            </span>
+            <button type="button" onClick={() => setMenu(true)} className="nav-box !px-2 !py-1.5" aria-label="Menu">
+              <Icon name="settings" size={14} />
+            </button>
+          </div>
+        </div>
+        <nav className="flex items-center gap-1 overflow-x-auto px-2 pb-1.5 md:hidden">
+          {TABS.map((t) => (
+            <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box !px-2.5 !py-1 !text-[0.58rem]", isActive && "active")}>
+              <Icon name={t.icon} size={12} />
+            </NavLink>
+          ))}
+        </nav>
+        {view.data.permissions.readOnly && (
+          <div className="flex items-center gap-2 border-t border-cyan/20 bg-cyan/5 px-3 py-1 text-[0.68rem] uppercase tracking-[0.16em] text-cyan/80">
+            <Icon name="lock" size={12} /> Read-only sheet — the Dungeon Master applies all changes. You can still roll dice and keep notes.
+          </div>
+        )}
+        {myRequests.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-amber/40 bg-amber/10 px-3 py-1.5 text-xs">
+            <Icon name="bell-ring" size={14} className="text-amber" />
+            <span className="text-amber">DM requests a roll:</span>
+            {myRequests.map((r) => (
+              <Button
+                key={r.id}
+                size="xs"
+                color="amber"
+                disabled={roll.isPending}
+                onClick={() =>
+                  roll.mutate({
+                    characterId,
+                    target: r.target ?? undefined,
+                    expression: r.expression ?? undefined,
+                    category: r.target?.startsWith("save") ? "save" : r.target ? "skill" : "custom",
+                    label: r.label,
+                    visibility: r.visibility,
+                    rollRequestId: r.id,
+                  })
+                }
+              >
+                {r.label}
+                {r.dc ? ` (DC ${r.dc})` : ""}
+              </Button>
+            ))}
+          </div>
+        )}
+      </header>
+      <main className="flex-1 p-3 lg:min-h-0 lg:overflow-y-auto">
+        <Outlet context={ctx} />
+      </main>
+
+      <Modal open={menu} onClose={() => setMenu(false)} title="System" width="max-w-sm">
+        <div className="space-y-3 text-sm">
+          <div className="text-muted">
+            Operator <span className="text-text">{me.data.username}</span> · {campaign.data.name}
+          </div>
+          {characters.data && characters.data.length > 1 && (
+            <div>
+              <div className="hud-title mb-1 text-[0.6rem]">Switch character</div>
+              <div className="flex flex-wrap gap-1">
+                {characters.data.map((c) => (
+                  <button key={c.id} className={clsx("nav-box !px-3 !py-1 !text-[0.6rem]", c.id === characterId && "active")} onClick={() => { setMenu(false); nav(`/c/${campaignId}/hud/${c.id}`); }}>
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/c/${campaignId}`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)}>
+              <Icon name="users" size={13} /> Campaign
+            </Link>
+            {isDm && (
+              <Link to={`/c/${campaignId}/dm`} className="hud-btn" style={{ ["--btn-color" as string]: "var(--color-crimson)" }} onClick={() => setMenu(false)}>
+                <Icon name="crown" size={13} /> DM//CONTROL
+              </Link>
+            )}
+            <Button
+              variant="ghost"
+              icon="log-out"
+              onClick={async () => {
+                await logout.mutateAsync();
+                disconnectSocket();
+                nav("/login");
+              }}
+            >
+              Disconnect
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

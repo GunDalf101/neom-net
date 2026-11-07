@@ -1,0 +1,649 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Accounts & campaigns
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  memberships  CampaignMembership[]
+  ownedCampaigns Campaign[]        @relation("CampaignOwner")
+  characters   Character[]
+  rolls        DiceRoll[]
+  events       CampaignEvent[]
+  journal      JournalEntry[]
+  overrides    DMOverride[]
+  sentMessages Message[]           @relation("MessageFrom")
+  receivedMessages Message[]       @relation("MessageTo")
+  sessionsStarted LiveSession[]
+}
+
+enum CampaignRole {
+  DM
+  PLAYER
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  ownerId     String
+  owner       User     @relation("CampaignOwner", fields: [ownerId], references: [id])
+  inviteCode  String   @unique
+  settings    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members         CampaignMembership[]
+  characters      Character[]
+  itemDefinitions ItemDefinition[]
+  conditionDefs   ConditionDefinition[]
+  rules           RuleDefinition[]
+  skillTrees      SkillTreeDefinition[]
+  abilities       AbilityDefinition[]
+  npcs            NpcDefinition[]
+  encounters      Encounter[]
+  missions        Mission[]
+  journal         JournalEntry[]
+  rolls           DiceRoll[]
+  events          CampaignEvent[]
+  overrides       DMOverride[]
+  traces          RuleTrace[]
+  pendingActions  PendingAction[]
+  rollRequests    RollRequest[]
+  messages        Message[]
+  sessions        LiveSession[]
+}
+
+model CampaignMembership {
+  id         String       @id @default(cuid())
+  campaignId String
+  campaign   Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       CampaignRole @default(PLAYER)
+  joinedAt   DateTime     @default(now())
+
+  @@unique([campaignId, userId])
+  @@index([userId])
+}
+
+model LiveSession {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  startedById String
+  startedBy   User      @relation(fields: [startedById], references: [id])
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+
+  @@index([campaignId, endedAt])
+}
+
+// ============================================================
+// Characters (state)
+// ============================================================
+
+model Character {
+  id             String   @id @default(cuid())
+  campaignId     String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ownerUserId    String
+  owner          User     @relation(fields: [ownerUserId], references: [id])
+  name           String
+  species        String   @default("Human")
+  characterClass String   @default("")
+  subclass       String   @default("")
+  level          Int      @default(1)
+  xp             Int      @default(0)
+  faction        String   @default("")
+  alignment      String   @default("")
+  background     String   @default("")
+  biography      String   @default("")
+  portraitUrl    String?
+
+  // Sheet data read/written together, validated by shared zod schemas.
+  attributes        Json
+  saveProficiencies Json
+  skills            Json
+  specialSkills     Json
+
+  hpCurrent        Int     @default(10)
+  hpMaxBase        Int     @default(10)
+  hpTemp           Int     @default(0)
+  baseSpeed        Int?
+  hitDieSize       Int     @default(8)
+  hitDiceUsed      Int     @default(0)
+  inspiration      Boolean @default(false)
+  deathSaveSuccess Int     @default(0)
+  deathSaveFailure Int     @default(0)
+  credits          Int     @default(0)
+  progressionPoints Int    @default(0)
+
+  /// Optimistic concurrency token, bumped on every mutation.
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items         ItemInstance[]
+  conditions    CharacterCondition[]
+  activeEffects ActiveEffect[]
+  overrides     DMOverride[]
+  unlocks       CharacterUnlock[]
+  rolls         DiceRoll[]
+  events        CampaignEvent[]
+  participants  EncounterParticipant[]
+  journal       JournalEntry[]
+  missions      MissionAssignment[]
+  traces        RuleTrace[]
+  pendingActions PendingAction[]
+  rollRequests  RollRequest[]
+  ruleUsages    RuleUsage[]
+  messages      Message[]
+
+  @@index([campaignId])
+  @@index([ownerUserId])
+}
+
+// ============================================================
+// Definitions (content catalog)
+// ============================================================
+
+model ItemDefinition {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  description      String   @default("")
+  icon             String   @default("box")
+  imageUrl         String?
+  category         String
+  rarity           String   @default("common")
+  price            Int      @default(0)
+  weight           Float    @default(0)
+  requirements     Json     @default("[]")
+  effects          Json     @default("[]")
+  useEffects       Json     @default("[]")
+  augmentationSlot String?
+  equipmentSlot    String?
+  capacityCost     Int      @default(0)
+  stackable        Boolean  @default(false)
+  maxCharges       Int?
+  damage           String?
+  damageType       String?
+  ruleIds          Json     @default("[]")
+  tags             Json     @default("[]")
+  visibleToPlayers Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  instances ItemInstance[]
+
+  @@index([campaignId, category])
+}
+
+model ItemInstance {
+  id            String         @id @default(cuid())
+  characterId   String
+  character     Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  definitionId  String
+  definition    ItemDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  quantity      Int            @default(1)
+  charges       Int?
+  status        String         @default("stored")
+  equippedSlot  String?
+  installedSlot String?
+  customName    String?
+  customEffects Json?
+  container     String         @default("backpack")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([characterId])
+}
+
+model ConditionDefinition {
+  id          String    @id @default(cuid())
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  key         String
+  name        String
+  description String    @default("")
+  color       String    @default("crimson")
+  effects     Json      @default("[]")
+  ruleIds     Json      @default("[]")
+  builtin     Boolean   @default(false)
+
+  applied CharacterCondition[]
+
+  @@unique([campaignId, key])
+}
+
+model CharacterCondition {
+  id             String              @id @default(cuid())
+  characterId    String
+  character      Character           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  definitionId   String
+  definition     ConditionDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  durationTurns  Int?
+  remainingTurns Int?
+  level          Int?
+  note           String?
+  sourceLabel    String?
+  appliedAt      DateTime            @default(now())
+
+  @@index([characterId])
+}
+
+/// Temporary passive effects created by rules, abilities or the DM.
+model ActiveEffect {
+  id             String    @id @default(cuid())
+  characterId    String
+  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  label          String
+  sourceType     String
+  sourceId       String?
+  effects        Json      @default("[]")
+  durationTurns  Int?
+  remainingTurns Int?
+  onExpiry       Json      @default("[]")
+  createdAt      DateTime  @default(now())
+
+  @@index([characterId])
+}
+
+model DMOverride {
+  id             String    @id @default(cuid())
+  campaignId     String
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  characterId    String
+  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  target         String
+  value          Int
+  reason         String?
+  durationTurns  Int?
+  remainingTurns Int?
+  active         Boolean   @default(true)
+  originalValue  Int
+  createdById    String
+  createdBy      User      @relation(fields: [createdById], references: [id])
+  createdAt      DateTime  @default(now())
+  revokedAt      DateTime?
+
+  @@index([characterId, active])
+}
+
+// ============================================================
+// Rules engine
+// ============================================================
+
+model RuleDefinition {
+  id             String   @id @default(cuid())
+  campaignId     String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name           String
+  description    String   @default("")
+  automationMode String?
+  enabled        Boolean  @default(true)
+  scope          String   @default("campaign")
+  /// Working copy edited in the workshop.
+  draftGraph     Json
+  draftVersion   Int      @default(1)
+  /// Snapshot used at runtime. Null until first publish.
+  publishedGraph Json?
+  publishedVersion Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  versions RuleVersion[]
+  traces   RuleTrace[]
+  pending  PendingAction[]
+  usages   RuleUsage[]
+
+  @@index([campaignId, enabled])
+}
+
+model RuleVersion {
+  id        String         @id @default(cuid())
+  ruleId    String
+  rule      RuleDefinition @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  version   Int
+  graph     Json
+  note      String?
+  createdAt DateTime       @default(now())
+
+  @@unique([ruleId, version])
+}
+
+model RuleUsage {
+  id          String         @id @default(cuid())
+  ruleId      String
+  rule        RuleDefinition @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  /// e.g. "cd1:encounter:<encounterId>" or "cd1:session:<sessionId>"
+  usageKey    String
+  uses        Int            @default(0)
+
+  @@unique([ruleId, characterId, usageKey])
+}
+
+model RuleTrace {
+  id             String          @id @default(cuid())
+  campaignId     String
+  campaign       Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ruleId         String?
+  rule           RuleDefinition? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleName       String
+  characterId    String
+  character      Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  eventType      String
+  result         Json
+  status         String
+  automationMode String
+  createdAt      DateTime        @default(now())
+
+  pending PendingAction[]
+
+  @@index([campaignId, createdAt])
+}
+
+model PendingAction {
+  id          String          @id @default(cuid())
+  campaignId  String
+  campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  ruleId      String?
+  rule        RuleDefinition? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  ruleName    String
+  traceId     String
+  trace       RuleTrace       @relation(fields: [traceId], references: [id], onDelete: Cascade)
+  actions     Json
+  status      String          @default("pending")
+  note        String?
+  createdAt   DateTime        @default(now())
+  resolvedAt  DateTime?
+
+  @@index([campaignId, status])
+}
+
+// ============================================================
+// Progression
+// ============================================================
+
+model SkillTreeDefinition {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  branch      String
+  name        String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+
+  nodes SkillTreeNode[]
+
+  @@unique([campaignId, branch])
+}
+
+model SkillTreeNode {
+  id           String              @id @default(cuid())
+  treeId       String
+  tree         SkillTreeDefinition @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  key          String
+  name         String
+  description  String              @default("")
+  icon         String              @default("zap")
+  maxRank      Int                 @default(1)
+  cost         Int                 @default(1)
+  parentKeys   Json                @default("[]")
+  requirements Json                @default("[]")
+  effects      Json                @default("[]")
+  ruleIds      Json                @default("[]")
+  position     Json                @default("{\"x\":0,\"y\":0}")
+  tier         Int                 @default(0)
+
+  unlocks CharacterUnlock[]
+
+  @@unique([treeId, key])
+}
+
+model CharacterUnlock {
+  id          String        @id @default(cuid())
+  characterId String
+  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  nodeId      String
+  node        SkillTreeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  rank        Int           @default(1)
+  createdAt   DateTime      @default(now())
+
+  @@unique([characterId, nodeId])
+}
+
+model AbilityDefinition {
+  id             String   @id @default(cuid())
+  campaignId     String
+  campaign       Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name           String
+  description    String   @default("")
+  icon           String   @default("zap")
+  actionType     String   @default("action")
+  cost           Json     @default("{\"resource\":\"none\",\"amount\":0}")
+  usesPer        String   @default("unlimited")
+  maxUses        Int      @default(1)
+  effects        Json     @default("[]")
+  passiveEffects Json     @default("[]")
+  ruleIds        Json     @default("[]")
+  createdAt      DateTime @default(now())
+
+  @@index([campaignId])
+}
+
+// ============================================================
+// NPCs & encounters
+// ============================================================
+
+model NpcDefinition {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  description      String   @default("")
+  portraitUrl      String?
+  faction          String   @default("")
+  attributes       Json
+  hpMax            Int      @default(10)
+  ac               Int      @default(10)
+  speed            Int      @default(9)
+  abilities        Json     @default("[]")
+  effects          Json     @default("[]")
+  ruleIds          Json     @default("[]")
+  visibleToPlayers Boolean  @default(false)
+  isEnemy          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  participants EncounterParticipant[]
+
+  @@index([campaignId])
+}
+
+model Encounter {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name        String
+  description String    @default("")
+  status      String    @default("planned")
+  round       Int       @default(0)
+  turnIndex   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  participants EncounterParticipant[]
+
+  @@index([campaignId, status])
+}
+
+model EncounterParticipant {
+  id          String         @id @default(cuid())
+  encounterId String
+  encounter   Encounter      @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  characterId String?
+  character   Character?     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  npcId       String?
+  npc         NpcDefinition? @relation(fields: [npcId], references: [id], onDelete: SetNull)
+  name        String
+  initiative  Int?
+  hpCurrent   Int            @default(0)
+  hpMax       Int            @default(0)
+  ac          Int            @default(10)
+  conditions  Json           @default("[]")
+  hidden      Boolean        @default(false)
+  notes       String         @default("")
+  sortOrder   Int            @default(0)
+
+  @@index([encounterId])
+}
+
+// ============================================================
+// Missions & journal
+// ============================================================
+
+model Mission {
+  id               String    @id @default(cuid())
+  campaignId       String
+  campaign         Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  description      String    @default("")
+  objectives       Json      @default("[]")
+  status           String    @default("available")
+  rewards          Json      @default("{}")
+  visibleToPlayers Boolean   @default(true)
+  rewardsGrantedAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  assignments MissionAssignment[]
+
+  @@index([campaignId])
+}
+
+model MissionAssignment {
+  missionId   String
+  mission     Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@id([missionId, characterId])
+}
+
+model JournalEntry {
+  id           String     @id @default(cuid())
+  campaignId   String
+  campaign     Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  authorUserId String
+  author       User       @relation(fields: [authorUserId], references: [id])
+  characterId  String?
+  character    Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  title        String
+  body         String     @default("")
+  visibility   String     @default("private")
+  isLore       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([campaignId])
+}
+
+// ============================================================
+// Dice, events, messaging
+// ============================================================
+
+model DiceRoll {
+  id          String     @id @default(cuid())
+  campaignId  String
+  campaign    Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  characterId String?
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  expression  String
+  category    String
+  label       String
+  mode        String     @default("normal")
+  result      Json
+  total       Int
+  visibility  String     @default("public")
+  dc          Int?
+  success     Boolean?
+  createdAt   DateTime   @default(now())
+
+  @@index([campaignId, createdAt])
+}
+
+model RollRequest {
+  id           String    @id @default(cuid())
+  campaignId   String
+  campaign     Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  characterId  String
+  character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  target       String?
+  expression   String?
+  label        String
+  dc           Int?
+  visibility   String    @default("public")
+  status       String    @default("pending")
+  resultRollId String?
+  createdAt    DateTime  @default(now())
+
+  @@index([campaignId, status])
+}
+
+/// Immutable append-only history. Reversals create new events referencing the original.
+model CampaignEvent {
+  id              String     @id @default(cuid())
+  campaignId      String
+  campaign        Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type            String
+  actorUserId     String?
+  actor           User?      @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  characterId     String?
+  character       Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  summary         String
+  payload         Json       @default("{}")
+  visibility      String     @default("public")
+  reversesEventId String?
+  createdAt       DateTime   @default(now())
+
+  @@index([campaignId, createdAt])
+}
+
+model Message {
+  id          String     @id @default(cuid())
+  campaignId  String
+  campaign    Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  fromUserId  String
+  from        User       @relation("MessageFrom", fields: [fromUserId], references: [id])
+  toUserId    String?
+  to          User?      @relation("MessageTo", fields: [toUserId], references: [id], onDelete: SetNull)
+  characterId String?
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  kind        String     @default("whisper")
+  body        String
+  createdAt   DateTime   @default(now())
+
+  @@index([campaignId, createdAt])
+}
