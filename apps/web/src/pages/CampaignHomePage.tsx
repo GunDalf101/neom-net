@@ -5,7 +5,7 @@ import { useCampaign, useCharacters, useCreateCharacter, useDeleteCharacter, use
 import { Badge, Bar, Button, ConfirmButton, Empty, Field, Icon, Input, Modal, NumberStepper, Panel, Select, Spinner } from "@/components/ui";
 import { useCampaignRealtime } from "@/realtime/socket";
 import { useUi } from "@/store/ui";
-import { Portrait } from "@/components/hud/Portrait";
+import { Portrait, PortraitPicker } from "@/components/hud/Portrait";
 
 export function CampaignHomePage() {
   const { campaignId = "" } = useParams();
@@ -22,6 +22,7 @@ export function CampaignHomePage() {
   const [species, setSpecies] = useState("Human");
   const [klass, setKlass] = useState("");
   const [subclass, setSubclass] = useState("");
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [attrs, setAttrs] = useState<Record<AttributeKey, number>>({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 });
   /** null = follow the class (d12 barbarian, d10 fighter/paladin/ranger, d6 sorcerer/wizard, d8 otherwise). */
   const [hitDie, setHitDie] = useState<HitDieSize | null>(null);
@@ -35,7 +36,7 @@ export function CampaignHomePage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const v = await create.mutateAsync({ campaignId, name, species, characterClass: klass, subclass, attributes: attrs, hitDieSize: effectiveDie });
+    const v = await create.mutateAsync({ campaignId, name, species, characterClass: klass, subclass, attributes: attrs, hitDieSize: effectiveDie, portraitUrl });
     setOpen(false);
     remember(campaignId, v.character.id);
     nav(`/c/${campaignId}/hud/${v.character.id}`);
@@ -138,6 +139,10 @@ export function CampaignHomePage() {
 
       <Modal open={open} onClose={() => setOpen(false)} title="New character">
         <form onSubmit={submit} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <PortraitPicker url={portraitUrl} name={name || "New"} size={80} onChange={setPortraitUrl} />
+            <div className="min-w-0 flex-1 text-xs text-muted">Portrait (optional): upload or drop an image. You can change it later from the sheet.</div>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Name">
               <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} required />

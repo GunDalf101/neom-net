@@ -1,9 +1,12 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useMe } from "@/api/hooks";
 import { Spinner, Toasts } from "@/components/ui";
+import { OpenInAppBanner } from "@/components/OpenInApp";
+import { rememberReturnTo } from "@/lib/returnTo";
 import { AuthPage } from "@/pages/AuthPage";
 import { CampaignHomePage } from "@/pages/CampaignHomePage";
 import { CampaignsPage } from "@/pages/CampaignsPage";
+import { SharedSheetPage } from "@/pages/SharedSheetPage";
 import { DmShell } from "@/pages/dm/DmShell";
 import { DashboardPage } from "@/pages/dm/DashboardPage";
 import { WorkshopPage } from "@/pages/dm/WorkshopPage";
@@ -26,18 +29,25 @@ function RequireAuth() {
   const me = useMe();
   const loc = useLocation();
   if (me.isLoading) return <Spinner label="Authenticating" />;
-  if (!me.data) return <Navigate to="/login" state={{ from: loc.pathname }} replace />;
+  if (!me.data) {
+    // Keep the whole target (a shared sheet link, a notification deep link) for after sign-in.
+    const from = loc.pathname + loc.search + loc.hash;
+    rememberReturnTo(from);
+    return <Navigate to="/login" state={{ from }} replace />;
+  }
   return <Outlet />;
 }
 
 export function App() {
   return (
     <div className="scanlines min-h-full">
+      <OpenInAppBanner />
       <Routes>
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/register" element={<AuthPage mode="register" />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<CampaignsPage />} />
+          <Route path="/s/:token" element={<SharedSheetPage />} />
           <Route path="/c/:campaignId" element={<CampaignHomePage />} />
           <Route path="/c/:campaignId/hud/:characterId" element={<HudShell />}>
             <Route index element={<CharacterPage />} />

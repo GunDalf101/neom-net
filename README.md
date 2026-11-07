@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (83 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (102 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -99,12 +99,33 @@ By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): 
 
 `npm run campaign:export-migration -w @neom/server -- "<campaign id or name>" [migrationName]` writes an idempotent Prisma data migration (`apps/server/prisma/migrations/<stamp>_<name>/migration.sql`) containing the campaign, its memberships, characters (with items, conditions, effects, overrides) and event log. Users are referenced by **email** and resolved when the migration runs: an existing account is reused, otherwise a claimable placeholder is created (empty password hash, cannot log in) and the first registration with that email takes it over, keeping the campaign attached. No password hashes are exported. Because every insert is `ON CONFLICT DO NOTHING`, re-running it (or applying it to the source database) changes nothing, and it ships to Render with the next deploy through `prisma migrate deploy`. The data becomes part of the repository history, so only use it for campaigns you are happy to commit; a per-campaign JSON export/import stays on the roadmap for anything sensitive.
 
+## CI
+
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request:
+
+1. **check**: `npm ci`, Prisma client, `npm run typecheck`, `npm test`, production web build.
+2. **golden** (after check): Postgres 16 service, `prisma migrate deploy`, a drift check that the migrations match `schema.prisma`, seed, production build served by the API on :4100, `npm run test:e2e` (API acceptance), then Chromium + `npm run test:ui` (UI golden rules G1–G11 on four viewports).
+
+To run the same locally without touching your dev data, point everything at a throwaway database:
+
+```bash
+docker exec neom-net-db psql -U neom -d neom_net -c "CREATE DATABASE neom_net_ci"
+export DATABASE_URL="postgresql://neom:neom_dev_password@localhost:5433/neom_net_ci?schema=public"
+npm run db:deploy -w @neom/server && SEED_PASSWORD=pw npm run db:seed -w @neom/server
+npm run build -w @neom/web && PORT=4100 npm run start -w @neom/server &
+API_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:e2e
+WEB_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:ui
+```
+
 ## UI golden rules, PWA and notifications
 
-- `docs/UI_GOLDEN_RULES.md` is the contract every screen is held to (ten rules, a feature coverage matrix, and the manual checklist). `npm run test:ui` runs the automated part with Playwright on phone, tablet, laptop and desktop viewports as player and DM: no page or console errors, no horizontal overflow, page landmarks present, a player action reaching the DM dashboard live, phone tap targets, and the manifest + service worker on a production build. Run `npm run pw:install -w @neom/web` once to fetch Chromium, then `SEED_PASSWORD=… WEB_URL=http://localhost:5174 npm run test:ui`.
+- `docs/UI_GOLDEN_RULES.md` is the contract every screen is held to (eleven rules, a feature coverage matrix, and the manual checklist). `npm run test:ui` runs the automated part with Playwright on phone, tablet, laptop and desktop viewports as player and DM: no page or console errors, no horizontal overflow, page landmarks present, a player action reaching the DM dashboard live, phone tap targets, portrait upload, a shared link surviving sign-in, and the manifest (with link capturing) + service worker on a production build. Run `npm run pw:install -w @neom/web` once to fetch Chromium, then `SEED_PASSWORD=… WEB_URL=http://localhost:5174 npm run test:ui`.
 - The web app is an installable PWA (manifest, icons, Workbox service worker with precached shell and cached fonts). Install it from the browser menu; on iPhone use Share → Add to Home Screen.
 - Push notifications: each device opts in from the HUD gear menu or the DM sidebar ("Notifications"). Owners are notified when the DM or a rule changes their character (damage, healing, conditions, items, overrides, sheet edits) while they are away from the table, and always for roll requests and sheets sent to them; the DM is notified of rule approvals waiting while away. Set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in production (`npx web-push generate-vapid-keys`); development generates a throwaway pair in the OS temp dir.
 - Send a sheet: the DM hands a character to a player from the live controls ("Send") or the HUD gear menu. Ownership moves, the player gets a toast and a push notification with a link, and the transfer is logged.
+- Share a sheet by link: HUD gear menu → Share link (owner or DM). Anyone holding the link signs in (once per device) and lands on a read-only copy they can download or import into one of their own characters; campaign members land on the live HUD. "New link" replaces it, "Revoke" kills it. On Android (installed PWA) and desktop Chromium with link capturing, the link opens in the installed app; a browser tab on a device with the app installed shows "Open in app". iOS cannot route links into Home Screen apps.
+- Sessions slide: a device that uses the app at least once every `SESSION_DAYS` (default 30) stays signed in. Deep links survive the login (and register) page.
+- Portraits: tap the camera on the identity card (or drop an image) to upload. Images of any size are downscaled to 640 px WebP in the browser before upload. Owners may change their own portrait even in DM-controlled mode (DM Settings toggle); the DM can also upload NPC portraits.
 - Change log: every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
 
 ## What works / what is next
@@ -129,7 +150,7 @@ Not yet implemented or simplified (honest list):
 - `cond.chance` and dice amounts in rules are random at execution time; simulation shows one sample.
 - Rule expiry branches evaluate their conditions when the rule fires, not at expiry time.
 - Player-to-DM messaging is whisper-only; no group chat.
-- Portrait images are stored as data URLs in Postgres (1 MB cap); no object storage.
+- Portrait images are stored as (browser-compressed) data URLs in Postgres; no object storage. Item images remain URL-only.
 - No rate limiting or CSRF token (cookies are `SameSite=Lax`, `httpOnly`; the dev proxy keeps everything same-origin). Add both before exposing publicly.
 - The web bundle is one chunk (~1.4 MB minified) because the icon picker imports the whole Lucide set; split before production.
 

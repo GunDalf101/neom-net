@@ -26,8 +26,10 @@ import {
   type SkillKey,
   type ProficiencyMultiplier,
   type SheetChange,
+  type SharedSheetDto,
 } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
+import { randomBytes } from "node:crypto";
 import { prisma, type Db } from "../db.js";
 import { badRequest, conflict, forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToUser } from "../realtime/io.js";
@@ -186,12 +188,15 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
     overrides: viewer.isDm || isOwner ? full.overrides.map(toOverrideDto) : [],
     unlocks: full.unlocks.map((u) => ({ nodeId: u.nodeId, nodeKey: u.node.key, treeId: u.node.treeId, rank: u.rank })),
     abilities,
+    shareToken: viewer.isDm || isOwner ? full.shareToken : null,
     permissions: {
       canEdit,
       canEditAttributes: viewer.isDm || (canEdit && settings.playersEditAttributes),
       canInstallCyberware: viewer.isDm || (canEdit && settings.playersInstallCyberware),
       canLevelUp: viewer.isDm || (canEdit && settings.playersLevelUp),
       canManageInventory: viewer.isDm || canEdit || (isOwner && settings.playersManageInventory),
+      canChangePortrait: viewer.isDm || canEdit || (isOwner && settings.playersManagePortrait),
+      canShare: viewer.isDm || isOwner,
       isDm: viewer.isDm,
       isOwner,
       readOnly,
@@ -712,7 +717,10 @@ export async function tickCharacterTurn(characterId: string): Promise<void> {
 
 export async function exportCharacter(characterId: string, userId: string) {
   await requireCharacterAccess(characterId, userId);
-  const full = await loadFull(characterId);
+  return sheetExport(await loadFull(characterId));
+}
+
+function sheetExport(full: FullCharacter): SharedSheetDto["sheet"] {
   const core = toCharacterCore(full);
   return {
     format: "neom-net/character" as const,
@@ -844,4 +852,99 @@ export async function assignCharacter(characterId: string, dmUserId: string, tar
   emitCharacterUpdated(character.campaignId, characterId);
   const full = await loadFull(characterId);
   return buildView(full, { userId: dmUserId, isDm: true });
+}
+
+// ---------- Portrait ----------
+
+/**
+ * Portrait-only update. Goes through access (not edit) so an owner can still set their picture in
+ * DM-controlled mode when the campaign allows it (`playersManagePortrait`, on by default).
+ */
+export async function setPortrait(characterId: string, userId: string, portraitUrl: string | null): Promise<CharacterView> {
+  const { character, membership, isOwner } = await requireCharacterAccess(characterId, userId);
+  const settings = campaignSettings(character.campaign);
+  const allowed = membership.isDm || (isOwner && (!settings.playersReadOnly || settings.playersManagePortrait));
+  if (!allowed) throw forbidden(isOwner ? "The Dungeon Master manages portraits in this campaign" : "You can only change your own character's portrait");
+  const next = portraitUrl || null;
+  await prisma.character.update({ where: { id: characterId }, data: { portraitUrl: next, version: { increment: 1 } } });
+  const changes: SheetChange[] = [{ field: "portraitUrl", from: character.portraitUrl ? "(image)" : null, to: next ? "(image)" : null }];
+  await logEvent({
+    campaignId: character.campaignId,
+    type: "character.updated",
+    actorUserId: userId,
+    characterId,
+    summary: `${character.name}'s portrait was ${next ? "updated" : "cleared"}`,
+    payload: { changes },
+    visibility: "owner",
+    ownerUserId: character.ownerUserId,
+  });
+  emitCharacterUpdated(character.campaignId, characterId);
+  return buildView(await loadFull(characterId), { userId, isDm: membership.isDm });
+}
+
+// ---------- Share links ----------
+
+async function requireShareRights(characterId: string, userId: string) {
+  const access = await requireCharacterAccess(characterId, userId);
+  if (!access.isOwner && !access.membership.isDm) throw forbidden("Only the owner or the DM can share this sheet");
+  return access;
+}
+
+/** Returns the character's share token, creating it (or replacing it when `rotate`) as needed. */
+export async function createShareLink(characterId: string, userId: string, rotate: boolean): Promise<CharacterView> {
+  const { character, membership } = await requireShareRights(characterId, userId);
+  if (!character.shareToken || rotate) {
+    await prisma.character.update({
+      where: { id: characterId },
+      data: { shareToken: randomBytes(24).toString("base64url"), shareCreatedAt: new Date() },
+    });
+    await logEvent({
+      campaignId: character.campaignId,
+      type: "character.shared",
+      actorUserId: userId,
+      characterId,
+      summary: `${character.name}'s share link was ${character.shareToken ? "replaced" : "created"}`,
+      visibility: "owner",
+      ownerUserId: character.ownerUserId,
+    });
+  }
+  return buildView(await loadFull(characterId), { userId, isDm: membership.isDm });
+}
+
+export async function revokeShareLink(characterId: string, userId: string): Promise<CharacterView> {
+  const { character, membership } = await requireShareRights(characterId, userId);
+  if (character.shareToken) {
+    await prisma.character.update({ where: { id: characterId }, data: { shareToken: null, shareCreatedAt: null } });
+    await logEvent({
+      campaignId: character.campaignId,
+      type: "character.unshared",
+      actorUserId: userId,
+      characterId,
+      summary: `${character.name}'s share link was revoked`,
+      visibility: "owner",
+      ownerUserId: character.ownerUserId,
+    });
+  }
+  return buildView(await loadFull(characterId), { userId, isDm: membership.isDm });
+}
+
+/**
+ * Resolves a share link for any signed-in user. Holding the link is the grant: non-members get a
+ * read-only copy of the sheet (export format, so it can be downloaded or imported), members are
+ * told to open the live HUD. Revoked or unknown tokens are a plain 404.
+ */
+export async function getSharedSheet(token: string, userId: string): Promise<SharedSheetDto> {
+  const row = await prisma.character.findUnique({ where: { shareToken: token }, select: { id: true } });
+  if (!row) throw notFound("Shared sheet");
+  const full = await loadFull(row.id);
+  const membership = await getMembership(full.campaignId, userId);
+  return {
+    campaignId: full.campaignId,
+    campaignName: full.campaign.name,
+    characterId: full.id,
+    ownerUsername: full.owner.username,
+    isMember: Boolean(membership),
+    derived: derive(full),
+    sheet: sheetExport(full),
+  };
 }

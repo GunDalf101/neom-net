@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate -w @neom/server
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build -w @neom/web
+
+  golden:
+    name: Migrations, e2e acceptance, UI golden rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: check
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: neom
+          POSTGRES_PASSWORD: neom_ci_password
+          POSTGRES_DB: neom_net
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U neom" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://neom:neom_ci_password@localhost:5432/neom_net?schema=public
+      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+      SEED_PASSWORD: ci-golden-password
+      PORT: "4100"
+      CORS_ORIGINS: http://localhost:4100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate -w @neom/server
+      - name: Apply migrations
+        run: npm run db:deploy -w @neom/server
+      - name: Migrations match schema.prisma
+        working-directory: apps/server
+        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+      - run: npm run db:seed -w @neom/server
+      - name: Build web app (served by the API, like production)
+        run: npm run build -w @neom/web
+      - name: Start server
+        run: |
+          npm run start -w @neom/server > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:4100/api/health && exit 0; sleep 1; done
+          cat server.log; exit 1
+      - name: E2E acceptance (API)
+        run: npm run test:e2e
+        env:
+          API_URL: http://localhost:4100
+      - name: Install Chromium
+        run: npm exec -w @neom/web -- playwright install --with-deps chromium
+      - name: UI golden rules (docs/UI_GOLDEN_RULES.md)
+        run: npm run test:ui
+        env:
+          WEB_URL: http://localhost:4100
+      - name: Server log
+        if: failure()
+        run: cat server.log

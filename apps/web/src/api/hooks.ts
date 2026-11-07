@@ -43,6 +43,7 @@ import type {
   UpdateCampaignInput,
   UpdateCharacterInput,
   UserDto,
+  SharedSheetDto,
   RuleExecutionResult,
   GraphValidation,
   RuleCharacterState,
@@ -79,6 +80,7 @@ export const qk = {
   session: (cid: string) => ["session", cid] as const,
   overrides: (cid: string) => ["overrides", cid] as const,
   pushConfig: ["push", "config"] as const,
+  shared: (token: string) => ["shared", token] as const,
 };
 
 function withToast<TData, TVars>(opts?: UseMutationOptions<TData, Error, TVars>): UseMutationOptions<TData, Error, TVars> {
@@ -218,6 +220,11 @@ export const useClearEffect = (id: string) => characterMutation<string>(id, (eff
 export const useResetCharacter = (id: string) => characterMutation<void>(id, () => api.post(`/characters/${id}/reset`, { confirm: true }), "Character reset")();
 /** DM hands the sheet to another campaign member (ownership transfer + notification). */
 export const useAssignCharacter = (id: string) => characterMutation<string>(id, (userId) => api.post(`/characters/${id}/assign`, { userId }), "Sheet sent")();
+/** Portrait-only update; works for owners in DM-controlled mode when the campaign allows it. */
+export const useSetPortrait = (id: string) => characterMutation<string | null>(id, (portraitUrl) => api.put(`/characters/${id}/portrait`, { portraitUrl }), "Portrait updated")();
+export const useShareLink = (id: string) => characterMutation<{ rotate?: boolean }>(id, (body) => api.post(`/characters/${id}/share`, body))();
+export const useRevokeShareLink = (id: string) => characterMutation<void>(id, () => api.delete(`/characters/${id}/share`), "Share link revoked")();
+export const useSharedSheet = (token: string) => useQuery({ queryKey: qk.shared(token), queryFn: () => api.get<SharedSheetDto>(`/shared/${token}`), enabled: Boolean(token) });
 
 // ---------- Push notifications ----------
 export interface PushConfigDto {

@@ -4,14 +4,18 @@ export interface SheetFile {
   format: "neom-net/character";
   version: 1;
   exportedAt: string;
-  character: Record<string, unknown>;
+  character: object;
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "character";
 
 /** Downloads the server-side export of a character as a JSON file. */
 export async function downloadSheet(characterId: string, name: string): Promise<void> {
-  const data = await api.get<SheetFile>(`/characters/${characterId}/export`);
+  saveSheetFile(await api.get<SheetFile>(`/characters/${characterId}/export`), name);
+}
+
+/** Saves an already-fetched sheet (e.g. one opened through a share link) as a `.neom.json` file. */
+export function saveSheetFile(data: SheetFile, name: string): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

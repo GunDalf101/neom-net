@@ -65,6 +65,8 @@ export interface CampaignRuleSettings {
    * drop, rename and move items. Cyberware install/removal, quantities, charges and currency stay with the DM.
    */
   playersManageInventory: boolean;
+  /** Even in DM-controlled mode, owners may upload or clear their own character's portrait. */
+  playersManagePortrait: boolean;
   /** Whether players may edit their own base statistics. */
   playersEditAttributes: boolean;
   playersInstallCyberware: boolean;
@@ -83,6 +85,7 @@ export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
   baseSpeed: DEFAULT_SPEED_METERS,
   playersReadOnly: true,
   playersManageInventory: true,
+  playersManagePortrait: true,
   playersEditAttributes: true,
   playersInstallCyberware: true,
   playersLevelUp: false,

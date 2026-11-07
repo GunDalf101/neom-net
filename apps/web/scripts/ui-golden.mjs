@@ -168,6 +168,81 @@ for (const vp of Object.keys(VIEWPORTS)) {
   await pl.ctx.close();
 }
 
+// ---- G11: a shared sheet link survives sign-in and lands on the sheet; portraits upload (G3/G6)
+{
+  const pl = await session("antonio", "laptop");
+  const hudPath = new URL(hudUrl).pathname;
+  const characterId = hudPath.split("/").pop();
+  await pl.page.goto(`${hudUrl}/`);
+  await pl.page.waitForSelector("text=Proficiency Bonus");
+
+  // Portrait: the upload control is visible to the read-only owner, and an upload round-trips.
+  const upload = pl.page.locator('[aria-label="Upload portrait"]').first();
+  if (!(await upload.isVisible())) fail("[G11] owner does not see the portrait upload control on the HUD");
+  else {
+    const before = await pl.page.evaluate(async (id) => (await (await fetch(`/api/characters/${id}`)).json()).character.portraitUrl, characterId);
+    // 64×64 opaque PNG generated in the page, so the test needs no fixture file.
+    const png = await pl.page.evaluate(async () => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 64;
+      const g = c.getContext("2d");
+      g.fillStyle = "#19e3ff";
+      g.fillRect(0, 0, 64, 64);
+      return c.toDataURL("image/png").split(",")[1];
+    });
+    await pl.page.locator('[data-testid="portrait-input"]').first().setInputFiles({ name: "portrait.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+    await pl.page.waitForTimeout(1200);
+    const after = await pl.page.evaluate(async (id) => (await (await fetch(`/api/characters/${id}`)).json()).character.portraitUrl, characterId);
+    if (!after || !after.startsWith("data:image/")) fail(`[G11] portrait upload did not persist (got ${String(after).slice(0, 30)})`);
+    await pl.page.evaluate(async ([id, url]) => fetch(`/api/characters/${id}/portrait`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ portraitUrl: url }) }), [characterId, before]);
+  }
+
+  // Share link from the System menu (G3: visible to the owner, G6: answers with a link).
+  await pl.page.click('button[aria-label="Menu"]');
+  await pl.page.waitForSelector("text=Share link");
+  const create = pl.page.locator("button:has-text('Create share link')");
+  if (await create.count()) await create.first().click();
+  await pl.page.waitForSelector('[data-testid="share-link"] input[aria-label="Share link"]', { timeout: 5000 }).catch(() => fail("[G11] share link field did not appear"));
+  const link = await pl.page.locator('input[aria-label="Share link"]').first().inputValue().catch(() => "");
+  const token = (link.match(/\/s\/([A-Za-z0-9_-]+)/) ?? [])[1];
+  await pl.ctx.close();
+
+  if (token) {
+    for (const vp of ["phone", "desktop"]) {
+      const v = VIEWPORTS[vp];
+      const ctx = await browser.newContext({ viewport: { width: v.width, height: v.height }, isMobile: v.mobile, hasTouch: v.mobile });
+      const page = await ctx.newPage();
+      const tag = `outsider@${vp}`;
+      page.on("pageerror", (e) => fail(`[${tag}] page error on ${page.url()}: ${e.message}`));
+      page.on("console", (m) => {
+        if (m.type() === "error" && !(m.text().includes("401") && /\/(login|s\/)/.test(page.url()))) fail(`[${tag}] console.error on ${page.url()}: ${m.text().slice(0, 200)}`);
+      });
+      // A user outside the campaign: register once, then always log in through the shared link.
+      await ctx.request.post(`${BASE}/api/auth/register`, { data: { email: "outsider-e2e@neom.local", username: "outsider-e2e", password: PASSWORD } });
+      await ctx.clearCookies();
+      await page.goto(`${BASE}/s/${token}`);
+      await page.waitForURL(/\/login/, { timeout: 10000 });
+      if (!(await page.locator('[data-testid="shared-login-hint"]').isVisible())) fail(`[${tag}] login page does not explain the shared link`);
+      await page.fill('input[autocomplete="username"]', "outsider-e2e@neom.local");
+      await page.fill('input[type="password"]', PASSWORD);
+      await page.click('button[type="submit"]');
+      await page.waitForURL((u) => u.pathname === `/s/${token}`, { timeout: 10000 }).catch(() => fail(`[${tag}] after sign-in landed on ${page.url()} instead of the shared sheet`));
+      await checkPage(page, tag, "shared sheet", ["Shared · read-only", "Antonio Ettoro", "Attributes", "Take a copy"]);
+      // Session persists: a fresh tab in the same context opens the link without logging in again.
+      const again = await ctx.newPage();
+      await again.goto(`${BASE}/s/${token}`);
+      await again.waitForSelector('[data-testid="shared-sheet"]', { timeout: 8000 }).catch(() => fail(`[${tag}] signed-in user was sent to ${again.url()} instead of the sheet`));
+      await ctx.close();
+    }
+    // Members following the same link land on the live HUD.
+    const m = await session("antonio", "phone");
+    await m.page.goto(`${BASE}/s/${token}`);
+    await m.page.waitForURL(/\/hud\//, { timeout: 8000 }).catch(() => fail(`[G11] member following the link landed on ${m.page.url()} instead of the HUD`));
+    await m.page.evaluate(async (id) => fetch(`/api/characters/${id}/share`, { method: "DELETE" }), characterId);
+    await m.ctx.close();
+  } else fail("[G11] no share token produced");
+}
+
 // ---- G10: manifest + service worker when served from a build
 {
   const ctx = await browser.newContext();
@@ -177,6 +252,9 @@ for (const vp of Object.keys(VIEWPORTS)) {
     try {
       const m = JSON.parse(await res.text());
       if (!m.name || !Array.isArray(m.icons) || m.icons.length < 2 || m.display !== "standalone") fail(`[G10] manifest incomplete: ${JSON.stringify(m).slice(0, 120)}`);
+      // Links (shared sheets, notifications) open in the installed app where the platform allows it.
+      if (m.handle_links !== "preferred" || !m.launch_handler) fail("[G10] manifest does not ask for link capturing (handle_links / launch_handler)");
+      if (m.scope !== "/") fail(`[G10] manifest scope ${m.scope} does not cover /s/ share links`);
       const sw = await page.goto(`${BASE}/sw.js`);
       if (!sw || !sw.ok()) fail("[G10] /sw.js is not served");
     } catch (e) {

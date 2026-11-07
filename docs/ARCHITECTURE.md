@@ -129,7 +129,8 @@ Socket.IO authenticates from the same httpOnly cookie as HTTP. A client emits `c
 - dm: `GET /:id/dashboard`, `POST /:id/overrides`, `DELETE /:id/overrides/:oid`, `POST /:id/dm/grant`, `GET|POST /:id/messages`, `GET|POST /:id/roll-requests`, `DELETE /:id/roll-requests/:rid`
 - encounters: `GET|POST /:id/encounters`, `GET|DELETE /:id/encounters/:eid`, `POST …/participants`, `POST …/action`
 - story: `npcs`, `missions` (+ `/:mid/objectives/:oid`, `/:mid/complete`), `journal` CRUD
-- characters: `POST /`, `GET|PATCH|DELETE /:cid`, `POST /:cid/hp`, `POST /:cid/conditions`, `DELETE /:cid/conditions/:x`, `POST /:cid/items/:iid/action`, `DELETE /:cid/effects/:eid`, `POST /:cid/unlock`, `POST /:cid/abilities/:aid/use`, `GET /:cid/export`, `POST /:cid/import`, `POST /:cid/reset`
+- characters: `POST /`, `GET|PATCH|DELETE /:cid`, `POST /:cid/hp`, `POST /:cid/conditions`, `DELETE /:cid/conditions/:x`, `POST /:cid/items/:iid/action`, `DELETE /:cid/effects/:eid`, `POST /:cid/unlock`, `POST /:cid/abilities/:aid/use`, `GET /:cid/export`, `POST /:cid/import`, `POST /:cid/reset`, `PUT /:cid/portrait`, `POST|DELETE /:cid/share`
+- shared: `GET /shared/:token` (any signed-in user holding the link)
 
 All bodies are validated with the shared zod schemas; errors return `{ error, code, details }` with 400 / 401 / 403 / 404 / 409 / 422.
 

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useLogin, useMe, useRegister } from "@/api/hooks";
-import { Button, Field, Input, Panel } from "@/components/ui";
+import { Button, Field, Icon, Input, Panel } from "@/components/ui";
 import { errorMessage } from "@/api/client";
+import { clearReturnTo, peekReturnTo, safeReturnTo } from "@/lib/returnTo";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const me = useMe();
@@ -14,8 +15,13 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const from = safeReturnTo(loc.state?.from) ?? peekReturnTo() ?? "/";
+  const sharedSheet = from.startsWith("/s/");
 
-  if (me.data) return <Navigate to={loc.state?.from ?? "/"} replace />;
+  if (me.data) {
+    clearReturnTo();
+    return <Navigate to={from} replace />;
+  }
 
   const busy = login.isPending || register.isPending;
   const err = login.error ?? register.error;
@@ -25,7 +31,8 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     try {
       if (mode === "login") await login.mutateAsync({ identifier, password });
       else await register.mutateAsync({ email, username: username || undefined, password });
-      nav(loc.state?.from ?? "/", { replace: true });
+      clearReturnTo();
+      nav(from, { replace: true });
     } catch {
       /* toast shown by hook */
     }
@@ -40,6 +47,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           </div>
           <div className="mt-1 font-display text-[0.6rem] uppercase tracking-[0.35em] text-muted">Campaign Operating System · v0.1</div>
         </div>
+        {sharedSheet && (
+          <div className="mb-3 flex items-center gap-2 border border-cyan/40 bg-cyan/5 px-3 py-2 text-xs text-cyan" data-testid="shared-login-hint">
+            <Icon name="link" size={14} /> {mode === "login" ? "Sign in" : "Create an account"} to open the shared character sheet. You stay signed in on this device.
+          </div>
+        )}
         <Panel title={mode === "login" ? "Authenticate" : "Register identity"} icon="fingerprint">
           <form onSubmit={submit} className="space-y-3">
             {mode === "login" ? (
@@ -68,14 +80,14 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             {mode === "login" ? (
               <>
                 No identity yet?{" "}
-                <Link to="/register" className="text-cyan hover:underline">
+                <Link to="/register" state={{ from }} className="text-cyan hover:underline">
                   Register
                 </Link>
               </>
             ) : (
               <>
                 Already registered?{" "}
-                <Link to="/login" className="text-cyan hover:underline">
+                <Link to="/login" state={{ from }} className="text-cyan hover:underline">
                   Log in
                 </Link>
               </>
