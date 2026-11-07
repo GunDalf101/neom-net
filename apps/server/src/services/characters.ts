@@ -5,6 +5,7 @@ import {
   computeDerivedStats,
   SKILLS,
   SPECIAL_SKILLS,
+  UpdateCharacterSchema,
   roll,
   type AbilityDto,
   type ApplyConditionInput,
@@ -686,7 +687,10 @@ export async function exportCharacter(characterId: string, userId: string) {
   };
 }
 
-/** Imports sheet fields from an export (identity, attributes, skills, HP). Items/unlocks are not re-created automatically. */
+/**
+ * Imports sheet fields from an export (identity, attributes, skills, HP, speed, hit die; level/XP/credits/points for the DM).
+ * Items, conditions and unlocks are campaign-specific and are not re-created automatically.
+ */
 export async function importCharacter(characterId: string, userId: string, payload: Record<string, unknown>): Promise<CharacterView> {
   const { membership } = await requireCharacterEdit(characterId, userId);
   const pick = <T>(k: string): T | undefined => payload[k] as T | undefined;
@@ -705,14 +709,36 @@ export async function importCharacter(characterId: string, userId: string, paylo
     skills: pick("skills"),
     specialSkills: pick("specialSkills"),
     hpMaxBase: pick("hpMaxBase"),
+    baseSpeed: pick("baseSpeed"),
+    hitDieSize: pick("hitDieSize"),
+    inspiration: pick("inspiration"),
   };
   if (membership.isDm) {
     input.level = pick("level");
     input.xp = pick("xp");
+    input.credits = pick("credits");
+    input.progressionPoints = pick("progressionPoints");
   }
-  const cleaned = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)) as UpdateCharacterInput;
+  const cleaned = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
   if (Object.keys(cleaned).length === 0) throw badRequest("Nothing importable in payload");
-  return updateCharacter(characterId, userId, cleaned);
+  // The file comes from outside: validate it exactly like a PATCH body before touching the sheet.
+  const parsed = UpdateCharacterSchema.safeParse(cleaned);
+  if (!parsed.success) {
+    throw badRequest(
+      "Import file failed validation",
+      parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    );
+  }
+  const view = await updateCharacter(characterId, userId, parsed.data);
+  await logEvent({
+    campaignId: view.character.campaignId,
+    type: "character.imported",
+    actorUserId: userId,
+    characterId,
+    summary: `${view.character.name}'s sheet was imported from a file (${Object.keys(parsed.data).join(", ")})`,
+    visibility: "owner",
+  });
+  return view;
 }
 
 export async function resetCharacter(characterId: string, userId: string): Promise<CharacterView> {

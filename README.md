@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (47 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (63 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -102,7 +102,8 @@ Working and verified end to end (API tests + build):
 - Rules engine: declarative node graphs (15 triggers, 14 conditions, 12 effects, 5 flow nodes), validation (types, cycles, parameters, reachability), server-side deterministic execution with step limits and recursion guard, per-encounter/session/turn/rest cooldown scopes, timed temporary effects with expiry effects, automatic / assisted / manual modes, execution traces, simulation, versioning and publishing, DM overrides with originals preserved.
 - Live play: authenticated Socket.IO rooms (campaign / DM / user), visibility-filtered pushes, presence, reconnect refetch, live sessions, encounters with initiative, turns, rounds, NPC HP (coarse for players), hidden combatants.
 - Progression: skill trees with prerequisites, ranks, costs and requirements; abilities granted through effects; missions with objectives and one-time reward grants; journal with private / shared / DM / lore visibility.
-- Export / import (sheet fields) and reset with confirmation.
+- Export / import: the HUD gear menu (System → Sheet data) downloads a `*.neom.json` file with the full sheet plus item, condition and unlock lists; Import validates the file server-side and restores identity, attributes, skills, cyberpunk skills (rank + proficiency), saves, HP, speed and hit die (the DM also restores level, XP, credits and points). Gear, conditions and unlocks are campaign-specific and are not re-created. Reset to level 1 lives in the same menu behind a confirmation.
+- Cyberpunk skills (Augmentation, Reflex, Adaptability, Hacking, Sanity, Aura) carry a rank (0..campaign max) and a proficiency tile that cycles none → proficient → expertise, exactly like standard skills. Expertise on cyberpunk skills is on by default; the DM can turn it off in Settings, which caps every cyberpunk skill at single proficiency.
 
 Not yet implemented or simplified (honest list):
 

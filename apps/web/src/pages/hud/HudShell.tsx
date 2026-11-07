@@ -1,11 +1,12 @@
 import type { CampaignDto, CharacterView, UserDto } from "@neom/shared";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { useCampaign, useCharacter, useCharacters, useLogout, useMe, useRoll, useRollRequests } from "@/api/hooks";
-import { Button, Icon, Modal, Spinner } from "@/components/ui";
+import { useCampaign, useCharacter, useCharacters, useImportCharacter, useLogout, useMe, useResetCharacter, useRoll, useRollRequests } from "@/api/hooks";
+import { Button, ConfirmButton, Icon, Modal, Spinner } from "@/components/ui";
+import { downloadSheet, readSheetFile } from "@/lib/sheetFile";
 import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
-import { useUi } from "@/store/ui";
+import { toast, useUi } from "@/store/ui";
 
 export interface HudContext {
   view: CharacterView;
@@ -50,10 +51,40 @@ export function HudShell() {
   const requests = useRollRequests(campaignId);
   const roll = useRoll(campaignId);
   const [menu, setMenu] = useState(false);
+  const importSheet = useImportCharacter(characterId);
+  const resetSheet = useResetCharacter(characterId);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (characterId) remember(campaignId, characterId);
   }, [campaignId, characterId, remember]);
+
+  const onExport = async () => {
+    if (!view.data) return;
+    setExporting(true);
+    try {
+      await downloadSheet(characterId, view.data.character.name);
+      toast("success", "Sheet exported");
+    } catch (e) {
+      toast("error", "Export failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
+  const onImportFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const sheet = await readSheetFile(file);
+      await importSheet.mutateAsync(sheet);
+      setMenu(false);
+    } catch (e) {
+      // Server-side failures already toast through the mutation; this covers unreadable files.
+      if (!(e instanceof Error) || !("status" in e)) toast("error", "Import failed", e instanceof Error ? e.message : String(e));
+    } finally {
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
 
   if (me.isLoading || campaign.isLoading || view.isLoading) return <Spinner label="Loading HUD" />;
   if (!me.data || !campaign.data) return <div className="p-6 text-crimson">Campaign unavailable.</div>;
@@ -153,6 +184,27 @@ export function HudShell() {
               </div>
             </div>
           )}
+          <div>
+            <div className="hud-title mb-1 text-[0.6rem]">Sheet data</div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" icon="download" disabled={exporting} onClick={onExport}>
+                {exporting ? "Exporting…" : "Export sheet"}
+              </Button>
+              {view.data.permissions.canEdit && (
+                <>
+                  <Button size="sm" icon="upload" color="amber" disabled={importSheet.isPending} onClick={() => fileInput.current?.click()}>
+                    {importSheet.isPending ? "Importing…" : "Import sheet"}
+                  </Button>
+                  <input ref={fileInput} type="file" accept=".json,application/json" className="hidden" onChange={(e) => void onImportFile(e.target.files?.[0])} />
+                  <ConfirmButton size="sm" icon="rotate-ccw" label="Reset to level 1" confirmLabel="Wipe gear, unlocks, level?" disabled={resetSheet.isPending} onConfirm={() => resetSheet.mutate()} />
+                </>
+              )}
+            </div>
+            <p className="mt-1 text-[0.65rem] text-muted">
+              Export writes a JSON file with the full sheet plus a list of items, conditions and unlocks. Import restores identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die
+              {view.data.permissions.isDm ? ", and as DM also level, XP, credits and progression points" : ""}; gear and unlocks stay as they are.
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Link to={`/c/${campaignId}`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)}>
               <Icon name="users" size={13} /> Campaign

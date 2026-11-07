@@ -87,6 +87,8 @@ await dm.call("POST", `/api/characters/${charId}/hp`, { action: "rest", kind: "l
 for (const o of await dm.call("GET", `/api/campaigns/${cid}/overrides`)) {
   if (o.characterId === charId) await dm.call("DELETE", `/api/campaigns/${cid}/overrides/${o.id}`);
 }
+await dm.call("PATCH", `/api/characters/${charId}`, { name: "Antonio Ettoro", specialSkills: { aura: { rank: 0, proficiency: 0 } } });
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: true, specialExpertiseEnabled: true } });
 
 console.log("    DM-controlled mode: players are read-only by default");
 let view = await player.call("GET", `/api/characters/${charId}`);
@@ -110,6 +112,38 @@ check(view.derived.speed.value === 9, "Speed 9 m");
 check(view.derived.skills.stealth.value === 9, `Stealth = ${view.derived.skills.stealth.value} (4 + expertise 4 + boots 1)`);
 check(view.derived.specialSkills.hacking.value === 8, `Hacking = ${view.derived.specialSkills.hacking.value} (3 + rank 2 + prof 2 + deck 1)`);
 check(view.permissions.isOwner && !view.permissions.isDm, "Player permissions are owner-level, not DM");
+
+console.log("    Cyberpunk skills take proficiency and expertise");
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { specialExpertiseEnabled: true } });
+view = await player.call("GET", `/api/characters/${charId}`);
+const auraBase = view.derived.specialSkills.aura.value;
+const pb = view.derived.profBonus.value;
+view = await player.call("PATCH", `/api/characters/${charId}`, { specialSkills: { aura: { rank: 0, proficiency: 1 } } });
+check(view.derived.specialSkills.aura.value === auraBase + pb && view.derived.specialSkills.aura.proficiency === 1, `Aura proficient: ${auraBase} → ${view.derived.specialSkills.aura.value}`);
+view = await player.call("PATCH", `/api/characters/${charId}`, { specialSkills: { aura: { rank: 0, proficiency: 2 } } });
+check(view.derived.specialSkills.aura.value === auraBase + 2 * pb && view.derived.specialSkills.aura.proficiency === 2, `Aura expertise: → ${view.derived.specialSkills.aura.value}`);
+check(view.derived.specialSkills.aura.breakdown.some((l) => /Expertise/.test(l.label)), "Breakdown names the expertise line");
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { specialExpertiseEnabled: false } });
+view = await player.call("GET", `/api/characters/${charId}`);
+check(view.derived.specialSkills.aura.proficiency === 1 && view.derived.specialSkills.aura.value === auraBase + pb, "Disabling expertise in settings caps cyberpunk skills at proficiency");
+await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { specialExpertiseEnabled: true } });
+
+console.log("    Export and import a sheet");
+const exported = await player.call("GET", `/api/characters/${charId}/export`);
+check(exported.format === "neom-net/character" && exported.version === 1 && exported.character.specialSkills.aura.proficiency === 2, "Export carries format, version and the sheet (aura expertise)");
+check(Array.isArray(exported.character.items) && exported.character.items.length > 0, "Export lists the character's items");
+await player.call("PATCH", `/api/characters/${charId}`, { name: "Antonio Ettoro (E2E)", specialSkills: { aura: { rank: 0, proficiency: 0 } } });
+view = await player.call("POST", `/api/characters/${charId}/import`, exported);
+check(view.character.name === "Antonio Ettoro" && view.derived.specialSkills.aura.proficiency === 2, "Import restores name and cyberpunk skill proficiency");
+let badImport = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/import`, { format: "neom-net/character", version: 1, character: { attributes: { str: "lots" } } });
+} catch (e) {
+  badImport = e.status === 400;
+}
+check(badImport, "Import rejects a malformed sheet with 400");
+view = await player.call("PATCH", `/api/characters/${charId}`, { specialSkills: { aura: { rank: 0, proficiency: 0 } } });
+check(view.derived.specialSkills.aura.value === auraBase, "Aura restored for the rest of the run");
 
 console.log("    Player cannot grant items or override stats");
 let denied = false;

@@ -72,7 +72,7 @@ export interface CampaignRuleSettings {
 
 export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
   specialMaxRank: DEFAULT_SPECIAL_MAX_RANK,
-  specialExpertiseEnabled: false,
+  specialExpertiseEnabled: true,
   nat20AutoSuccess: false,
   baseCapacity: DEFAULT_CYBERWARE_CAPACITY,
   baseSpeed: DEFAULT_SPEED_METERS,

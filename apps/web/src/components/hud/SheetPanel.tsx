@@ -13,7 +13,7 @@ import {
 } from "@neom/shared";
 import clsx from "clsx";
 import { useState } from "react";
-import { useRoll, useUpdateCharacter } from "@/api/hooks";
+import { useCampaign, useRoll, useUpdateCharacter } from "@/api/hooks";
 import { Icon } from "@/components/ui";
 import { StatBreakdown } from "@/components/StatBreakdown";
 import { fmtMod } from "@/lib/format";
@@ -49,7 +49,7 @@ function useRoller(view: CharacterView) {
 }
 
 /** Editable score box: type a number and blur / press Enter. */
-function ScoreBox({ value, onCommit, editable, color }: { value: number; onCommit: (v: number) => void; editable: boolean; color?: string }) {
+function ScoreBox({ value, onCommit, editable, color, min = 1, max = 30 }: { value: number; onCommit: (v: number) => void; editable: boolean; color?: string; min?: number; max?: number }) {
   const [draft, setDraft] = useState<string | null>(null);
   if (!editable) return <span className="valbox">{value}</span>;
   return (
@@ -62,7 +62,7 @@ function ScoreBox({ value, onCommit, editable, color }: { value: number; onCommi
       onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
       onBlur={() => {
         const n = Number(draft);
-        if (draft !== null && n >= 1 && n <= 30 && n !== value) onCommit(n);
+        if (draft !== null && n >= min && n <= max && n !== value) onCommit(n);
         setDraft(null);
       }}
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
@@ -77,6 +77,59 @@ function SqCheck({ on, color, onChange, disabled, label }: { on: boolean; color:
       <span className={clsx("sq-check", on && "on")} style={{ ["--check-color" as string]: color }} />
       {label}
     </button>
+  );
+}
+
+const PROF_TITLE: Record<ProficiencyMultiplier, string> = { 0: "Not proficient", 1: "Proficient", 2: "Expertise (double proficiency)" };
+
+/** Proficiency tile shared by standard and cyberpunk skills: click cycles none → proficient → expertise. */
+function ProfTile({ level, color, editable, onChange, expertiseAllowed = true, title }: { level: ProficiencyMultiplier; color: string; editable: boolean; onChange: (next: ProficiencyMultiplier) => void; expertiseAllowed?: boolean; title?: string }) {
+  const steps = expertiseAllowed ? 3 : 2;
+  const next = ((level + 1) % steps) as ProficiencyMultiplier;
+  return (
+    <button
+      type="button"
+      disabled={!editable}
+      onClick={() => onChange(next)}
+      className="tile tile-sm"
+      style={{ ["--tile-color" as string]: level > 0 ? color : "var(--color-dim)", opacity: level > 0 ? 1 : 0.6 }}
+      title={`${title ? `${title}: ` : ""}${PROF_TITLE[level]}${editable ? ` — click for ${PROF_TITLE[next].toLowerCase()}` : ""}`}
+      aria-label={`${title ?? "Proficiency"}: ${PROF_TITLE[level]}`}
+    >
+      <Icon name={level === 2 ? "star" : "square"} size={10} />
+    </button>
+  );
+}
+
+/** Whether the campaign lets cyberpunk skills take expertise (DM setting). */
+function useSpecialExpertiseAllowed(view: CharacterView): boolean {
+  const campaign = useCampaign(view.character.campaignId);
+  return campaign.data?.settings.specialExpertiseEnabled ?? true;
+}
+
+/** Cyberpunk skill proficiency control: tile + PROF / EXPERT tag. */
+function SpecialProf({ k, view, color, compact }: { k: SpecialSkillKey; view: CharacterView; color: string; compact?: boolean }) {
+  const { character: c, derived, permissions } = view;
+  const update = useUpdateCharacter(c.id);
+  const allowed = useSpecialExpertiseAllowed(view);
+  const own = c.specialSkills[k];
+  const level = derived.specialSkills[k].proficiency;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <ProfTile
+        level={level}
+        color={color}
+        editable={permissions.canEditAttributes}
+        expertiseAllowed={allowed}
+        title={SPECIAL_SKILL_META[k].name}
+        onChange={(next) => update.mutate({ specialSkills: { [k]: { ...own, proficiency: next } } })}
+      />
+      {!compact && (
+        <span className={clsx("font-display text-[0.5rem] tracking-[0.12em]", level > 0 ? "text-text/80" : "text-dim")}>
+          {level === 2 ? "EXPERT" : level === 1 ? "PROF" : "—"}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -148,6 +201,7 @@ export function AttributeRow({ attr, view }: { attr: AttributeKey; view: Charact
               {sMeta.name}
             </button>
             <span className="text-[0.65rem] text-dim">rk {derived.specialSkills[special].rank}</span>
+            <SpecialProf k={special} view={view} color={color} compact />
             <StatBreakdown stat={derived.specialSkills[special]} label={sMeta.name}>
               <span className="num font-semibold" style={{ color }}>
                 {fmtMod(derived.specialSkills[special].value)}
@@ -172,10 +226,15 @@ function SkillsTab({ view }: { view: CharacterView }) {
   const update = useUpdateCharacter(c.id);
   const doRoll = useRoller(view);
   const editable = permissions.canEditAttributes;
+  const expertiseAllowed = useSpecialExpertiseAllowed(view);
+  const maxRank = useCampaign(c.campaignId).data?.settings.specialMaxRank ?? 20;
   return (
     <div className="space-y-2">
       <div className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
-        <div className="hud-title mb-1.5">Cyberpunk skills</div>
+        <div className="hud-title mb-1.5 flex items-center justify-between">
+          <span>Cyberpunk skills</span>
+          <span className="text-[0.55rem] text-dim">{expertiseAllowed ? "tile: none → proficient → expertise" : "tile: none → proficient (expertise off in this campaign)"}</span>
+        </div>
         <div className="space-y-1">
           {SPECIAL_SKILLS.map((k: SpecialSkillKey) => {
             const m = SPECIAL_SKILL_META[k];
@@ -192,9 +251,9 @@ function SkillsTab({ view }: { view: CharacterView }) {
                 </button>
                 <span className="flex items-center gap-1 text-xs text-muted">
                   rank
-                  <ScoreBox value={own.rank} editable={editable} onCommit={(v) => update.mutate({ specialSkills: { [k]: { ...own, rank: v } } })} />
+                  <ScoreBox value={own.rank} editable={editable} min={0} max={maxRank} onCommit={(v) => update.mutate({ specialSkills: { [k]: { ...own, rank: v } } })} />
                 </span>
-                <SqCheck on={d.proficiency > 0} color={color} disabled={!editable} onChange={(v) => update.mutate({ specialSkills: { [k]: { ...own, proficiency: v ? 1 : 0 } } })} label="prof" />
+                <SpecialProf k={k} view={view} color={color} />
                 <span className="ml-auto">
                   <StatBreakdown stat={d} label={m.name}>
                     <span className="valbox" style={{ ["--val-color" as string]: color }}>
