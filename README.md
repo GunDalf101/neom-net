@@ -67,6 +67,17 @@ SEED_PASSWORD=<the seed password> npm run test:e2e
 
 The script logs in as DM and player and exercises: campaign access, permission denials, creating an augmentation, granting it, installing it (stats recalculate, capacity enforced), starting a session and encounter, taking damage that fires **Emergency Reflex Protocol** (automatic) and queues **Adrenaline Overdrive** (assisted), cooldown enforcement, DM approval, DM override and revert, turn-based expiry with the expiry effect, server-side skill rolls, the event log, and persistence across a fresh login.
 
+## Deploying to Render
+
+`render.yaml` is a Render Blueprint: one Node web service (API, Socket.IO and the built web app on the same origin) plus a managed Postgres.
+
+1. Push the repo to GitHub, then in Render choose **New → Blueprint** and select it. Render creates `neom-net` (web service) and `neom-net-db` (Postgres) and generates `JWT_SECRET`.
+2. In the service's **Environment**, set `SEED_PASSWORD` to the password you want for the demo accounts (`overseer`, `antonio`). `SEED_ON_BOOT=true` seeds the demo campaign on the first boot only; set it to `false` afterwards if you do not want the check on every restart.
+3. If Render assigns a different hostname, update `CORS_ORIGINS` to match it (the web app is same-origin, so this only affects external clients).
+4. Build runs `npm ci --include=dev && npm run build:render` (Prisma client + Vite build). Start runs `prisma migrate deploy` and then the server, which serves `apps/web/dist` for every non-API path. Health check: `/api/health`.
+
+Notes: the free Postgres plan expires after 30 days and free web services sleep when idle, which also drops Socket.IO connections until the next request. Render's `NODE_VERSION` is pinned in the blueprint. Secure cookies work behind Render's proxy because the server trusts one proxy hop.
+
 ## Demo content ("NEOM//NET — Night City Protocol")
 
 - **Antonio Ettoro**, Human Rogue // Netrunner, level 1. STR 14 DEX 18 CON 14 INT 16 WIS 12 CHA 10, 12 HP, 9 m speed. Starts with a pistol, armored trench coat (AC 16 total), netrunner deck, Tactical Boots installed, stim patches, a trauma kit and a quest datashard.

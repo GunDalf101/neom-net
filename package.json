@@ -12,6 +12,8 @@
     "dev:server": "npm run dev -w @neom/server",
     "dev:web": "npm run dev -w @neom/web",
     "build": "npm run build -w @neom/shared && npm run build -w @neom/server && npm run build -w @neom/web",
+    "build:render": "npm run db:generate -w @neom/server && npm run build -w @neom/web",
+    "start:render": "npm run db:deploy -w @neom/server && npm run start -w @neom/server",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "node apps/server/scripts/smoke-e2e.mjs",

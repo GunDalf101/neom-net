@@ -1,0 +1,41 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# One Node web service (API + Socket.IO + built web app) and one managed Postgres.
+# Deploy: Render dashboard → New → Blueprint → pick this repo. Then set SEED_PASSWORD
+# (and optionally CORS_ORIGINS) in the service's environment.
+services:
+  - type: web
+    name: neom-net
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build:render
+    startCommand: npm run start:render
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: neom-net-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      # Seeds the demo campaign on the first boot if the database is empty (no shell on the free plan).
+      - key: SEED_ON_BOOT
+        value: "true"
+      # Password for the seeded demo accounts (overseer / antonio). Set it in the dashboard.
+      - key: SEED_PASSWORD
+        sync: false
+      # The web app is served from the same origin, so this only matters for external clients.
+      - key: CORS_ORIGINS
+        value: https://neom-net.onrender.com
+
+databases:
+  - name: neom-net-db
+    plan: free
+    databaseName: neom_net
+    user: neom
+    region: frankfurt

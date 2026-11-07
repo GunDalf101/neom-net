@@ -6,12 +6,13 @@
  * generated and printed once below. No credentials are stored in the repository.
  */
 import { randomBytes } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { ItemDefinitionInput, PassiveEffect, RuleGraph, SkillTreeNodeInput } from "@neom/shared";
 import { ensureBuiltinConditions } from "../src/services/conditions.js";
 
-const prisma = new PrismaClient();
+const defaultPrisma = new PrismaClient();
 
 const CAMPAIGN_NAME = "NEOM//NET — Night City Protocol";
 
@@ -472,8 +473,14 @@ function tree(branch: SkillTreeNodeInput["key"] extends string ? string : never,
 
 const mod = (target: string, value: number, label?: string): PassiveEffect => ({ kind: "modifier", target, value, op: "add", label });
 
-async function main() {
-  await ensureBuiltinConditions(prisma);
+/** True when the demo campaign already exists (used by SEED_ON_BOOT to seed only once). */
+export async function demoCampaignExists(client: PrismaClient = defaultPrisma): Promise<boolean> {
+  return (await client.campaign.count({ where: { name: CAMPAIGN_NAME } })) > 0;
+}
+
+export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<void> {
+  const prisma = client;
+  await ensureBuiltinConditions(client);
 
   const password = process.env.SEED_PASSWORD ?? randomBytes(6).toString("base64url");
   const passwordHash = await bcrypt.hash(password, 12);
@@ -857,9 +864,13 @@ async function main() {
   console.log("");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+// CLI entry (npm run db:seed). When imported (SEED_ON_BOOT), nothing runs automatically.
+const invokedDirectly = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+if (invokedDirectly) {
+  seedDemo(defaultPrisma)
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(() => defaultPrisma.$disconnect());
+}

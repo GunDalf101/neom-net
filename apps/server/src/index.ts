@@ -9,6 +9,15 @@ import { ensureBuiltinConditions } from "./services/conditions.js";
 async function main() {
   await prisma.$connect();
   await ensureBuiltinConditions();
+  if (process.env.SEED_ON_BOOT === "true") {
+    // Hosted deployments without a shell (e.g. Render free plan): seed the demo campaign once.
+    const { demoCampaignExists, seedDemo } = await import("../prisma/seed.js");
+    if (await demoCampaignExists(prisma)) logger.info("Demo campaign present, skipping seed");
+    else {
+      logger.info("SEED_ON_BOOT: seeding demo campaign");
+      await seedDemo(prisma);
+    }
+  }
   const app = createApp();
   const httpServer = createServer(app);
   createRealtime(httpServer);

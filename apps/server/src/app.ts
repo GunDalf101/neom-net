@@ -1,6 +1,9 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Express } from "express";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { pinoHttp } from "pino-http";
 import { attachUser } from "./auth/auth.js";
 import { config } from "./config.js";
@@ -44,6 +47,18 @@ export function createApp(): Express {
   app.use("/api/characters", charactersRouter);
 
   app.use("/api", (_req, _res, next) => next(notFound("Endpoint")));
+
+  // Production: serve the built web app from the same origin (Render runs a single service).
+  const webDist = process.env.WEB_DIST ?? resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
+  if (existsSync(webDist)) {
+    app.use(express.static(webDist, { index: false, maxAge: "1h", immutable: false }));
+    app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.sendFile(resolve(webDist, "index.html"));
+    });
+    logger.info({ webDist }, "Serving web app");
+  }
+
   app.use(errorHandler);
   return app;
 }
