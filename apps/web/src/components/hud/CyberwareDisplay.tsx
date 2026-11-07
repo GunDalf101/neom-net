@@ -92,8 +92,9 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
   const used = derived.capacityUsed;
 
   return (
-    <div className="relative flex h-full flex-col">
-      <div ref={containerRef} className="relative grid flex-1 grid-cols-[minmax(170px,1fr)_minmax(160px,1.05fr)_minmax(170px,1fr)] gap-2 xl:grid-cols-[minmax(190px,1fr)_minmax(200px,1.15fr)_minmax(190px,1fr)]">
+    <div className="relative flex h-full min-w-[520px] flex-col lg:min-w-0">
+      {/* Track minimums must stay under the centre column's 560px floor (516px here); the roomier set only applies on wide screens. */}
+      <div ref={containerRef} className="relative grid flex-1 grid-cols-[minmax(170px,1fr)_minmax(160px,1.05fr)_minmax(170px,1fr)] gap-2 2xl:grid-cols-[minmax(190px,1fr)_minmax(200px,1.15fr)_minmax(190px,1fr)]">
         <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible">
           {lines.map((l) => {
             const midX = l.x1 + (l.x2 - l.x1) * 0.5;

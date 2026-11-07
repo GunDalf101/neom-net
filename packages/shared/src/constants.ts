@@ -233,6 +233,32 @@ export const XP_THRESHOLDS = [
 
 export const MAX_LEVEL = 20;
 
+export const HIT_DIE_SIZES = [6, 8, 10, 12] as const;
+export type HitDieSize = (typeof HIT_DIE_SIZES)[number];
+
+/** 5e hit die by class. Custom or unknown classes fall back to d8. */
+export const CLASS_HIT_DIE: Record<string, HitDieSize> = {
+  barbarian: 12,
+  fighter: 10,
+  paladin: 10,
+  ranger: 10,
+  artificer: 8,
+  bard: 8,
+  cleric: 8,
+  druid: 8,
+  monk: 8,
+  rogue: 8,
+  warlock: 8,
+  sorcerer: 6,
+  wizard: 6,
+};
+
+/** Looks the class up by its first word, so "Rogue // Netrunner" and "Fighter (Solo)" both resolve. */
+export function hitDieForClass(characterClass: string | undefined | null): HitDieSize {
+  const key = (characterClass ?? "").trim().toLowerCase().split(/[^a-z]+/)[0] ?? "";
+  return CLASS_HIT_DIE[key] ?? 8;
+}
+
 /** Base cyberware capacity before modifiers. Campaign-configurable. */
 export const DEFAULT_CYBERWARE_CAPACITY = 10;
 export const DEFAULT_SPEED_METERS = 9;

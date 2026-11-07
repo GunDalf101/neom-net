@@ -16,7 +16,7 @@ export function EventsPage() {
   const list = (events.data ?? []).filter((e) => !filter || e.type.includes(filter) || e.summary.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[1.4fr_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
       <Panel title="Campaign event history" icon="scroll-text" actions={<Input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} className="!w-44 !py-1 text-xs" />}>
         {events.isLoading && <Spinner />}
         {list.length === 0 && <Empty>No events match.</Empty>}
@@ -57,12 +57,12 @@ export function EventRow({ e, compact }: { e: CampaignEventDto; compact?: boolea
         <span className="num w-10 shrink-0 text-dim" title={e.createdAt}>
           {clock(e.createdAt)}
         </span>
-        <Badge color={TYPE_COLOR(e.type)} className="shrink-0">
+        <Badge color={TYPE_COLOR(e.type)} className={clsx("min-w-0 truncate", compact ? "max-w-[7.5rem] @md:max-w-none" : "shrink-0")} title={e.type}>
           {e.type}
         </Badge>
-        <span className={clsx("flex-1", compact && "truncate")}>{e.summary}</span>
-        {e.visibility !== "public" && <Badge color="crimson">{e.visibility}</Badge>}
-        <span className="shrink-0 text-dim">{e.actorName ?? "SYSTEM"}</span>
+        <span className={clsx("min-w-0 flex-1", compact ? "truncate" : "break-words")} title={compact ? e.summary : undefined}>{e.summary}</span>
+        {e.visibility !== "public" && <Badge color="crimson" className={clsx("shrink-0", compact && "hidden @md:inline-flex")}>{e.visibility}</Badge>}
+        <span className={clsx("max-w-[7rem] shrink-0 truncate text-dim", compact && "hidden @sm:inline")}>{e.actorName ?? "SYSTEM"}</span>
       </button>
       {open && Object.keys(e.payload).length > 0 && <pre className="num mt-1 max-h-48 overflow-auto border border-line bg-bg-0 p-2 text-[0.65rem] text-muted">{JSON.stringify(e.payload, null, 2)}</pre>}
     </li>

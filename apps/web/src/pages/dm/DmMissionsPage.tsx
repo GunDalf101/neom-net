@@ -40,7 +40,7 @@ function MissionsBoard() {
     setForm(m === "new" ? empty() : { name: m.name, description: m.description, objectives: m.objectives, status: m.status, rewards: m.rewards, assignedCharacterIds: m.assignedCharacterIds, visibleToPlayers: m.visibleToPlayers });
   };
   return (
-    <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
       <Panel title="Missions" icon="target" color="amber" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         {missions.data?.length === 0 && <Empty>No missions.</Empty>}
         <div className="space-y-1">
@@ -81,7 +81,7 @@ function MissionsBoard() {
               setEditing(null);
             }}
           >
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Field label="Name" className="md:col-span-2">
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </Field>
@@ -108,7 +108,7 @@ function MissionsBoard() {
                 Add objective
               </Button>
             </div>
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
               <Field label="XP reward">
                 <Input type="number" min={0} value={form.rewards.xp} onChange={(e) => setForm({ ...form, rewards: { ...form.rewards, xp: Number(e.target.value) } })} />
               </Field>

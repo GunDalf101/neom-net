@@ -38,7 +38,7 @@ export function NpcsPage() {
   };
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[360px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[360px_1fr]">
       <Panel title="NPCs & enemies" icon="users-round" color="crimson" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         {npcs.data?.length === 0 && <Empty>No NPCs yet.</Empty>}
         <div className="space-y-1">
@@ -69,7 +69,7 @@ export function NpcsPage() {
               setEditing(null);
             }}
           >
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
               <Field label="Name" className="md:col-span-2">
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </Field>
@@ -121,7 +121,7 @@ export function NpcsPage() {
               <div className="space-y-2">
                 {form.abilities.map((ab, i) => (
                   <div key={i} className="hud-panel space-y-2 p-2" style={{ ["--panel-accent" as string]: "var(--color-amber)" }}>
-                    <div className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_2fr_auto]">
                       <Input placeholder="Name" value={ab.name} onChange={(e) => setForm({ ...form, abilities: form.abilities.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
                       <Input placeholder="Description (attack bonus, damage, save…)" value={ab.description} onChange={(e) => setForm({ ...form, abilities: form.abilities.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)) })} />
                       <Button size="xs" variant="ghost" icon="x" onClick={() => setForm({ ...form, abilities: form.abilities.filter((_, j) => j !== i) })} />

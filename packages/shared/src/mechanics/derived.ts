@@ -60,6 +60,11 @@ export interface CampaignRuleSettings {
    * progression). They can still view, roll dice and write journal notes. Overrides the flags below.
    */
   playersReadOnly: boolean;
+  /**
+   * Even in DM-controlled mode, players may manage their own inventory: equip, unequip, use consumables,
+   * drop, rename and move items. Cyberware install/removal, quantities, charges and currency stay with the DM.
+   */
+  playersManageInventory: boolean;
   /** Whether players may edit their own base statistics. */
   playersEditAttributes: boolean;
   playersInstallCyberware: boolean;
@@ -77,6 +82,7 @@ export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
   baseCapacity: DEFAULT_CYBERWARE_CAPACITY,
   baseSpeed: DEFAULT_SPEED_METERS,
   playersReadOnly: true,
+  playersManageInventory: true,
   playersEditAttributes: true,
   playersInstallCyberware: true,
   playersLevelUp: false,
@@ -93,6 +99,10 @@ export interface CharacterSnapshot {
   hpMaxBase: number;
   baseSpeed?: number;
   baseCapacity?: number;
+  /** Unarmored base AC (default 10); the DM raises it for natural armor or house rules. */
+  acBase?: number;
+  /** Flat DM adjustment to AC, applied after every other source. */
+  acBonus?: number;
   sources: EffectSource[];
   overrides: StatOverride[];
   settings: CampaignRuleSettings;
@@ -375,15 +385,12 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
   }
 
   // Combat stats (homebrew additive model, see docs/ARCHITECTURE.md)
-  const ac = composeStat(
-    "ac",
-    [
-      { label: "Base AC", value: 10, kind: "base" },
-      { label: "DEX modifier", value: modifiers.dex, kind: "attribute" },
-    ],
-    sources,
-    overrides,
-  );
+  const acLines: BreakdownLine[] = [
+    { label: "Base AC", value: snap.acBase ?? 10, kind: "base" },
+    { label: "DEX modifier", value: modifiers.dex, kind: "attribute" },
+  ];
+  if (snap.acBonus) acLines.push({ label: "DM adjustment", value: snap.acBonus, kind: "modifier" });
+  const ac = composeStat("ac", acLines, sources, overrides);
   const initiative = composeStat(
     "initiative",
     [{ label: "DEX modifier", value: modifiers.dex, kind: "attribute" }],

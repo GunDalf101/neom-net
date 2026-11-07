@@ -41,7 +41,8 @@ charactersRouter.delete("/:characterId/conditions/:conditionId", wrap<AuthedRequ
 }));
 
 charactersRouter.post("/:characterId/items/:itemId/action", wrap<AuthedRequest>(async (req, res) => {
-  const { membership } = await requireCharacterEdit(cid(req), req.user.id);
+  // Access only: the item service decides per action (players may manage their own gear even in DM-controlled mode).
+  const { membership } = await requireCharacterAccess(cid(req), req.user.id);
   res.json(await performItemAction(cid(req), actor(req, membership.isDm), req.params.itemId as string, parseBody(ItemActionSchema, req.body)));
 }));
 

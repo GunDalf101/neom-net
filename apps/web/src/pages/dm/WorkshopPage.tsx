@@ -115,7 +115,7 @@ function ItemsWorkshop() {
   const list = (items.data ?? []).filter((d) => !filter || d.name.toLowerCase().includes(filter.toLowerCase()) || d.category.includes(filter));
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
       <Panel title="Catalog" icon="package" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         <Input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} className="mb-2 !py-1 text-xs" />
         <div className="max-h-[70vh] space-y-1 overflow-y-auto pr-1">
@@ -147,7 +147,7 @@ function ItemsWorkshop() {
               setEditingId(saved.id);
             }}
           >
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Field label="Name" className="md:col-span-2">
                 <Input value={form.name} onChange={(e) => set("name", e.target.value)} required />
               </Field>
@@ -313,7 +313,7 @@ function ConditionsWorkshop() {
     setForm(d === "new" ? empty() : { key: d.key, name: d.name, description: d.description, color: d.color, effects: d.effects, ruleIds: d.ruleIds });
   };
   return (
-    <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
       <Panel title="Conditions" icon="alert-triangle" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         <div className="max-h-[70vh] space-y-1 overflow-y-auto pr-1 text-xs">
           {defs.data?.map((d) => (
@@ -337,7 +337,7 @@ function ConditionsWorkshop() {
               setEditing(null);
             }}
           >
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Field label="Key (camelCase)">
                 <Input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} required pattern="^[a-zA-Z][a-zA-Z0-9_]*$" />
               </Field>
@@ -392,7 +392,7 @@ function AbilitiesWorkshop() {
     setForm(a === "new" ? empty() : { name: a.name, description: a.description, icon: a.icon, actionType: a.actionType, cost: a.cost as AbilityInput["cost"], usesPer: a.usesPer, maxUses: a.maxUses, effects: a.effects, passiveEffects: a.passiveEffects, ruleIds: a.ruleIds });
   };
   return (
-    <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
       <Panel title="Abilities" icon="zap" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         <div className="space-y-1 text-xs">
           {abilities.data?.map((a) => (
@@ -418,7 +418,7 @@ function AbilitiesWorkshop() {
               setEditing(null);
             }}
           >
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Field label="Name">
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </Field>
@@ -506,7 +506,7 @@ function TreesWorkshop() {
         ))}
       </div>
       <Panel title={`${SPECIAL_SKILL_META[branch].name} tree`} icon="git-branch" color="crimson" actions={<Button size="xs" variant="solid" color="crimson" icon="save" disabled={save.isPending} onClick={() => save.mutate({ branch, name: draft.name, description: draft.description, nodes: draft.nodes })}>Save tree</Button>}>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Field label="Tree name">
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           </Field>
@@ -517,7 +517,7 @@ function TreesWorkshop() {
         <div className="mt-3 space-y-2">
           {draft.nodes.map((n, i) => (
             <div key={i} className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
-              <div className="grid gap-2 md:grid-cols-6">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
                 <Field label="Key">
                   <Input value={n.key} onChange={(e) => setNode(i, { ...n, key: e.target.value })} />
                 </Field>

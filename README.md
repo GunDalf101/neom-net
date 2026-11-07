@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (63 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (71 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -89,7 +89,11 @@ Notes: the free Postgres plan expires after 30 days and free web services sleep 
 
 ## Who can change what
 
-By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): players view their HUD, roll dice (including DM-requested checks) and keep journal notes, while every change to the sheet, HP, conditions, inventory, cyberware, progression, currency and missions is made by the DM from DM//CONTROL or from the character's HUD while logged in as DM. The server enforces this on every mutating endpoint, and players see a read-only banner. The DM can switch it off in Settings to let players edit their own characters, with the finer-grained flags (attributes, cyberware, levelling) applying in that mode. Currency is DM-only in both modes.
+By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): players view their HUD, roll dice (including DM-requested checks) and keep journal notes, while every change to the sheet, HP, conditions, cyberware, progression, currency and missions is made by the DM from DM//CONTROL or from the character's HUD while logged in as DM. The server enforces this on every mutating endpoint, and players see a read-only banner. One exception is on by default (`playersManageInventory`): players still manage their own gear in read-only mode, meaning equip, unequip, use consumables, drop, rename and move. Installing or removing cyberware, setting quantities or charges, and currency stay with the DM. The DM can switch read-only off in Settings to let players edit their own characters, with the finer-grained flags (attributes, cyberware, levelling) applying in that mode. Currency is DM-only in both modes.
+
+**Hit dice.** A new character's hit die follows its class (d12 barbarian; d10 fighter, paladin, ranger; d6 sorcerer, wizard; d8 for everything else, including custom classes), matched on the first word so "Rogue // Netrunner" is a rogue. The New character form and the Identity editor both expose the die, so the DM can override it for homebrew classes. Level 1 HP defaults to the die plus the CON modifier.
+
+**Armor class without items.** The DM can set a character's unarmored base AC (default 10) and a flat adjustment from the Combat panel on the sheet or from the HP tab of the dashboard live controls. Both show up as their own lines in the AC breakdown, and gear, cyberware and conditions still add on top. Temporary changes are better done as a DM override (Override tab), which keeps the calculated value visible.
 
 ## What works / what is next
 

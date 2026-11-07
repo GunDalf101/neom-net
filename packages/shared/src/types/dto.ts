@@ -79,6 +79,8 @@ export interface CharacterCore {
   hpMaxBase: number;
   hpTemp: number;
   baseSpeed: number | null;
+  acBase: number;
+  acBonus: number;
   hitDieSize: number;
   hitDiceUsed: number;
   inspiration: boolean;
@@ -212,6 +214,8 @@ export interface CharacterView {
     canEditAttributes: boolean;
     canInstallCyberware: boolean;
     canLevelUp: boolean;
+    /** Equip / unequip / use / drop / rename own items. True for owners even in read-only mode when the campaign allows it. */
+    canManageInventory: boolean;
     isDm: boolean;
     isOwner: boolean;
     /** True for players when the campaign's "players are read-only" rule is on. */

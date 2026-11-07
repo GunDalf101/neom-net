@@ -46,10 +46,10 @@ export function ConditionsPanel({ view }: { view: CharacterView }) {
   const cyber = all.filter((d) => CYBER_KEYS.has(d.key) || !d.builtin);
 
   return (
-    <div className="grid gap-2 sm:grid-cols-[1.15fr_1fr]">
+    <div className="grid grid-cols-1 gap-2 @md:grid-cols-[1.15fr_1fr]">
       <section className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
         <div className="hud-title mb-1.5 text-text">Conditions</div>
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1 @md:grid-cols-2 @sm:grid-cols-3">
           {dnd.map((d) => {
             const on = active.get(d.key);
             return (

@@ -1,7 +1,7 @@
-import { levelForXp, xpForLevel, type CharacterView } from "@neom/shared";
+import { HIT_DIE_SIZES, hitDieForClass, levelForXp, xpForLevel, type CharacterView, type HitDieSize } from "@neom/shared";
 import { useState } from "react";
 import { useUpdateCharacter } from "@/api/hooks";
-import { Bar, Button, Field, Icon, Input, Modal, Textarea } from "@/components/ui";
+import { Bar, Button, Field, Icon, Input, Modal, Select, Textarea } from "@/components/ui";
 import { StatBreakdown } from "@/components/StatBreakdown";
 import { fmtMod } from "@/lib/format";
 import { Portrait } from "./Portrait";
@@ -88,9 +88,12 @@ function IdentityEditor({ view, open, onClose }: { view: CharacterView; open: bo
     biography: c.biography,
     level: c.level,
     xp: c.xp,
+    hitDieSize: c.hitDieSize as HitDieSize,
     portraitUrl: c.portraitUrl,
   });
+  const [dieTouched, setDieTouched] = useState(false);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const setClass = (v: string) => setForm((f) => ({ ...f, characterClass: v, hitDieSize: dieTouched ? f.hitDieSize : hitDieForClass(v) }));
 
   const onFile = (file: File | undefined) => {
     if (!file) return;
@@ -114,6 +117,7 @@ function IdentityEditor({ view, open, onClose }: { view: CharacterView; open: bo
             delete body.level;
             delete body.xp;
           }
+          if (!permissions.canEditAttributes || form.hitDieSize === c.hitDieSize) delete body.hitDieSize;
           await update.mutateAsync(body);
           onClose();
         }}
@@ -139,12 +143,23 @@ function IdentityEditor({ view, open, onClose }: { view: CharacterView; open: bo
           <Field label="Species">
             <Input value={form.species} onChange={(e) => set("species", e.target.value)} />
           </Field>
-          <Field label="Class">
-            <Input value={form.characterClass} onChange={(e) => set("characterClass", e.target.value)} />
+          <Field label="Class" hint={!dieTouched && form.characterClass ? `hit die follows the class (d${hitDieForClass(form.characterClass)})` : undefined}>
+            <Input value={form.characterClass} onChange={(e) => setClass(e.target.value)} />
           </Field>
-          <Field label="Subclass">
-            <Input value={form.subclass} onChange={(e) => set("subclass", e.target.value)} />
-          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Subclass">
+              <Input value={form.subclass} onChange={(e) => set("subclass", e.target.value)} />
+            </Field>
+            <Field label="Hit die" hint={!permissions.canEditAttributes ? "DM sets the hit die" : undefined}>
+              <Select value={form.hitDieSize} disabled={!permissions.canEditAttributes} onChange={(e) => { setDieTouched(true); set("hitDieSize", Number(e.target.value) as HitDieSize); }}>
+                {HIT_DIE_SIZES.map((d) => (
+                  <option key={d} value={d}>
+                    d{d}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
           <Field label="Faction">
             <Input value={form.faction} onChange={(e) => set("faction", e.target.value)} />
           </Field>

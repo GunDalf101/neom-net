@@ -228,7 +228,7 @@ export function RuleEditor({ graph, onChange, lookups }: RuleEditorProps) {
   const setParams = (params: Record<string, unknown>) => setNodes((ns) => ns.map((n) => (n.id === selectedId ? { ...n, data: { ...n.data, params } } : n)));
 
   return (
-    <div className="grid gap-2 lg:grid-cols-[200px_1fr_280px]">
+    <div className="grid grid-cols-1 gap-2 lg:grid-cols-[200px_minmax(0,1fr)_280px]">
       <div className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-violet)" }}>
         <div className="hud-title mb-2 text-[0.55rem]">Node palette</div>
         <div className="mb-2 flex flex-wrap gap-1">
@@ -260,7 +260,6 @@ export function RuleEditor({ graph, onChange, lookups }: RuleEditorProps) {
           onPaneClick={() => setSelectedId(null)}
           fitView
           deleteKeyCode={["Backspace", "Delete"]}
-          proOptions={{ hideAttribution: true }}
         >
           <Background gap={24} color="#1c2a3c" />
           <Controls />

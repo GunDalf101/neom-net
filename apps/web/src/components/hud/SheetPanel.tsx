@@ -174,7 +174,7 @@ export function AttributeRow({ attr, view }: { attr: AttributeKey; view: Charact
         <Icon name={ATTR_ICON[attr]} size={30} />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-display text-[0.95rem] font-bold uppercase tracking-[0.04em] text-text">{meta.name}</span>
           <span className="ml-auto flex items-center gap-2">
             {score.override || score.value !== c.attributes[attr] ? (
@@ -190,7 +190,7 @@ export function AttributeRow({ attr, view }: { attr: AttributeKey; view: Charact
               {fmtMod(derived.modifiers[attr])}
             </span>
           </span>
-          <SqCheck on={derived.saves[attr].proficient} color={color} disabled={!editable} onChange={(v) => update.mutate({ saveProficiencies: { [attr]: v } })} label={<span className="text-[0.72rem]">Saving Throw</span>} />
+          <SqCheck on={derived.saves[attr].proficient} color={color} disabled={!editable} onChange={(v) => update.mutate({ saveProficiencies: { [attr]: v } })} label={<span className="whitespace-nowrap text-[0.72rem]" title="Saving throw proficiency">Save</span>} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="inline-flex items-center gap-1.5 text-[0.85rem]">
@@ -311,11 +311,11 @@ function SavesTab({ view }: { view: CharacterView }) {
         const d = derived.saves[a];
         const flags = derived.rollFlags.filter((f) => f.on === `save.${a}`);
         return (
-          <div key={a} className="flex items-center gap-3 border-b border-line/50 py-1.5 text-sm last:border-0">
+          <div key={a} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line/50 py-1.5 text-sm last:border-0">
             <span className="tile" style={{ ["--tile-color" as string]: color }}>
               <Icon name={ATTR_ICON[a]} size={20} />
             </span>
-            <span className="w-28 font-display text-[0.8rem] font-bold uppercase text-text">{ATTRIBUTE_META[a].name}</span>
+            <span className="w-24 font-display text-[0.8rem] font-bold uppercase text-text">{ATTRIBUTE_META[a].name}</span>
             <SqCheck on={d.proficient} color={color} disabled={!permissions.canEditAttributes} onChange={(v) => update.mutate({ saveProficiencies: { [a]: v } })} label="Proficient" />
             {flags.map((f, i) => (
               <span key={i} className={clsx("font-display text-[0.5rem]", f.mode === "advantage" ? "text-ok" : "text-crimson")}>

@@ -102,6 +102,20 @@ try {
 check(ro, "Player HP change rejected with 403 while read-only");
 const roRoll = await player.call("POST", `/api/campaigns/${cid}/rolls`, { characterId: charId, target: "skill.perception", category: "skill" });
 check(roRoll.total >= 1, "Player can still roll dice while read-only");
+check(view.permissions.canManageInventory === true, "Read-only player may still manage their own inventory");
+const pistol = view.items.find((i) => i.definition.name.includes("Lexington"));
+view = await player.call("POST", `/api/characters/${charId}/items/${pistol.id}/action`, { action: "unequip" });
+check(view.items.find((i) => i.id === pistol.id).status === "stored", "Read-only player unequipped their pistol");
+view = await player.call("POST", `/api/characters/${charId}/items/${pistol.id}/action`, { action: "equip" });
+check(view.items.find((i) => i.id === pistol.id).status === "equipped", "Read-only player re-equipped it");
+const boots = view.items.find((i) => i.installedSlot === "feet");
+let roInstall = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/items/${boots.id}/action`, { action: "uninstall" });
+} catch (e) {
+  roInstall = e.status === 403;
+}
+check(roInstall, "Read-only player cannot remove cyberware (403)");
 // The rest of the workflow exercises player-side actions, so the DM switches the campaign to player-editable.
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: false } });
 view = await player.call("GET", `/api/characters/${charId}`);
@@ -112,6 +126,30 @@ check(view.derived.speed.value === 9, "Speed 9 m");
 check(view.derived.skills.stealth.value === 9, `Stealth = ${view.derived.skills.stealth.value} (4 + expertise 4 + boots 1)`);
 check(view.derived.specialSkills.hacking.value === 8, `Hacking = ${view.derived.specialSkills.hacking.value} (3 + rank 2 + prof 2 + deck 1)`);
 check(view.permissions.isOwner && !view.permissions.isDm, "Player permissions are owner-level, not DM");
+
+console.log("    Hit die follows the class");
+const barb = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Krak (E2E)", characterClass: "Barbarian // Street Brawler", attributes: { str: 16, dex: 12, con: 14, int: 8, wis: 10, cha: 8 } });
+check(barb.character.hitDieSize === 12 && barb.character.hpMaxBase === 14, `Barbarian starts with d12 and ${barb.character.hpMaxBase} HP (12 + CON 2)`);
+const wiz = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Vex (E2E)", characterClass: "wizard", hitDieSize: 10 });
+check(wiz.character.hitDieSize === 10, "An explicit hit die overrides the class default");
+const custom = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Zed (E2E)", characterClass: "Netrunner" });
+check(custom.character.hitDieSize === 8, "Unknown classes fall back to d8");
+for (const ch of [barb, wiz, custom]) await dm.call("DELETE", `/api/characters/${ch.character.id}`);
+
+console.log("    DM adjusts AC without an item");
+let acDenied = false;
+try {
+  await player.call("PATCH", `/api/characters/${charId}`, { acBonus: 5 });
+} catch (e) {
+  acDenied = e.status === 403;
+}
+check(acDenied, "Player cannot change base AC or the adjustment (403)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { acBonus: 2 });
+check(view.derived.ac.value === 18 && view.derived.ac.breakdown.some((l) => l.label === "DM adjustment"), `AC with +2 DM adjustment = ${view.derived.ac.value}`);
+view = await dm.call("PATCH", `/api/characters/${charId}`, { acBase: 12 });
+check(view.derived.ac.value === 20, `AC with base 12 = ${view.derived.ac.value}`);
+view = await dm.call("PATCH", `/api/characters/${charId}`, { acBase: 10, acBonus: 0 });
+check(view.derived.ac.value === 16, "AC restored to 16");
 
 console.log("    Cyberpunk skills take proficiency and expertise");
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { specialExpertiseEnabled: true } });

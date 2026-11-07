@@ -17,6 +17,7 @@ import {
   useRules,
   useSendMessage,
   useTriggerRule,
+  useUpdateCharacter,
 } from "@/api/hooks";
 import { ROLL_TARGETS, STAT_TARGETS, TargetSelect } from "@/components/editors/EffectEditors";
 import { Badge, Bar, Button, Field, Icon, Input, Panel, Select, Spinner, Textarea } from "@/components/ui";
@@ -71,7 +72,7 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
           </button>
         ))}
       </div>
-      {tab === "hp" && <HpTab characterId={c.id} />}
+      {tab === "hp" && <HpTab characterId={c.id} acBase={c.acBase} acBonus={c.acBonus} ac={derived.ac.value} />}
       {tab === "status" && <StatusTab campaignId={campaignId} view={v} />}
       {tab === "grant" && <GrantTab campaignId={campaignId} characterId={c.id} />}
       {tab === "override" && <OverrideTab campaignId={campaignId} view={v} />}
@@ -92,8 +93,9 @@ function Stat({ label, value, color, overridden }: { label: string; value: strin
   );
 }
 
-function HpTab({ characterId }: { characterId: string }) {
+function HpTab({ characterId, acBase, acBonus, ac }: { characterId: string; acBase: number; acBonus: number; ac: number }) {
   const hp = useHpAction(characterId);
+  const update = useUpdateCharacter(characterId);
   const [amount, setAmount] = useState(6);
   const [type, setType] = useState<DamageType>("physical");
   const [ignore, setIgnore] = useState(false);
@@ -135,10 +137,18 @@ function HpTab({ characterId }: { characterId: string }) {
           Long rest
         </Button>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-muted">Set base max HP</span>
         <Input type="number" min={1} className="num !w-20" placeholder="max" onKeyDown={(e) => e.key === "Enter" && hp.mutate({ action: "setMax", value: Number((e.target as HTMLInputElement).value) })} />
         <span className="text-dim">Enter to apply</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
+        <span className="text-muted">Armor class</span>
+        <span className="num font-bold text-blue">{ac}</span>
+        <span className="text-dim">= base</span>
+        <Input type="number" min={0} max={30} key={`b${acBase}`} defaultValue={acBase} className="num !w-16" title="Unarmored base AC (default 10)" onBlur={(e) => Number(e.target.value) !== acBase && update.mutate({ acBase: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+        <span className="text-dim">+ DEX + gear + adjustment</span>
+        <Input type="number" min={-20} max={20} key={`a${acBonus}`} defaultValue={acBonus} className="num !w-16" title="Flat DM adjustment" onBlur={(e) => Number(e.target.value) !== acBonus && update.mutate({ acBonus: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
       </div>
     </div>
   );

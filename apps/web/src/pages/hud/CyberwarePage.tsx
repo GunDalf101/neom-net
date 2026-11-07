@@ -13,8 +13,8 @@ export function CyberwarePage() {
   const catalog = (defs.data ?? []).filter((d) => d.category === "cyberware");
 
   return (
-    <div className="mx-auto grid max-w-[1700px] gap-3 lg:grid-cols-[minmax(560px,1.5fr)_minmax(320px,1fr)]">
-      <div className="min-h-[600px]">
+    <div className="mx-auto grid max-w-[1700px] grid-cols-1 gap-3 lg:grid-cols-[minmax(560px,1.5fr)_minmax(320px,1fr)]">
+      <div className="min-h-[600px] min-w-0 overflow-x-auto lg:overflow-visible">
         <CyberwareDisplay view={view} />
       </div>
       <div className="space-y-3">

@@ -1,8 +1,8 @@
-import { ATTRIBUTES, ATTRIBUTE_META, type AttributeKey } from "@neom/shared";
+import { ATTRIBUTES, ATTRIBUTE_META, HIT_DIE_SIZES, abilityModifier, hitDieForClass, type AttributeKey, type HitDieSize } from "@neom/shared";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCampaign, useCharacters, useCreateCharacter, useDeleteCharacter, useMe } from "@/api/hooks";
-import { Badge, Bar, Button, ConfirmButton, Empty, Field, Icon, Input, Modal, NumberStepper, Panel, Spinner } from "@/components/ui";
+import { Badge, Bar, Button, ConfirmButton, Empty, Field, Icon, Input, Modal, NumberStepper, Panel, Select, Spinner } from "@/components/ui";
 import { useCampaignRealtime } from "@/realtime/socket";
 import { useUi } from "@/store/ui";
 import { Portrait } from "@/components/hud/Portrait";
@@ -23,6 +23,9 @@ export function CampaignHomePage() {
   const [klass, setKlass] = useState("");
   const [subclass, setSubclass] = useState("");
   const [attrs, setAttrs] = useState<Record<AttributeKey, number>>({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 });
+  /** null = follow the class (d12 barbarian, d10 fighter/paladin/ranger, d6 sorcerer/wizard, d8 otherwise). */
+  const [hitDie, setHitDie] = useState<HitDieSize | null>(null);
+  const effectiveDie: HitDieSize = hitDie ?? hitDieForClass(klass);
 
   if (campaign.isLoading) return <Spinner />;
   if (!campaign.data) return <div className="p-6 text-crimson">Campaign unavailable.</div>;
@@ -32,7 +35,7 @@ export function CampaignHomePage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const v = await create.mutateAsync({ campaignId, name, species, characterClass: klass, subclass, attributes: attrs });
+    const v = await create.mutateAsync({ campaignId, name, species, characterClass: klass, subclass, attributes: attrs, hitDieSize: effectiveDie });
     setOpen(false);
     remember(campaignId, v.character.id);
     nav(`/c/${campaignId}/hud/${v.character.id}`);
@@ -65,11 +68,11 @@ export function CampaignHomePage() {
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
         <Panel title="Character roster" icon="users">
           {characters.isLoading && <Spinner />}
           {characters.data?.length === 0 && <Empty icon="user-round-plus">No characters yet. Create one to enter the HUD.</Empty>}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {characters.data?.map((ch) => {
               const mine = ch.ownerUserId === me.data?.id;
               return (
@@ -135,7 +138,7 @@ export function CampaignHomePage() {
 
       <Modal open={open} onClose={() => setOpen(false)} title="New character">
         <form onSubmit={submit} className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Name">
               <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} required />
             </Field>
@@ -147,6 +150,22 @@ export function CampaignHomePage() {
             </Field>
             <Field label="Subclass">
               <Input value={subclass} onChange={(e) => setSubclass(e.target.value)} placeholder="Netrunner" />
+            </Field>
+            <Field label="Hit die" hint={hitDie === null ? `follows the class · level 1 HP ${Math.max(1, effectiveDie + abilityModifier(attrs.con))}` : "set by hand"}>
+              <div className="flex items-center gap-2">
+                <Select value={effectiveDie} onChange={(e) => setHitDie(Number(e.target.value) as HitDieSize)}>
+                  {HIT_DIE_SIZES.map((d) => (
+                    <option key={d} value={d}>
+                      d{d}
+                    </option>
+                  ))}
+                </Select>
+                {hitDie !== null && (
+                  <Button size="xs" variant="ghost" onClick={() => setHitDie(null)}>
+                    Auto
+                  </Button>
+                )}
+              </div>
             </Field>
           </div>
           <div>

@@ -50,15 +50,15 @@ export function InventoryPage() {
   const loadout = view.items.filter((i) => i.status === "equipped" || i.installedSlot);
 
   return (
-    <div className="mx-auto grid max-w-[1900px] gap-3 xl:grid-cols-[minmax(290px,0.8fr)_minmax(620px,2.2fr)_minmax(320px,0.95fr)]">
+    <div className="mx-auto grid max-w-[1900px] grid-cols-1 gap-3 xl:grid-cols-[minmax(290px,0.8fr)_minmax(620px,2.2fr)_minmax(320px,0.95fr)]">
       {/* Left: compact sheet */}
-      <div className="hidden space-y-2 xl:block">
+      <div className="hidden min-w-0 space-y-2 xl:block">
         <IdentityCard view={view} compact />
         <CompactAttributes view={view} />
       </div>
 
       {/* Center: grid */}
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <section className="hud-panel p-3" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
           <div className="font-display text-[1.2rem] font-black uppercase tracking-[0.08em] text-cyan glow-text">Inventory</div>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -72,7 +72,7 @@ export function InventoryPage() {
             <span className="nav-box !px-2 !py-1.5">
               <Icon name="scan-search" size={14} />
             </span>
-            <div className="flex min-w-[220px] flex-1 items-center border border-cyan/35 bg-bg-0/70 px-2">
+            <div className="flex min-w-[160px] flex-1 items-center border border-cyan/35 bg-bg-0/70 px-2">
               <input className="w-full bg-transparent py-1.5 text-sm outline-none" placeholder="Search item..." value={search} onChange={(e) => setSearch(e.target.value)} />
               <Icon name="search" size={14} className="text-muted" />
             </div>
@@ -103,10 +103,10 @@ export function InventoryPage() {
       </div>
 
       {/* Right: details */}
-      <div className="space-y-2">
-        {selected ? <DetailPanel item={selected} view={view} act={act} canEdit={permissions.canEdit} isDm={isDm} /> : <section className="hud-panel p-4 text-sm text-dim">Select an item to inspect it.</section>}
+      <div className="min-w-0 space-y-2">
+        {selected ? <DetailPanel item={selected} view={view} act={act} canEdit={permissions.canManageInventory} isDm={isDm} /> : <section className="hud-panel p-4 text-sm text-dim">Select an item to inspect it.</section>}
         <CurrencyPanel view={view} />
-        {selected && permissions.canEdit && (
+        {selected && permissions.canManageInventory && (
           <section className="hud-panel p-3" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
             <div className="font-display text-[0.95rem] font-bold uppercase tracking-[0.08em] text-text">Quick actions</div>
             <QuickActions item={selected} act={act} isDm={isDm} />
@@ -343,11 +343,11 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
       {canEdit && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           {item.installedSlot ? (
-            <button type="button" className="hud-btn !py-2.5 !text-[0.75rem]" style={{ ["--btn-color" as string]: "var(--color-amber)" }} onClick={() => run({ action: "uninstall" })}>
+            <button type="button" className="hud-btn !py-2.5 !text-[0.75rem]" style={{ ["--btn-color" as string]: "var(--color-amber)" }} disabled={!view.permissions.canInstallCyberware} title={view.permissions.canInstallCyberware ? undefined : "The DM removes cyberware in this campaign"} onClick={() => run({ action: "uninstall" })}>
               Uninstall
             </button>
           ) : d.category === "cyberware" ? (
-            <button type="button" className="hud-btn !py-2.5 !text-[0.75rem]" disabled={(unmet.length > 0 && !isDm) || !view.permissions.canInstallCyberware} onClick={() => run({ action: "install" })}>
+            <button type="button" className="hud-btn !py-2.5 !text-[0.75rem]" disabled={(unmet.length > 0 && !isDm) || !view.permissions.canInstallCyberware} title={view.permissions.canInstallCyberware ? undefined : "The DM installs cyberware in this campaign"} onClick={() => run({ action: "install" })}>
               Install
             </button>
           ) : item.status === "equipped" ? (

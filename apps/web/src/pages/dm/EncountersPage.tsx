@@ -18,7 +18,7 @@ export function EncountersPage() {
   const sel = selectedId ?? active?.id ?? encounters.data?.[0]?.id ?? null;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[300px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[300px_1fr]">
       <Panel
         title="Encounters"
         icon="swords"

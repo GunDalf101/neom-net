@@ -131,7 +131,7 @@ export function HudShell() {
         </nav>
         {view.data.permissions.readOnly && (
           <div className="flex items-center gap-2 border-t border-cyan/20 bg-cyan/5 px-3 py-1 text-[0.68rem] uppercase tracking-[0.16em] text-cyan/80">
-            <Icon name="lock" size={12} /> Read-only sheet — the Dungeon Master applies all changes. You can still roll dice and keep notes.
+            <Icon name="lock" size={12} /> Read-only sheet — the Dungeon Master applies all changes. You can still roll dice{view.data.permissions.canManageInventory ? ", manage your gear" : ""} and keep notes.
           </div>
         )}
         {myRequests.length > 0 && (

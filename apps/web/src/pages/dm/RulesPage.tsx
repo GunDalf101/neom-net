@@ -24,7 +24,7 @@ export function RulesPage() {
   };
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[300px_1fr]">
+    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[300px_1fr]">
       <Panel title="Rules" icon="git-fork" color="violet" actions={<Button size="xs" icon="plus" onClick={createNew}>New</Button>}>
         {rules.isLoading && <Spinner />}
         {rules.data?.length === 0 && <Empty>No rules yet.</Empty>}
@@ -98,7 +98,7 @@ function RuleWorkbench({ rule }: { rule: RuleDefinitionDto }) {
           </>
         }
       >
-        <div className="grid gap-2 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
           <Field label="Name" className="md:col-span-2">
             <Input value={meta.name} onChange={(e) => { setMeta({ ...meta, name: e.target.value }); setDirty(true); }} />
           </Field>
@@ -197,7 +197,7 @@ function Simulator({ graph }: { graph: RuleGraph }) {
   const res = sim.data;
   return (
     <Panel title="Simulation (dry run — nothing is applied)" icon="flask-conical" color="amber">
-      <div className="grid gap-2 md:grid-cols-6">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
         <Field label="Character state" className="md:col-span-2">
           <Select value={characterId} onChange={(e) => setCharacterId(e.target.value)}>
             <option value="">Synthetic test character</option>

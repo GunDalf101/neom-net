@@ -3,6 +3,7 @@ import {
   abilityModifier,
   applyDamage,
   computeDerivedStats,
+  hitDieForClass,
   SKILLS,
   SPECIAL_SKILLS,
   UpdateCharacterSchema,
@@ -127,6 +128,8 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
     specialSkills: full.specialSkills as unknown as Record<SpecialSkillKey, { rank: number; proficiency: ProficiencyMultiplier }>,
     hpMaxBase: full.hpMaxBase,
     baseSpeed: full.baseSpeed ?? undefined,
+    acBase: full.acBase,
+    acBonus: full.acBonus,
     sources,
     overrides: full.overrides.map((o) => ({ id: o.id, target: o.target, value: o.value, reason: o.reason })),
     settings,
@@ -187,6 +190,7 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
       canEditAttributes: viewer.isDm || (canEdit && settings.playersEditAttributes),
       canInstallCyberware: viewer.isDm || (canEdit && settings.playersInstallCyberware),
       canLevelUp: viewer.isDm || (canEdit && settings.playersLevelUp),
+      canManageInventory: viewer.isDm || canEdit || (isOwner && settings.playersManageInventory),
       isDm: viewer.isDm,
       isOwner,
       readOnly,
@@ -235,7 +239,7 @@ function defaultSheet(input: CreateCharacterInput) {
   const saveProficiencies = Object.fromEntries(ATTRIBUTES.map((a) => [a, false]));
   const skills = Object.fromEntries(SKILLS.map((s) => [s, 0]));
   const specialSkills = Object.fromEntries(SPECIAL_SKILLS.map((s) => [s, { rank: 0, proficiency: 0 }]));
-  const hitDieSize = input.hitDieSize ?? 8;
+  const hitDieSize = input.hitDieSize ?? hitDieForClass(input.characterClass);
   const hpMaxBase = input.hpMaxBase ?? Math.max(1, hitDieSize + abilityModifier(attributes.con));
   return { attributes, saveProficiencies, skills, specialSkills, hitDieSize, hpMaxBase };
 }
@@ -293,7 +297,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -301,7 +305,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   const data: Prisma.CharacterUpdateInput = { version: { increment: 1 } };
   const simple = [
     "name", "species", "characterClass", "subclass", "faction", "alignment", "background", "biography", "portraitUrl",
-    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints",
+    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus",
   ] as const;
   for (const k of simple) {
     if (input[k] !== undefined) (data as Record<string, unknown>)[k] = input[k];
@@ -718,6 +722,8 @@ export async function importCharacter(characterId: string, userId: string, paylo
     input.xp = pick("xp");
     input.credits = pick("credits");
     input.progressionPoints = pick("progressionPoints");
+    input.acBase = pick("acBase");
+    input.acBonus = pick("acBonus");
   }
   const cleaned = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
   if (Object.keys(cleaned).length === 0) throw badRequest("Nothing importable in payload");

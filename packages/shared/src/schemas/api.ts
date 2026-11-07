@@ -47,6 +47,7 @@ export const CampaignSettingsSchema = z.object({
   baseSpeed: z.number().int().min(0).max(100),
   proficiencyTable: z.array(z.number().int().min(0).max(20)).length(20).optional(),
   playersReadOnly: z.boolean(),
+  playersManageInventory: z.boolean(),
   playersEditAttributes: z.boolean(),
   playersInstallCyberware: z.boolean(),
   playersLevelUp: z.boolean(),
@@ -123,6 +124,9 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   hpMaxBase: z.number().int().min(1).max(999).optional(),
   baseSpeed: z.number().int().min(0).max(100).nullable().optional(),
   hitDieSize: z.union([z.literal(6), z.literal(8), z.literal(10), z.literal(12)]).optional(),
+  /** DM only: unarmored base AC and a flat adjustment. */
+  acBase: z.number().int().min(0).max(30).optional(),
+  acBonus: z.number().int().min(-20).max(20).optional(),
   inspiration: z.boolean().optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
   progressionPoints: z.number().int().min(0).max(10_000).optional(),

@@ -31,17 +31,17 @@ export function Panel({
   icon?: string;
 }) {
   return (
-    <section className={clsx("hud-panel", className)} style={{ ["--panel-accent" as string]: accent(color) }}>
+    <section className={clsx("hud-panel min-w-0", className)} style={{ ["--panel-accent" as string]: accent(color) }}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-2 px-3 pt-2.5 pb-1.5">
+        <header className="flex flex-wrap items-center justify-between gap-2 px-3 pt-2.5 pb-1.5">
           <h3 className="hud-title flex items-center gap-2" style={{ color: accent(color) }}>
             {icon && <Icon name={icon} size={13} />}
             {title}
           </h3>
-          {actions && <div className="flex items-center gap-1.5">{actions}</div>}
+          {actions && <div className="flex min-w-0 flex-wrap items-center gap-1.5">{actions}</div>}
         </header>
       )}
-      <div className={clsx("px-3 pb-3", !title && "pt-3", bodyClassName)}>{children}</div>
+      <div className={clsx("@container min-w-0 px-3 pb-3", !title && "pt-3", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -187,9 +187,10 @@ export function Toggle({ on, onChange, label, color = "cyan", disabled, size = 1
 }
 
 // ---------- Badge / Bar ----------
-export function Badge({ children, color = "cyan", className, solid }: { children: ReactNode; color?: string; className?: string; solid?: boolean }) {
+export function Badge({ children, color = "cyan", className, solid, title }: { children: ReactNode; color?: string; className?: string; solid?: boolean; title?: string }) {
   return (
     <span
+      title={title}
       className={clsx("hud-clip-sm inline-flex items-center gap-1 px-1.5 py-0.5 font-display text-[0.55rem] uppercase tracking-[0.14em]", className)}
       style={solid ? { background: accent(color), color: "#04060a" } : { border: `1px solid ${accent(color)}`, color: accent(color), background: `color-mix(in srgb, ${accent(color)} 10%, transparent)` }}
     >

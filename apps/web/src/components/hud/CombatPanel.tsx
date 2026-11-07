@@ -43,6 +43,28 @@ function Row({ icon, color, label, sub, children, className }: { icon: string; c
   );
 }
 
+/** Small signed integer box: type, then blur / Enter to commit. */
+function IntBox({ value, min, max, onCommit, signed, title }: { value: number; min: number; max: number; onCommit: (v: number) => void; signed?: boolean; title?: string }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? (signed ? fmtMod(value) : String(value));
+  return (
+    <input
+      className="valbox w-12 !text-[0.85rem]"
+      value={shown}
+      inputMode="numeric"
+      title={title}
+      onFocus={() => setDraft(String(value))}
+      onChange={(e) => setDraft(e.target.value.replace(/[^0-9-]/g, ""))}
+      onBlur={() => {
+        const n = Number(draft);
+        if (draft !== null && draft !== "" && Number.isInteger(n) && n >= min && n <= max && n !== value) onCommit(n);
+        setDraft(null);
+      }}
+      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+    />
+  );
+}
+
 function CombatTab({ view }: { view: CharacterView }) {
   const { character: c, derived, permissions } = view;
   const hp = useHpAction(c.id);
@@ -131,6 +153,20 @@ function CombatTab({ view }: { view: CharacterView }) {
             <span className={clsx("num text-[1.35rem] font-bold", derived.ac.override && "text-amber")}>{derived.ac.value}</span>
           </StatBreakdown>
         </Row>
+        {permissions.isDm && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-line/50 py-1 pl-1 text-[0.65rem] text-muted" title="DM only: unarmored base AC and a flat adjustment. Armor, cyberware and conditions still add on top.">
+            <span className="font-display text-[0.5rem] tracking-[0.2em] text-crimson">DM</span>
+            <span>base AC</span>
+            <IntBox value={c.acBase} min={0} max={30} onCommit={(v) => update.mutate({ acBase: v })} title="Unarmored base AC (default 10)" />
+            <span>adjust</span>
+            <IntBox value={c.acBonus} min={-20} max={20} signed onCommit={(v) => update.mutate({ acBonus: v })} title="Flat AC adjustment" />
+            {c.acBonus !== 0 && (
+              <button type="button" className="text-dim hover:text-text" onClick={() => update.mutate({ acBonus: 0 })}>
+                clear
+              </button>
+            )}
+          </div>
+        )}
         <Row icon="fast-forward" color="var(--color-crimson)" label="Initiative" sub={breakdownText(derived.initiative)}>
           <StatBreakdown stat={derived.initiative} label="Initiative">
             <span className={clsx("num text-[1.35rem] font-bold", derived.initiative.override && "text-amber")}>{fmtMod(derived.initiative.value)}</span>

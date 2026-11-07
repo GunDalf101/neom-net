@@ -48,11 +48,11 @@ export function CampaignsPage() {
         </Button>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
         <Panel title="Campaigns" icon="network">
           {campaigns.isLoading && <Spinner />}
           {campaigns.data?.length === 0 && <Empty>No campaigns yet. Create one or join with an invite code.</Empty>}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {campaigns.data?.map((c) => (
               <Link key={c.id} to={`/c/${c.id}`} className="hud-panel group block p-3 transition hover:border-cyan" style={{ ["--panel-accent" as string]: c.role === "DM" ? "var(--color-crimson)" : "var(--color-cyan)" }}>
                 <div className="flex items-start justify-between gap-2">

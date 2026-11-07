@@ -83,7 +83,8 @@ export function SettingsPage() {
             <Toggle on={s.playersReadOnly} color="crimson" onChange={(v) => set("playersReadOnly", v)} label={<span className="text-sm text-text">Players are read-only: the DM makes all changes</span>} />
             <p className="mt-1 text-xs text-muted">When on, players can view their sheets, roll dice and write journal notes, but every change to HP, conditions, gear, cyberware, progression, missions and the sheet itself goes through DM//CONTROL. The three player permissions below only apply when this is off.</p>
           </div>
-          <div className="space-y-1.5">
+          <div className="flex flex-col items-start gap-1.5">
+            <Toggle on={s.playersManageInventory} onChange={(v) => set("playersManageInventory", v)} label="Players manage their own inventory even when read-only (equip, use, drop, rename)" />
             <Toggle on={s.specialExpertiseEnabled} onChange={(v) => set("specialExpertiseEnabled", v)} label="Allow expertise on cyberpunk skills" />
             <Toggle on={s.nat20AutoSuccess} onChange={(v) => set("nat20AutoSuccess", v)} label="House rule: natural 20 / 1 auto-succeed / fail on checks with a DC" />
             <Toggle on={s.tempHpStacks} onChange={(v) => set("tempHpStacks", v)} label="Temporary HP stacks (default: highest value wins)" />

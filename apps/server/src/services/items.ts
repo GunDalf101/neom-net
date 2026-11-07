@@ -141,7 +141,10 @@ function requirementContext(full: FullCharacter) {
   };
 }
 
-async function resolve(characterId: string, actor: Actor) {
+/** Actions a player may take on their own gear while the campaign is otherwise DM-controlled. */
+const PLAYER_INVENTORY_ACTIONS = new Set<ItemAction["action"]>(["equip", "unequip", "use", "drop", "rename", "move"]);
+
+async function resolve(characterId: string, actor: Actor, action?: ItemAction["action"]) {
   const full = await loadFull(characterId);
   let isDm = true;
   if (actor.userId) {
@@ -149,13 +152,17 @@ async function resolve(characterId: string, actor: Actor) {
     if (!m) throw forbidden();
     isDm = m.isDm;
     if (!isDm && full.ownerUserId !== actor.userId) throw forbidden("Not your character");
-    if (!isDm && campaignSettings(full.campaign).playersReadOnly) throw forbidden("This campaign is DM-controlled: only the Dungeon Master can change characters");
+    const settings = campaignSettings(full.campaign);
+    if (!isDm && settings.playersReadOnly) {
+      const inventoryOk = settings.playersManageInventory && action !== undefined && PLAYER_INVENTORY_ACTIONS.has(action);
+      if (!inventoryOk) throw forbidden("This campaign is DM-controlled: only the Dungeon Master can change characters");
+    }
   }
   return { full, isDm };
 }
 
 export async function performItemAction(characterId: string, actor: Actor, itemId: string, action: ItemAction, ctx: MutationContext = {}): Promise<CharacterView> {
-  const { full, isDm } = await resolve(characterId, actor);
+  const { full, isDm } = await resolve(characterId, actor, action.action);
   const item = full.items.find((i) => i.id === itemId);
   if (!item) throw notFound("Item");
   const def = item.definition;

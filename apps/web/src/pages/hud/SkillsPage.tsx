@@ -39,7 +39,7 @@ export function SkillsPage() {
       {trees.isLoading && <Spinner />}
       {!tree && !trees.isLoading && <Empty icon="git-branch">The DM has not defined this skill tree yet.</Empty>}
       {tree && (
-        <div className="grid gap-3 lg:grid-cols-[1fr_320px]">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
           <Panel title={`${tree.name} // ${SPECIAL_SKILL_META[branch as keyof typeof SPECIAL_SKILL_META].attribute.toUpperCase()}`} color={color} icon="git-branch">
             <p className="mb-3 text-xs text-muted">{tree.description || SPECIAL_SKILL_META[branch as keyof typeof SPECIAL_SKILL_META].description}</p>
             <TreeGraph tree={tree} view={view} color={color} onUnlock={(id) => unlock.mutate(id)} busy={unlock.isPending} />

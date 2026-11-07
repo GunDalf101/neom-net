@@ -185,17 +185,19 @@ input.valbox:focus {
 /* Segmented tabs inside a panel */
 .seg {
   display: flex;
+  max-width: 100%;
   border: 1px solid rgba(25, 227, 255, 0.35);
   clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
 }
 .seg > button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   font-family: var(--font-display);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 0.4rem;
   color: var(--color-muted);
   border-right: 1px solid rgba(25, 227, 255, 0.2);
 }

@@ -124,6 +124,9 @@ model Character {
   hpMaxBase        Int     @default(10)
   hpTemp           Int     @default(0)
   baseSpeed        Int?
+  /// Unarmored base AC and a flat DM adjustment (see computeDerivedStats).
+  acBase           Int     @default(10)
+  acBonus          Int     @default(0)
   hitDieSize       Int     @default(8)
   hitDiceUsed      Int     @default(0)
   inspiration      Boolean @default(false)

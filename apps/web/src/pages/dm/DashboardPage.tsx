@@ -29,8 +29,8 @@ export function DashboardPage() {
         <Tile icon="hourglass" label="Awaiting DM" value={String(d.pendingActions.length + d.pendingRollRequests.length)} color={d.pendingActions.length ? "amber" : "muted"} sub={`${d.pendingActions.length} rule approvals · ${d.pendingRollRequests.length} roll requests`} />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(320px,1fr)_minmax(480px,1.6fr)]">
-        <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(320px,1fr)_minmax(480px,1.6fr)]">
+        <div className="min-w-0 space-y-3">
           <Panel title="Character roster" icon="users-round">
             {d.characters.length === 0 && <Empty>No characters in this campaign yet.</Empty>}
             <div className="space-y-2">
@@ -107,9 +107,9 @@ export function DashboardPage() {
           </Panel>
         </div>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {sel ? <LiveControls campaignId={campaign.id} characterId={sel} /> : <Empty>Select a character to control.</Empty>}
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <Panel title="Recent rolls" icon="dices" color="crimson">
               {d.recentRolls.length === 0 && <div className="text-xs text-dim">No rolls yet.</div>}
               {d.recentRolls.map((r) => (

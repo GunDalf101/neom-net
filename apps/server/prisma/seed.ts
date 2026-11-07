@@ -506,7 +506,7 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
         "2077. The NEOM arcology hums above the old city. Kobolds & Ferkus Co. runs the lower tiers; Netwatch watches everyone else. You are what slips between.",
       ownerId: dm.id,
       inviteCode: "NIGHTCITY",
-      settings: { defaultAutomationMode: "automatic", playersReadOnly: true, playersInstallCyberware: true, playersEditAttributes: true },
+      settings: { defaultAutomationMode: "automatic", playersReadOnly: true, playersManageInventory: true, playersInstallCyberware: true, playersEditAttributes: true, specialExpertiseEnabled: true },
       members: { create: [{ userId: dm.id, role: "DM" }, { userId: player.id, role: "PLAYER" }] },
     },
   });

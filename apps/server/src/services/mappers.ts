@@ -61,6 +61,8 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     hpMaxBase: c.hpMaxBase,
     hpTemp: c.hpTemp,
     baseSpeed: c.baseSpeed,
+    acBase: c.acBase,
+    acBonus: c.acBonus,
     hitDieSize: c.hitDieSize,
     hitDiceUsed: c.hitDiceUsed,
     inspiration: c.inspiration,

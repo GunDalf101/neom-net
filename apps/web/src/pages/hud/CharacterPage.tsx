@@ -16,7 +16,7 @@ export function CharacterPage() {
   const { view, isDm, campaign } = useHud();
   const tab = useUi((s) => s.mobileTab);
   const setTab = useUi((s) => s.setMobileTab);
-  const col = "lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [scrollbar-gutter:stable]";
+  const col = "min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain lg:pr-1 [scrollbar-gutter:stable]";
 
   return (
     <div className="mx-auto flex h-full max-w-[1900px] flex-col">
@@ -27,16 +27,17 @@ export function CharacterPage() {
           </button>
         ))}
       </div>
-      <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(330px,0.95fr)_minmax(560px,1.45fr)_minmax(330px,0.95fr)]">
+      <div className="grid grid-cols-1 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(330px,0.95fr)_minmax(560px,1.45fr)_minmax(330px,0.95fr)]">
         <div className={clsx("space-y-2", col, tab !== "sheet" && "hidden lg:block")}>
           <IdentityCard view={view} />
           <SheetPanel view={view} />
           <SkillCheckBar view={view} />
         </div>
-        <div className={clsx("min-h-[640px] lg:min-h-0 lg:h-full", tab !== "core" && "hidden lg:block")}>
+        {/* The body figure needs ~520px; on phones it pans sideways instead of breaking the page. */}
+        <div className={clsx("min-h-[640px] min-w-0 overflow-x-auto lg:h-full lg:min-h-0 lg:overflow-visible", tab !== "core" && "hidden lg:block")}>
           <CyberwareDisplay view={view} />
         </div>
-        <div className={clsx("space-y-2", col, tab !== "combat" && "hidden lg:block")}>
+        <div className={clsx("space-y-2 @container", col, tab !== "combat" && "hidden lg:block")}>
           <CombatPanel view={view} />
           <DicePanel view={view} isDm={isDm} />
           <RollHistory campaignId={campaign.id} />
