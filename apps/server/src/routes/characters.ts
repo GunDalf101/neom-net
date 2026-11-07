@@ -70,6 +70,8 @@ charactersRouter.post("/:characterId/assign", wrap<AuthedRequest>(async (req, re
 }));
 charactersRouter.put("/:characterId/portrait", wrap<AuthedRequest>(async (req, res) => res.json(await characters.setPortrait(cid(req), req.user.id, parseBody(SetPortraitSchema, req.body).portraitUrl))));
 charactersRouter.post("/:characterId/share", wrap<AuthedRequest>(async (req, res) => res.json(await characters.createShareLink(cid(req), req.user.id, parseBody(ShareLinkSchema, req.body).rotate))));
+charactersRouter.post("/:characterId/claim-link", wrap<AuthedRequest>(async (req, res) => res.json(await characters.createClaimLink(cid(req), req.user.id, parseBody(ShareLinkSchema, req.body).rotate))));
+charactersRouter.delete("/:characterId/claim-link", wrap<AuthedRequest>(async (req, res) => res.json(await characters.revokeClaimLink(cid(req), req.user.id))));
 charactersRouter.delete("/:characterId/share", wrap<AuthedRequest>(async (req, res) => res.json(await characters.revokeShareLink(cid(req), req.user.id))));
 charactersRouter.get("/:characterId/export", wrap<AuthedRequest>(async (req, res) => res.json(await characters.exportCharacter(cid(req), req.user.id))));
 charactersRouter.post("/:characterId/import", wrap<AuthedRequest>(async (req, res) => {

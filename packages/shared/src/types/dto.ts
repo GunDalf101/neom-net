@@ -211,6 +211,8 @@ export interface CharacterView {
   abilities: AbilityDto[];
   /** Active share-link token (`/s/<token>`); only sent to the owner and the DM. */
   shareToken: string | null;
+  /** Single-use hand-off token; only the DM receives it. */
+  claimToken: string | null;
   permissions: {
     canEdit: boolean;
     canEditAttributes: boolean;
@@ -535,6 +537,22 @@ export interface SharedSheetDto {
       unlocks: { nodeKey: string; rank: number }[];
     };
   };
+}
+
+/** What a signed-in user sees before taking a sheet through a hand-off link (`/claim/<token>`). */
+export interface ClaimInfoDto {
+  campaignId: string;
+  campaignName: string;
+  characterId: string;
+  characterName: string;
+  characterClass: string;
+  level: number;
+  portraitUrl: string | null;
+  currentOwner: string;
+  offeredBy: string;
+  /** The viewer already owns it (link opened twice): just go to the HUD. */
+  alreadyYours: boolean;
+  isMember: boolean;
 }
 
 export interface ApiError {

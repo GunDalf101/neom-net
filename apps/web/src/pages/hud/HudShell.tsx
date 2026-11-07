@@ -7,6 +7,7 @@ import { Button, ConfirmButton, Icon, Modal, Spinner } from "@/components/ui";
 import { PushToggle } from "@/components/PushToggle";
 import { SendSheet } from "@/components/SendSheet";
 import { ShareLink } from "@/components/ShareLink";
+import { HandOffLink } from "@/components/HandOffLink";
 import { downloadSheet, readSheetFile } from "@/lib/sheetFile";
 import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
 import { toast, useUi } from "@/store/ui";
@@ -197,6 +198,8 @@ export function HudShell() {
             <div>
               <div className="hud-title mb-1 text-[0.6rem]">Hand this sheet to a player</div>
               <SendSheet view={view.data} />
+              <div className="mt-2 text-[0.6rem] uppercase tracking-[0.16em] text-muted">or by link</div>
+              <HandOffLink view={view.data} />
             </div>
           )}
           {view.data.permissions.canShare && (

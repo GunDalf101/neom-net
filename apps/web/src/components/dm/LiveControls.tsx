@@ -21,6 +21,7 @@ import {
 } from "@/api/hooks";
 import { ROLL_TARGETS, STAT_TARGETS, TargetSelect } from "@/components/editors/EffectEditors";
 import { Badge, Bar, Button, Field, Icon, Input, Panel, Select, Spinner, Textarea } from "@/components/ui";
+import { HandOffLink } from "@/components/HandOffLink";
 import { SendSheet } from "@/components/SendSheet";
 import { fmtMod } from "@/lib/format";
 
@@ -52,6 +53,7 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
       actions={
         <>
           <SendSheet view={v} compact />
+          <HandOffLink view={v} compact />
           <Link to={`/c/${campaignId}/hud/${c.id}`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]">
             <Icon name="scan-face" size={12} /> Sheet
           </Link>

@@ -88,6 +88,18 @@ for (const o of await dm.call("GET", `/api/campaigns/${cid}/overrides`)) {
   if (o.characterId === charId) await dm.call("DELETE", `/api/campaigns/${cid}/overrides/${o.id}`);
 }
 await dm.call("PATCH", `/api/characters/${charId}`, { name: "Antonio Ettoro", specialSkills: { aura: { rank: 0, proficiency: 0 } } });
+{
+  // Ownership and gear may have been left mid-flight by an interrupted run or a manual hand-off test.
+  const cmembers = (await dm.call("GET", `/api/campaigns/${cid}`)).members;
+  const antonioMember = cmembers.find((m) => m.username === "antonio");
+  const current = await dm.call("GET", `/api/characters/${charId}`);
+  if (antonioMember && current.character.ownerUserId !== antonioMember.userId) await dm.call("POST", `/api/characters/${charId}/assign`, { userId: antonioMember.userId });
+  for (const it of current.items) {
+    const n = it.definition.name;
+    if ((n.includes("Lexington") || n.includes("Trench Coat") || n.includes("Netrunner Deck")) && it.status !== "equipped" && !it.installedSlot) await dm.call("POST", `/api/characters/${charId}/items/${it.id}/action`, { action: "equip" });
+  }
+  if (current.claimToken) await dm.call("DELETE", `/api/characters/${charId}/claim-link`);
+}
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: true, specialExpertiseEnabled: true } });
 
 console.log("    DM-controlled mode: players are read-only by default");
@@ -203,6 +215,43 @@ view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: anton
 check(view.character.ownerUserId === antonioUser.userId, "Sheet handed back to antonio");
 const assignedEvt = (await dm.call("GET", `/api/campaigns/${cid}/events?limit=5&characterId=${charId}`)).find((e) => e.type === "character.assigned");
 check(Boolean(assignedEvt), "character.assigned event logged");
+
+console.log("    DM hands a sheet over by link");
+let claimDenied = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/claim-link`, {});
+} catch (e) {
+  claimDenied = e.status === 403;
+}
+check(claimDenied, "Players cannot create hand-off links (403)");
+view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: dmUser.userId });
+view = await dm.call("POST", `/api/characters/${charId}/claim-link`, {});
+const claimToken = view.claimToken;
+check(typeof claimToken === "string" && claimToken.length >= 16, "DM created a hand-off link");
+check((await player.call("GET", `/api/characters/${charId}`)).claimToken === null, "Players never see the hand-off token");
+const claimer = new Session("CLAIMER");
+const claimerEmail = "e2e-claimer@neom.local";
+try {
+  await claimer.call("POST", "/api/auth/register", { email: claimerEmail, password: "claimer-pass" });
+} catch (e) {
+  if (e.status !== 409) throw e;
+  await claimer.call("POST", "/api/auth/login", { identifier: claimerEmail, password: "claimer-pass" });
+}
+const preview = await claimer.call("GET", `/api/shared/claim/${claimToken}`);
+check(preview.characterName === "Antonio Ettoro" && preview.alreadyYours === false, `Outsider previews the hand-off (member=${preview.isMember})`);
+const taken = await claimer.call("POST", `/api/shared/claim/${claimToken}`);
+check(taken.characterId === charId, "Outsider took the sheet");
+const asClaimer = await claimer.call("GET", `/api/characters/${charId}`);
+check(asClaimer.permissions.isOwner === true && asClaimer.character.ownerUserId !== dmUser.userId, "Claimer is now the owner and a campaign member");
+let reused = false;
+try {
+  await claimer.call("GET", `/api/shared/claim/${claimToken}`);
+} catch (e) {
+  reused = e.status === 404;
+}
+check(reused, "The hand-off link is single-use (404 afterwards)");
+view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: antonioUser.userId });
+check(view.character.ownerUserId === antonioUser.userId, "Sheet handed back to antonio");
 
 console.log("    Push subscriptions register per device");
 const pushCfg = await player.call("GET", "/api/push/config");

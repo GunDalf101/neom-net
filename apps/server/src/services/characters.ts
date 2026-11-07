@@ -13,6 +13,7 @@ import {
   type CharacterSnapshot,
   type CharacterSummaryDto,
   type CharacterView,
+  type ClaimInfoDto,
   type CreateCharacterInput,
   type DerivedStats,
   type EffectSource,
@@ -32,7 +33,7 @@ import type { Prisma } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { prisma, type Db } from "../db.js";
 import { badRequest, conflict, forbidden, notFound, ruleViolation } from "../errors.js";
-import { emitCharacterUpdated, emitToUser } from "../realtime/io.js";
+import { emitCharacterUpdated, emitToCampaign, emitToUser } from "../realtime/io.js";
 import { campaignSettings, getMembership, requireCharacterAccess, requireCharacterEdit, requireMember } from "./access.js";
 import { findConditionDefinition } from "./conditions.js";
 import { logEvent } from "./events.js";
@@ -189,6 +190,7 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
     unlocks: full.unlocks.map((u) => ({ nodeId: u.nodeId, nodeKey: u.node.key, treeId: u.node.treeId, rank: u.rank })),
     abilities,
     shareToken: viewer.isDm || isOwner ? full.shareToken : null,
+    claimToken: viewer.isDm ? full.claimToken : null,
     permissions: {
       canEdit,
       canEditAttributes: viewer.isDm || (canEdit && settings.playersEditAttributes),
@@ -947,4 +949,93 @@ export async function getSharedSheet(token: string, userId: string): Promise<Sha
     derived: derive(full),
     sheet: sheetExport(full),
   };
+}
+
+// ---------- Hand-off links (DM → player) ----------
+
+/** DM only: a single-use link; the signed-in user who opens it takes ownership. Rotating replaces the old link. */
+export async function createClaimLink(characterId: string, userId: string, rotate: boolean): Promise<CharacterView> {
+  const { character, membership } = await requireCharacterAccess(characterId, userId);
+  if (!membership.isDm) throw forbidden("Only the DM can hand off sheets");
+  if (!character.claimToken || rotate) {
+    await prisma.character.update({
+      where: { id: characterId },
+      data: { claimToken: randomBytes(24).toString("base64url"), claimCreatedAt: new Date() },
+    });
+    await logEvent({
+      campaignId: character.campaignId,
+      type: "character.handoff.created",
+      actorUserId: userId,
+      characterId,
+      summary: `A hand-off link for ${character.name} was ${character.claimToken ? "replaced" : "created"}`,
+      visibility: "dm",
+    });
+  }
+  return buildView(await loadFull(characterId), { userId, isDm: true });
+}
+
+export async function revokeClaimLink(characterId: string, userId: string): Promise<CharacterView> {
+  const { character, membership } = await requireCharacterAccess(characterId, userId);
+  if (!membership.isDm) throw forbidden("Only the DM can hand off sheets");
+  if (character.claimToken) {
+    await prisma.character.update({ where: { id: characterId }, data: { claimToken: null, claimCreatedAt: null } });
+    await logEvent({ campaignId: character.campaignId, type: "character.handoff.revoked", actorUserId: userId, characterId, summary: `The hand-off link for ${character.name} was revoked`, visibility: "dm" });
+  }
+  return buildView(await loadFull(characterId), { userId, isDm: true });
+}
+
+async function characterByClaimToken(token: string) {
+  const row = await prisma.character.findUnique({
+    where: { claimToken: token },
+    include: { campaign: { include: { owner: { select: { username: true } } } }, owner: { select: { username: true } } },
+  });
+  if (!row) throw notFound("Hand-off link");
+  return row;
+}
+
+export async function getClaimInfo(token: string, userId: string): Promise<ClaimInfoDto> {
+  const c = await characterByClaimToken(token);
+  const membership = await getMembership(c.campaignId, userId);
+  return {
+    campaignId: c.campaignId,
+    campaignName: c.campaign.name,
+    characterId: c.id,
+    characterName: c.name,
+    characterClass: [c.characterClass, c.subclass].filter(Boolean).join(" // "),
+    level: c.level,
+    portraitUrl: c.portraitUrl,
+    currentOwner: c.owner.username,
+    offeredBy: c.campaign.owner.username,
+    alreadyYours: c.ownerUserId === userId,
+    isMember: Boolean(membership),
+  };
+}
+
+/**
+ * Takes the sheet: joins the campaign as a player when needed, moves ownership to the caller, and burns the
+ * token so the link cannot be reused. The DM is told through the event log and the character update push.
+ */
+export async function claimSheet(token: string, userId: string): Promise<{ campaignId: string; characterId: string }> {
+  const c = await characterByClaimToken(token);
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { username: true } });
+  const membership = await getMembership(c.campaignId, userId);
+  if (!membership) {
+    await prisma.campaignMembership.create({ data: { campaignId: c.campaignId, userId, role: "PLAYER" } });
+    await logEvent({ campaignId: c.campaignId, type: "member.joined", actorUserId: userId, summary: `${user.username} joined through a hand-off link` });
+    emitToCampaign(c.campaignId, "campaign.updated", { campaignId: c.campaignId });
+  }
+  const previousOwner = c.ownerUserId;
+  await prisma.character.update({ where: { id: c.id }, data: { ownerUserId: userId, claimToken: null, claimCreatedAt: null, version: { increment: 1 } } });
+  await logEvent({
+    campaignId: c.campaignId,
+    type: "character.assigned",
+    actorUserId: userId,
+    characterId: c.id,
+    summary: `${user.username} took ${c.name}'s sheet through a hand-off link${previousOwner !== userId ? ` (from ${c.owner.username})` : ""}`,
+    payload: { fromUserId: previousOwner, toUserId: userId, via: "link" },
+    visibility: "owner",
+    ownerUserId: userId,
+  });
+  emitCharacterUpdated(c.campaignId, c.id);
+  return { campaignId: c.campaignId, characterId: c.id };
 }

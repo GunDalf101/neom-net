@@ -8,6 +8,7 @@ import type {
   CampaignSummaryDto,
   CharacterSummaryDto,
   CharacterView,
+  ClaimInfoDto,
   ConditionDefinitionDto,
   ConditionDefinitionInput,
   CreateCharacterInput,
@@ -81,6 +82,7 @@ export const qk = {
   overrides: (cid: string) => ["overrides", cid] as const,
   pushConfig: ["push", "config"] as const,
   shared: (token: string) => ["shared", token] as const,
+  claim: (token: string) => ["claim", token] as const,
 };
 
 function withToast<TData, TVars>(opts?: UseMutationOptions<TData, Error, TVars>): UseMutationOptions<TData, Error, TVars> {
@@ -224,6 +226,23 @@ export const useAssignCharacter = (id: string) => characterMutation<string>(id, 
 export const useSetPortrait = (id: string) => characterMutation<string | null>(id, (portraitUrl) => api.put(`/characters/${id}/portrait`, { portraitUrl }), "Portrait updated")();
 export const useShareLink = (id: string) => characterMutation<{ rotate?: boolean }>(id, (body) => api.post(`/characters/${id}/share`, body))();
 export const useRevokeShareLink = (id: string) => characterMutation<void>(id, () => api.delete(`/characters/${id}/share`), "Share link revoked")();
+export const useClaimLink = (id: string) => characterMutation<{ rotate?: boolean }>(id, (body) => api.post(`/characters/${id}/claim-link`, body))();
+export const useRevokeClaimLink = (id: string) => characterMutation<void>(id, () => api.delete(`/characters/${id}/claim-link`), "Hand-off link revoked")();
+export const useClaimInfo = (token: string) => useQuery({ queryKey: qk.claim(token), queryFn: () => api.get<ClaimInfoDto>(`/shared/claim/${token}`), enabled: Boolean(token), retry: false });
+export function useClaimSheet(token: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: () => api.post<{ campaignId: string; characterId: string }>(`/shared/claim/${token}`),
+      onSuccess: (r) => {
+        qc.invalidateQueries({ queryKey: qk.campaigns });
+        qc.invalidateQueries({ queryKey: qk.characters(r.campaignId) });
+        qc.invalidateQueries({ queryKey: qk.character(r.characterId) });
+        toast("success", "The sheet is yours");
+      },
+    }),
+  );
+}
 export const useSharedSheet = (token: string) => useQuery({ queryKey: qk.shared(token), queryFn: () => api.get<SharedSheetDto>(`/shared/${token}`), enabled: Boolean(token) });
 
 // ---------- Push notifications ----------

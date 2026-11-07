@@ -7,6 +7,7 @@ import { AuthPage } from "@/pages/AuthPage";
 import { CampaignHomePage } from "@/pages/CampaignHomePage";
 import { CampaignsPage } from "@/pages/CampaignsPage";
 import { SharedSheetPage } from "@/pages/SharedSheetPage";
+import { ClaimSheetPage } from "@/pages/ClaimSheetPage";
 import { DmShell } from "@/pages/dm/DmShell";
 import { DashboardPage } from "@/pages/dm/DashboardPage";
 import { WorkshopPage } from "@/pages/dm/WorkshopPage";
@@ -48,6 +49,7 @@ export function App() {
         <Route element={<RequireAuth />}>
           <Route path="/" element={<CampaignsPage />} />
           <Route path="/s/:token" element={<SharedSheetPage />} />
+          <Route path="/claim/:token" element={<ClaimSheetPage />} />
           <Route path="/c/:campaignId" element={<CampaignHomePage />} />
           <Route path="/c/:campaignId/hud/:characterId" element={<HudShell />}>
             <Route index element={<CharacterPage />} />

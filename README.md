@@ -126,6 +126,7 @@ WEB_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:ui
 - Share a sheet by link: HUD gear menu → Share link (owner or DM). Anyone holding the link signs in (once per device) and lands on a read-only copy they can download or import into one of their own characters; campaign members land on the live HUD. "New link" replaces it, "Revoke" kills it. On Android (installed PWA) and desktop Chromium with link capturing, the link opens in the installed app; a browser tab on a device with the app installed shows "Open in app". iOS cannot route links into Home Screen apps.
 - Sessions slide: a device that uses the app at least once every `SESSION_DAYS` (default 30) stays signed in. Deep links survive the login (and register) page.
 - Portraits: tap the camera on the identity card (or drop an image) to upload. Images of any size are downscaled to 640 px WebP in the browser before upload. Owners may change their own portrait even in DM-controlled mode (DM Settings toggle); the DM can also upload NPC portraits.
+- Hand-off by link: the DM creates a one-time link from the live controls ("Hand-off link") or the HUD gear menu. The first player to open it signs in or registers, joins the campaign if needed, becomes the owner of the sheet, and the link stops working. The read-only share link (`/s/<token>`) remains for viewing or importing a copy.
 - Change log: every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
 
 ## What works / what is next

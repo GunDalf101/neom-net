@@ -132,6 +132,9 @@ model Character {
   /// Read-only share link (`/s/<token>`). Null when the sheet is not shared; rotating replaces it.
   shareToken     String?   @unique
   shareCreatedAt DateTime?
+  /// Single-use hand-off link: the signed-in user who opens it becomes the owner (DM only).
+  claimToken     String?   @unique
+  claimCreatedAt DateTime?
 
   // Sheet data read/written together, validated by shared zod schemas.
   attributes        Json
