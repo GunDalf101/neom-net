@@ -166,7 +166,7 @@ export interface DerivedStats {
   maxHp: StatValue;
   capacity: StatValue;
   capacityUsed: number;
-  /** Cyberpsychosis threshold: proficiency × level × 5 + Sanity + Augmentation (house rule). */
+  /** Cyberpsychosis threshold: proficiency × level × 5 + passive Sanity (10 + mod) + passive Augmentation (10 + mod). */
   cyberpsychosisMax: StatValue;
   /** Current load = DM-assigned points + installed cyberware capacity cost, shown as a percentage of the threshold. */
   cyberpsychosis: { points: number; fromCyberware: number; current: number; max: number; percent: number };
@@ -428,13 +428,13 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     .filter((s) => s.occupiesCapacity)
     .reduce((sum, s) => sum + (s.capacityCost ?? 0), 0);
 
-  // Cyberpsychosis (house rule): threshold grows with experience and mental/physical conditioning.
+  // Cyberpsychosis (house rule): threshold grows with experience and the passive scores of Sanity and Augmentation.
   const cyberpsychosisMax = composeStat(
     "cyberpsychosisMax",
     [
       { label: `Proficiency ${pb} × level ${snap.level} × 5`, value: pb * snap.level * 5, kind: "base" },
-      { label: "Sanity", value: specialSkills.sanity.value, kind: "modifier" },
-      { label: "Augmentation", value: specialSkills.augmentation.value, kind: "modifier" },
+      { label: `Passive Sanity (10 ${specialSkills.sanity.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.sanity.value)})`, value: 10 + specialSkills.sanity.value, kind: "modifier" },
+      { label: `Passive Augmentation (10 ${specialSkills.augmentation.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.augmentation.value)})`, value: 10 + specialSkills.augmentation.value, kind: "modifier" },
     ],
     sources,
     overrides,

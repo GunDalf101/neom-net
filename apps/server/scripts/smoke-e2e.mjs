@@ -265,8 +265,8 @@ check(unsubRes.devices === subRes.devices - 1, "Unsubscribed");
 
 console.log("    Cyberpsychosis bar (house rule)");
 const psy = view.derived.cyberpsychosis;
-const expectedMax = view.derived.profBonus.value * view.character.level * 5 + view.derived.specialSkills.sanity.value + view.derived.specialSkills.augmentation.value;
-check(view.derived.cyberpsychosisMax.value === expectedMax && psy.max === expectedMax, `Threshold = prof × level × 5 + Sanity + Augmentation = ${psy.max}`);
+const expectedMax = view.derived.profBonus.value * view.character.level * 5 + (10 + view.derived.specialSkills.sanity.value) + (10 + view.derived.specialSkills.augmentation.value);
+check(view.derived.cyberpsychosisMax.value === expectedMax && psy.max === expectedMax, `Threshold = prof × level × 5 + passive Sanity + passive Augmentation = ${psy.max}`);
 check(psy.fromCyberware === view.derived.capacityUsed && psy.current === psy.points + psy.fromCyberware, `Current ${psy.current} = ${psy.points} pts + ${psy.fromCyberware} cyberware`);
 check(psy.percent === Math.round((psy.current / psy.max) * 100), `Shown as ${psy.percent}%`);
 let psyDenied = false;
