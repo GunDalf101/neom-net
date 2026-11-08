@@ -96,7 +96,7 @@ export function DmShell() {
         <main className="flex-1 p-3">
           <Outlet context={{ campaign: campaign.data, me: me.data, connected } satisfies DmContext} />
         </main>
-        <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber">
+        <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber" fill>
           <ChatPanel campaign={campaign.data} meId={me.data.id} />
         </Drawer>
       </div>

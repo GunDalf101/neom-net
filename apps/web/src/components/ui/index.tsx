@@ -239,7 +239,8 @@ export function Modal({ open, onClose, title, children, width = "max-w-xl", colo
   );
 }
 
-export function Drawer({ open, onClose, title, children, color = "cyan" }: { open: boolean; onClose: () => void; title?: ReactNode; children: ReactNode; color?: string }) {
+/** `fill`: the drawer is exactly the viewport height and its content lays out as a column (chat-style: list scrolls, composer stays put). */
+export function Drawer({ open, onClose, title, children, color = "cyan", fill }: { open: boolean; onClose: () => void; title?: ReactNode; children: ReactNode; color?: string; fill?: boolean }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -248,9 +249,9 @@ export function Drawer({ open, onClose, title, children, color = "cyan" }: { ope
   }, [open, onClose]);
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-[90] flex justify-end bg-black/60 backdrop-blur-[2px]" onMouseDown={onClose}>
-      <div className="h-full w-full max-w-md overflow-y-auto border-l border-line bg-bg-1 p-3" onMouseDown={(e) => e.stopPropagation()}>
-        <Panel title={title} color={color} actions={<Button size="xs" variant="ghost" icon="x" onClick={onClose} aria-label="Close" />}>
+    <div className="fixed inset-0 z-[90] flex h-[100dvh] justify-end bg-black/60 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div className={clsx("h-full w-full max-w-md border-l border-line bg-bg-1 p-3", fill ? "flex flex-col overflow-hidden" : "overflow-y-auto")} style={fill ? { paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))", paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" } : undefined} onMouseDown={(e) => e.stopPropagation()}>
+        <Panel title={title} color={color} className={fill ? "flex min-h-0 flex-1 flex-col" : undefined} bodyClassName={fill ? "flex min-h-0 flex-1 flex-col" : undefined} actions={<Button size="xs" variant="ghost" icon="x" onClick={onClose} aria-label="Close" />}>
           {children}
         </Panel>
       </div>

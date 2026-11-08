@@ -179,7 +179,7 @@ export function HudShell() {
         <Outlet context={ctx} />
       </main>
 
-      <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber">
+      <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber" fill>
         <ChatPanel campaign={campaign.data} meId={me.data.id} />
       </Drawer>
 

@@ -56,6 +56,20 @@ export function ChatPanel({ campaign, meId, initialPeer }: { campaign: CampaignD
       if (box) box.scrollTop = box.scrollHeight - before;
     });
   };
+  // Lazy loading: when the sentinel above the oldest message scrolls into view, fetch the next page.
+  const topRef = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetchingNextPage } = paged;
+  useEffect(() => {
+    const el = topRef.current;
+    const root = scrollBox.current;
+    if (!el || !root || !hasNextPage) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting) && !isFetchingNextPage) void loadOlder();
+    }, { root, rootMargin: "120px 0px 0px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasNextPage, isFetchingNextPage, peer, thread.length]);
 
   const submit = () => {
     const body = draft.trim();
@@ -65,7 +79,7 @@ export function ChatPanel({ campaign, meId, initialPeer }: { campaign: CampaignD
   const peerName = campaign.members.find((m) => m.userId === peer)?.username ?? "—";
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col gap-2 text-sm" data-testid="chat-panel">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 text-sm" data-testid="chat-panel">
       {isDm && (
         <div className="flex flex-wrap gap-1">
           {others.map((m) => {
@@ -84,10 +98,8 @@ export function ChatPanel({ campaign, meId, initialPeer }: { campaign: CampaignD
       <div className="hud-title text-[0.6rem]">{isDm ? `Thread with ${peerName}` : `Your line to the DM (${peerName})`}</div>
       <div ref={scrollBox} className="hud-panel min-h-0 flex-1 overflow-y-auto p-2" style={{ ["--panel-accent" as string]: "var(--color-amber)" }} data-testid="chat-scroll">
         {paged.hasNextPage && (
-          <div className="mb-2 text-center">
-            <Button size="xs" variant="ghost" icon="history" disabled={paged.isFetchingNextPage} onClick={() => void loadOlder()} data-testid="chat-load-older">
-              {paged.isFetchingNextPage ? "Loading…" : `Load older (${CHAT_PAGE} at a time)`}
-            </Button>
+          <div ref={topRef} className="mb-2 flex items-center justify-center gap-2 py-1 text-[0.6rem] uppercase tracking-wider text-dim" data-testid="chat-load-older" aria-live="polite">
+            <Icon name="loader" size={11} className={paged.isFetchingNextPage ? "animate-spin" : ""} /> {paged.isFetchingNextPage ? "Loading older messages…" : "Scroll up for older messages"}
           </div>
         )}
         {!paged.hasNextPage && thread.length >= CHAT_PAGE && <div className="mb-2 text-center text-[0.6rem] uppercase tracking-wider text-dim">Beginning of the thread</div>}
