@@ -69,6 +69,7 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     deathSaveSuccess: c.deathSaveSuccess,
     deathSaveFailure: c.deathSaveFailure,
     credits: c.credits,
+    cyberpsychosis: c.cyberpsychosis,
     progressionPoints: c.progressionPoints,
     version: c.version,
     createdAt: iso(c.createdAt),

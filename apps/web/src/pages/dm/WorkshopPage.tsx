@@ -179,7 +179,7 @@ function ItemsWorkshop() {
                   <option value="0">No (DM only)</option>
                 </Select>
               </Field>
-              <Field label="Price (¢)">
+              <Field label="Price (₭ kamas)">
                 <Input type="number" min={0} value={form.price} onChange={(e) => set("price", Number(e.target.value))} />
               </Field>
               <Field label="Weight (kg)">

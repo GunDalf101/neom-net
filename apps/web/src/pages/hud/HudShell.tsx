@@ -226,7 +226,7 @@ export function HudShell() {
             </div>
             <p className="mt-1 text-[0.65rem] text-muted">
               Export writes a JSON file with the full sheet plus a list of items, conditions and unlocks. Import restores identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die
-              {view.data.permissions.isDm ? ", and as DM also level, XP, credits and progression points" : ""}; gear and unlocks stay as they are.
+              {view.data.permissions.isDm ? ", and as DM also level, XP, kamas and progression points" : ""}; gear and unlocks stay as they are.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

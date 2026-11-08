@@ -55,7 +55,7 @@ export function MissionsPage() {
                     <div className="mt-2 flex flex-wrap items-center gap-1 text-[0.65rem]">
                       <Icon name="gift" size={12} className="text-amber" />
                       {m.rewards.xp > 0 && <Badge color="blue">{m.rewards.xp} XP</Badge>}
-                      {m.rewards.credits > 0 && <Badge color="amber">{m.rewards.credits} ¢</Badge>}
+                      {m.rewards.credits > 0 && <Badge color="amber">{m.rewards.credits} ₭</Badge>}
                       {m.rewards.progressionPoints > 0 && <Badge color="cyan">{m.rewards.progressionPoints} pts</Badge>}
                       {m.rewards.itemDefinitionIds.map((id) => (
                         <Badge key={id} color="violet">

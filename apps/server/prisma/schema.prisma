@@ -155,6 +155,8 @@ model Character {
   deathSaveSuccess Int     @default(0)
   deathSaveFailure Int     @default(0)
   credits          Int     @default(0)
+  /// Cyberpsychosis points the DM has assigned (trauma, botched installs); installed cyberware load is added on top.
+  cyberpsychosis   Int     @default(0)
   progressionPoints Int    @default(0)
 
   /// Optimistic concurrency token, bumped on every mutation.

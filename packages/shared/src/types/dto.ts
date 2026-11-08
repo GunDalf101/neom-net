@@ -87,6 +87,7 @@ export interface CharacterCore {
   deathSaveSuccess: number;
   deathSaveFailure: number;
   credits: number;
+  cyberpsychosis: number;
   progressionPoints: number;
   version: number;
   createdAt: string;
@@ -236,6 +237,7 @@ export interface CharacterSummaryDto {
   campaignId: string;
   ownerUserId: string;
   ownerUsername: string;
+  cyberpsychosisPercent: number;
   name: string;
   species: string;
   characterClass: string;

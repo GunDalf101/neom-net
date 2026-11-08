@@ -112,7 +112,7 @@ function MissionsBoard() {
               <Field label="XP reward">
                 <Input type="number" min={0} value={form.rewards.xp} onChange={(e) => setForm({ ...form, rewards: { ...form.rewards, xp: Number(e.target.value) } })} />
               </Field>
-              <Field label="Credits">
+              <Field label="Kamas">
                 <Input type="number" min={0} value={form.rewards.credits} onChange={(e) => setForm({ ...form, rewards: { ...form.rewards, credits: Number(e.target.value) } })} />
               </Field>
               <Field label="Progression points">

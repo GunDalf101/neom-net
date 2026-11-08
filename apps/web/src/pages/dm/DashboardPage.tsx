@@ -54,6 +54,9 @@ export function DashboardPage() {
                       <span className="num text-cyan">
                         {ch.capacityUsed}/{ch.capacity}
                       </span>
+                      <span className={clsx("num", ch.cyberpsychosisPercent >= 75 ? "text-amber" : "text-violet")} title="Cyberpsychosis">
+                        Ψ {ch.cyberpsychosisPercent}%
+                      </span>
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-1">
                       {ch.conditions.map((c) => (

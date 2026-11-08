@@ -69,7 +69,7 @@ export function CyberwarePage() {
                       <span className="flex shrink-0 flex-col items-end gap-0.5">
                         <Badge color={RARITY_COLOR[d.rarity]}>{rarityName(d.rarity)}</Badge>
                         <span className="num text-muted">
-                          {d.price.toLocaleString()} ¢ · cap {d.capacityCost}
+                          {d.price.toLocaleString()} ₭ · cap {d.capacityCost}
                         </span>
                       </span>
                     </div>

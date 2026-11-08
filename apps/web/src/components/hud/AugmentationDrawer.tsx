@@ -143,7 +143,7 @@ export function AugDetails({ item, view, children }: { item: ItemInstanceDto; vi
         <dt className="text-dim">Capacity cost</dt>
         <dd className="num">{d.capacityCost}</dd>
         <dt className="text-dim">Price</dt>
-        <dd className="num">{d.price.toLocaleString()} ¢</dd>
+        <dd className="num">{d.price.toLocaleString()} ₭</dd>
         {d.weight > 0 && (
           <>
             <dt className="text-dim">Weight</dt>

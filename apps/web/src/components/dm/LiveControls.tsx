@@ -60,12 +60,13 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
         </>
       }
     >
-      <div className="mb-2 grid grid-cols-4 gap-2 text-xs sm:grid-cols-6">
+      <div className="mb-2 grid grid-cols-4 gap-2 text-xs sm:grid-cols-7">
         <Stat label="HP" value={`${c.hpCurrent}/${derived.maxHp.value}${c.hpTemp ? ` +${c.hpTemp}` : ""}`} color="crimson" />
         <Stat label="AC" value={String(derived.ac.value)} color="blue" overridden={Boolean(derived.ac.override)} />
         <Stat label="Init" value={fmtMod(derived.initiative.value)} color="crimson" />
         <Stat label="Speed" value={`${derived.speed.value} m`} color="crimson" />
         <Stat label="Cap" value={`${derived.capacityUsed}/${derived.capacity.value}`} color="cyan" />
+        <Stat label="Psych" value={`${derived.cyberpsychosis.percent}%`} color={derived.cyberpsychosis.percent >= 75 ? "amber" : "violet"} />
         <Stat label="Level" value={`${c.level} · ${c.xp} xp`} color="muted" />
       </div>
       <Bar value={c.hpCurrent} max={derived.maxHp.value} color="crimson" className="mb-3" />
@@ -78,7 +79,7 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
           </button>
         ))}
       </div>
-      {tab === "hp" && <HpTab characterId={c.id} acBase={c.acBase} acBonus={c.acBonus} ac={derived.ac.value} />}
+      {tab === "hp" && <HpTab characterId={c.id} acBase={c.acBase} acBonus={c.acBonus} ac={derived.ac.value} psychPoints={c.cyberpsychosis} psych={derived.cyberpsychosis} />}
       {tab === "status" && <StatusTab campaignId={campaignId} view={v} />}
       {tab === "grant" && <GrantTab campaignId={campaignId} characterId={c.id} />}
       {tab === "override" && <OverrideTab campaignId={campaignId} view={v} />}
@@ -99,7 +100,7 @@ function Stat({ label, value, color, overridden }: { label: string; value: strin
   );
 }
 
-function HpTab({ characterId, acBase, acBonus, ac }: { characterId: string; acBase: number; acBonus: number; ac: number }) {
+function HpTab({ characterId, acBase, acBonus, ac, psychPoints, psych }: { characterId: string; acBase: number; acBonus: number; ac: number; psychPoints: number; psych: { current: number; max: number; percent: number; fromCyberware: number } }) {
   const hp = useHpAction(characterId);
   const update = useUpdateCharacter(characterId);
   const [amount, setAmount] = useState(6);
@@ -147,6 +148,12 @@ function HpTab({ characterId, acBase, acBonus, ac }: { characterId: string; acBa
         <span className="text-muted">Set base max HP</span>
         <Input type="number" min={1} className="num !w-20" placeholder="max" onKeyDown={(e) => e.key === "Enter" && hp.mutate({ action: "setMax", value: Number((e.target as HTMLInputElement).value) })} />
         <span className="text-dim">Enter to apply</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
+        <span className="text-muted">Cyberpsychosis</span>
+        <span className="num font-bold text-violet">{psych.percent}%</span>
+        <span className="text-dim">{psych.current} / {psych.max} · {psych.fromCyberware} from cyberware + points</span>
+        <Input type="number" min={0} max={999} key={`p${psychPoints}`} defaultValue={psychPoints} className="num !w-16" title="Cyberpsychosis points (trauma, botched installs)" onBlur={(e) => Number(e.target.value) !== psychPoints && update.mutate({ cyberpsychosis: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
         <span className="text-muted">Armor class</span>
@@ -216,7 +223,7 @@ function GrantTab({ campaignId, characterId }: { campaignId: string; characterId
           <Select value={resource} onChange={(e) => setResource(e.target.value as typeof resource)} className="!w-40">
             <option value="xp">Experience</option>
             <option value="progressionPoints">Progression points</option>
-            <option value="credits">Credits</option>
+            <option value="credits">Kamas</option>
           </Select>
         </Field>
         <Field label="Amount (negative removes)">

@@ -127,7 +127,7 @@ export function InventoryPage() {
   );
 }
 
-/** Credits are DM-controlled: players see a locked read-out, the DM can adjust or set them (logged as grants). */
+/** Kamas (currency) are DM-controlled: players see a locked read-out, the DM can adjust or set them (logged as grants). */
 function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
   const { character: c, permissions } = view;
   const grant = useDmGrant(c.campaignId);
@@ -139,7 +139,7 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
       <div className="flex items-center justify-between">
         <span className="font-display text-[0.95rem] font-bold uppercase tracking-[0.08em] text-text">Currency</span>
         {!permissions.isDm && (
-          <span className="flex items-center gap-1 text-[0.6rem] uppercase tracking-wider text-muted" title="Only the DM can change credits">
+          <span className="flex items-center gap-1 text-[0.6rem] uppercase tracking-wider text-muted" title="Only the DM can change kamas">
             <Icon name="lock" size={11} /> DM controlled
           </span>
         )}
@@ -148,7 +148,7 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
         <span className="tile" style={{ ["--tile-color" as string]: "var(--color-amber)" }}>
           <Icon name="coins" size={20} />
         </span>
-        <span className="font-display text-[0.9rem] font-bold uppercase tracking-[0.1em] text-amber">Credits</span>
+        <span className="font-display text-[0.9rem] font-bold uppercase tracking-[0.1em] text-amber">Kamas</span>
         <span className="num ml-auto text-[1.6rem] font-black text-amber">{c.credits.toLocaleString()}</span>
       </div>
       {permissions.isDm && (
@@ -317,7 +317,7 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
         <dt className="text-muted">Weight</dt>
         <dd className="num text-text">{d.weight} kg</dd>
         <dt className="text-muted">Value</dt>
-        <dd className="num text-text">{d.price.toLocaleString()} credits</dd>
+        <dd className="num text-text">{d.price.toLocaleString()} ₭</dd>
         {item.quantity > 1 && (
           <>
             <dt className="text-muted">Quantity</dt>

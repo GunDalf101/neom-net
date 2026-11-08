@@ -197,13 +197,26 @@ function CombatTab({ view }: { view: CharacterView }) {
             </button>
           )}
         </Row>
-        <Row icon="sparkle" color="var(--color-amber)" label="Inspiration">
-          <button type="button" disabled={!canEdit} onClick={() => update.mutate({ inspiration: !c.inspiration })} className="flex items-center">
+        <Row icon="brain-circuit" color="var(--color-violet)" label="Cyberpsychosis" sub={`${derived.cyberpsychosis.current} / ${derived.cyberpsychosis.max} · ${derived.cyberpsychosis.fromCyberware} from cyberware${derived.cyberpsychosis.points ? ` + ${derived.cyberpsychosis.points} pts` : ""}`} className="!items-start">
+          <div className="flex w-36 flex-col items-end gap-1">
+            <StatBreakdown stat={derived.cyberpsychosisMax} label="Cyberpsychosis threshold" format={(n) => String(n)}>
+              <span className={clsx("num text-[1.35rem] font-bold leading-none", derived.cyberpsychosis.percent >= 100 ? "text-crimson" : derived.cyberpsychosis.percent >= 75 ? "text-amber" : "text-violet")}>
+                {derived.cyberpsychosis.percent}%
+              </span>
+            </StatBreakdown>
+            <Bar value={Math.min(derived.cyberpsychosis.current, derived.cyberpsychosis.max)} max={derived.cyberpsychosis.max} color={derived.cyberpsychosis.percent >= 100 ? "crimson" : derived.cyberpsychosis.percent >= 75 ? "amber" : "violet"} className="w-full" height={6} />
+            {permissions.isDm && (
+              <span className="flex items-center gap-1 text-[0.6rem] text-muted" title="DM: cyberpsychosis points from trauma, botched installs, etc. Cyberware load is added automatically.">
+                <span className="font-display text-[0.5rem] tracking-[0.2em] text-crimson">DM</span> pts
+                <IntBox value={c.cyberpsychosis} min={0} max={999} onCommit={(v) => update.mutate({ cyberpsychosis: v })} title="Cyberpsychosis points" />
+              </span>
+            )}
+          </div>
+        </Row>
+        <Row icon="sparkle" color="var(--color-amber)" label="Inspiration" sub={`₭ ${c.credits.toLocaleString()} kamas · ${c.progressionPoints} pts`}>
+          <button type="button" disabled={!canEdit} onClick={() => update.mutate({ inspiration: !c.inspiration })} className="flex items-center" title="Inspiration">
             <span className={clsx("sq-check h-5 w-5", c.inspiration && "on")} style={{ ["--check-color" as string]: "var(--color-amber)" }} />
           </button>
-          <span className="ml-3 text-[0.7rem] text-muted">
-            Credits <span className="num text-amber">{c.credits.toLocaleString()}</span> · Points <span className="num text-cyan">{c.progressionPoints}</span>
-          </span>
           {canEdit && (
             <span className="ml-auto flex gap-1">
               <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "short" })}>

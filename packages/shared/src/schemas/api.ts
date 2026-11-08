@@ -128,6 +128,8 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   /** DM only: unarmored base AC and a flat adjustment. */
   acBase: z.number().int().min(0).max(30).optional(),
   acBonus: z.number().int().min(-20).max(20).optional(),
+  /** DM only: cyberpsychosis points (cyberware load is added automatically). */
+  cyberpsychosis: z.number().int().min(0).max(999).optional(),
   inspiration: z.boolean().optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
   progressionPoints: z.number().int().min(0).max(10_000).optional(),

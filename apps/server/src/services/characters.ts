@@ -134,6 +134,7 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
     baseSpeed: full.baseSpeed ?? undefined,
     acBase: full.acBase,
     acBonus: full.acBonus,
+    cyberpsychosisPoints: full.cyberpsychosis,
     sources,
     overrides: full.overrides.map((o) => ({ id: o.id, target: o.target, value: o.value, reason: o.reason })),
     settings,
@@ -212,6 +213,7 @@ export function toSummary(full: FullCharacter, derived = derive(full)): Characte
     campaignId: full.campaignId,
     ownerUserId: full.ownerUserId,
     ownerUsername: full.owner.username,
+    cyberpsychosisPercent: derived.cyberpsychosis.percent,
     name: full.name,
     species: full.species,
     characterClass: full.characterClass,
@@ -294,7 +296,7 @@ const SHEET_LABELS: Record<string, string> = {
   name: "name", species: "species", characterClass: "class", subclass: "subclass", faction: "faction", alignment: "alignment",
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
-  acBase: "base AC", acBonus: "AC adjustment",
+  acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -338,7 +340,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -346,7 +348,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   const data: Prisma.CharacterUpdateInput = { version: { increment: 1 } };
   const simple = [
     "name", "species", "characterClass", "subclass", "faction", "alignment", "background", "biography", "portraitUrl",
-    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus",
+    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis",
   ] as const;
   for (const k of simple) {
     if (input[k] !== undefined) (data as Record<string, unknown>)[k] = input[k];
@@ -770,6 +772,7 @@ export async function importCharacter(characterId: string, userId: string, paylo
     input.progressionPoints = pick("progressionPoints");
     input.acBase = pick("acBase");
     input.acBonus = pick("acBonus");
+    input.cyberpsychosis = pick("cyberpsychosis");
   }
   const cleaned = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
   if (Object.keys(cleaned).length === 0) throw badRequest("Nothing importable in payload");

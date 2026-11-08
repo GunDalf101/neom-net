@@ -3,8 +3,8 @@ import type { SheetChange } from "@neom/shared";
 const LABELS: Record<string, string> = {
   name: "Name", species: "Species", characterClass: "Class", subclass: "Subclass", faction: "Faction", alignment: "Alignment",
   background: "Background", biography: "Biography", portraitUrl: "Portrait", level: "Level", xp: "XP", hpMaxBase: "Base max HP",
-  baseSpeed: "Base speed", hitDieSize: "Hit die", inspiration: "Inspiration", credits: "Credits", progressionPoints: "Points",
-  acBase: "Base AC", acBonus: "AC adjustment", attributes: "Attribute", skills: "Skill", saveProficiencies: "Save", specialSkills: "Cyberpunk skill",
+  baseSpeed: "Base speed", hitDieSize: "Hit die", inspiration: "Inspiration", progressionPoints: "Points",
+  acBase: "Base AC", acBonus: "AC adjustment", cyberpsychosis: "Cyberpsychosis points", credits: "Kamas", attributes: "Attribute", skills: "Skill", saveProficiencies: "Save", specialSkills: "Cyberpunk skill",
 };
 const PROF = ["none", "proficient", "expertise"];
 

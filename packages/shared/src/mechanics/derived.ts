@@ -106,6 +106,8 @@ export interface CharacterSnapshot {
   acBase?: number;
   /** Flat DM adjustment to AC, applied after every other source. */
   acBonus?: number;
+  /** Cyberpsychosis points assigned by the DM; installed cyberware load is added automatically. */
+  cyberpsychosisPoints?: number;
   sources: EffectSource[];
   overrides: StatOverride[];
   settings: CampaignRuleSettings;
@@ -164,6 +166,10 @@ export interface DerivedStats {
   maxHp: StatValue;
   capacity: StatValue;
   capacityUsed: number;
+  /** Cyberpsychosis threshold: proficiency × level × 5 + Sanity + Augmentation (house rule). */
+  cyberpsychosisMax: StatValue;
+  /** Current load = DM-assigned points + installed cyberware capacity cost, shown as a percentage of the threshold. */
+  cyberpsychosis: { points: number; fromCyberware: number; current: number; max: number; percent: number };
   rollFlags: RollFlag[];
   resistances: ResistanceEntry[];
   senses: { name: string; rangeMeters?: number; sourceName: string }[];
@@ -422,6 +428,22 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     .filter((s) => s.occupiesCapacity)
     .reduce((sum, s) => sum + (s.capacityCost ?? 0), 0);
 
+  // Cyberpsychosis (house rule): threshold grows with experience and mental/physical conditioning.
+  const cyberpsychosisMax = composeStat(
+    "cyberpsychosisMax",
+    [
+      { label: `Proficiency ${pb} × level ${snap.level} × 5`, value: pb * snap.level * 5, kind: "base" },
+      { label: "Sanity", value: specialSkills.sanity.value, kind: "modifier" },
+      { label: "Augmentation", value: specialSkills.augmentation.value, kind: "modifier" },
+    ],
+    sources,
+    overrides,
+  );
+  const psychPoints = Math.max(0, snap.cyberpsychosisPoints ?? 0);
+  const psychMax = Math.max(1, cyberpsychosisMax.value);
+  const psychCurrent = psychPoints + capacityUsed;
+  const cyberpsychosis = { points: psychPoints, fromCyberware: capacityUsed, current: psychCurrent, max: psychMax, percent: Math.round((psychCurrent / psychMax) * 100) };
+
   // Flags and traits
   const rollFlags: RollFlag[] = [];
   const resistances: ResistanceEntry[] = [];
@@ -466,6 +488,8 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     maxHp,
     capacity,
     capacityUsed,
+    cyberpsychosisMax,
+    cyberpsychosis,
     rollFlags,
     resistances,
     senses,

@@ -99,6 +99,7 @@ await dm.call("PATCH", `/api/characters/${charId}`, { name: "Antonio Ettoro", sp
     if ((n.includes("Lexington") || n.includes("Trench Coat") || n.includes("Netrunner Deck")) && it.status !== "equipped" && !it.installedSlot) await dm.call("POST", `/api/characters/${charId}/items/${it.id}/action`, { action: "equip" });
   }
   if (current.claimToken) await dm.call("DELETE", `/api/characters/${charId}/claim-link`);
+  if (current.character.cyberpsychosis !== 0) await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 0 });
 }
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: true, specialExpertiseEnabled: true } });
 
@@ -261,6 +262,24 @@ const subRes = await player.call("POST", "/api/push/subscribe", { endpoint: fake
 check(subRes.ok === true && subRes.devices >= 1, `Subscribed (${subRes.devices} device)`);
 const unsubRes = await player.call("POST", "/api/push/unsubscribe", { endpoint: fakeEndpoint });
 check(unsubRes.devices === subRes.devices - 1, "Unsubscribed");
+
+console.log("    Cyberpsychosis bar (house rule)");
+const psy = view.derived.cyberpsychosis;
+const expectedMax = view.derived.profBonus.value * view.character.level * 5 + view.derived.specialSkills.sanity.value + view.derived.specialSkills.augmentation.value;
+check(view.derived.cyberpsychosisMax.value === expectedMax && psy.max === expectedMax, `Threshold = prof × level × 5 + Sanity + Augmentation = ${psy.max}`);
+check(psy.fromCyberware === view.derived.capacityUsed && psy.current === psy.points + psy.fromCyberware, `Current ${psy.current} = ${psy.points} pts + ${psy.fromCyberware} cyberware`);
+check(psy.percent === Math.round((psy.current / psy.max) * 100), `Shown as ${psy.percent}%`);
+let psyDenied = false;
+try {
+  await player.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 3 });
+} catch (e) {
+  psyDenied = e.status === 403;
+}
+check(psyDenied, "Players cannot set cyberpsychosis points (403)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 5 });
+check(view.derived.cyberpsychosis.points === 5 && view.derived.cyberpsychosis.current === psy.current + 5, `DM adds 5 points → ${view.derived.cyberpsychosis.percent}%`);
+view = await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 0 });
+check(view.derived.cyberpsychosis.points === 0, "Points reset");
 
 console.log("    Hit die follows the class");
 const barb = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Krak (E2E)", characterClass: "Barbarian // Street Brawler", attributes: { str: 16, dex: 12, con: 14, int: 8, wis: 10, cha: 8 } });
