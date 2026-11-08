@@ -1,7 +1,7 @@
 import type { CampaignDto, MessageDto } from "@neom/shared";
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMarkMessagesRead, useMessages, useSendMessage } from "@/api/hooks";
+import { CHAT_PAGE, useMarkMessagesRead, useMessageThread, useMessages, useSendMessage } from "@/api/hooks";
 import { Button, Icon, Select, Textarea } from "@/components/ui";
 
 function stamp(iso: string): string {
@@ -26,26 +26,36 @@ export function ChatPanel({ campaign, meId, initialPeer }: { campaign: CampaignD
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
-  const all = messages.data ?? [];
-  const byPeer = useMemo(() => {
-    const map = new Map<string, MessageDto[]>();
-    for (const m of all) {
-      const other = m.fromUserId === meId ? m.toUserId : m.toUserId === meId ? m.fromUserId : null;
-      if (!other) continue;
-      (map.get(other) ?? map.set(other, []).get(other)!).push(m);
-    }
-    for (const list of map.values()) list.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return map;
-  }, [all, meId]);
-  const thread = peer ? byPeer.get(peer) ?? [] : [];
-  const unreadIn = (id: string) => (byPeer.get(id) ?? []).filter((m) => m.toUserId === meId && !m.readAt).length;
+  // Unread counts per tab come from the inbox (latest 200); the open thread is paged separately.
+  const unreadIn = (id: string) => (messages.data ?? []).filter((m) => m.fromUserId === id && m.toUserId === meId && !m.readAt).length;
+  const paged = useMessageThread(campaign.id, peer);
+  const thread = useMemo<MessageDto[]>(() => {
+    const seen = new Set<string>();
+    const out: MessageDto[] = [];
+    for (const page of paged.data?.pages ?? []) for (const m of page) if (!seen.has(m.id)) { seen.add(m.id); out.push(m); }
+    return out.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }, [paged.data]);
+  const scrollBox = useRef<HTMLDivElement>(null);
+  const newestId = thread[thread.length - 1]?.id;
 
   useEffect(() => {
     const unread = thread.filter((m) => m.toUserId === meId && !m.readAt).map((m) => m.id);
     if (unread.length) markRead.mutate(unread);
-    endRef.current?.scrollIntoView({ block: "end" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [peer, thread.length]);
+  }, [peer, newestId, thread.length]);
+  // Stick to the bottom when a new message arrives or the thread changes (not when older pages are prepended).
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [peer, newestId]);
+
+  const loadOlder = async () => {
+    const box = scrollBox.current;
+    const before = box ? box.scrollHeight - box.scrollTop : 0;
+    await paged.fetchNextPage();
+    requestAnimationFrame(() => {
+      if (box) box.scrollTop = box.scrollHeight - before;
+    });
+  };
 
   const submit = () => {
     const body = draft.trim();
@@ -72,9 +82,17 @@ export function ChatPanel({ campaign, meId, initialPeer }: { campaign: CampaignD
         </div>
       )}
       <div className="hud-title text-[0.6rem]">{isDm ? `Thread with ${peerName}` : `Your line to the DM (${peerName})`}</div>
-      <div className="hud-panel min-h-0 flex-1 overflow-y-auto p-2" style={{ ["--panel-accent" as string]: "var(--color-amber)" }}>
-        {messages.isLoading && <div className="text-xs text-dim">Loading…</div>}
-        {!messages.isLoading && thread.length === 0 && <div className="py-6 text-center text-xs text-dim">No messages yet. Say something.</div>}
+      <div ref={scrollBox} className="hud-panel min-h-0 flex-1 overflow-y-auto p-2" style={{ ["--panel-accent" as string]: "var(--color-amber)" }} data-testid="chat-scroll">
+        {paged.hasNextPage && (
+          <div className="mb-2 text-center">
+            <Button size="xs" variant="ghost" icon="history" disabled={paged.isFetchingNextPage} onClick={() => void loadOlder()} data-testid="chat-load-older">
+              {paged.isFetchingNextPage ? "Loading…" : `Load older (${CHAT_PAGE} at a time)`}
+            </Button>
+          </div>
+        )}
+        {!paged.hasNextPage && thread.length >= CHAT_PAGE && <div className="mb-2 text-center text-[0.6rem] uppercase tracking-wider text-dim">Beginning of the thread</div>}
+        {paged.isLoading && <div className="text-xs text-dim">Loading…</div>}
+        {!paged.isLoading && peer && thread.length === 0 && <div className="py-6 text-center text-xs text-dim">No messages yet. Say something.</div>}
         <ul className="space-y-1.5">
           {thread.map((m) => {
             const mine = m.fromUserId === meId;

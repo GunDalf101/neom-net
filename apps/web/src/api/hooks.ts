@@ -49,7 +49,7 @@ import type {
   GraphValidation,
   RuleCharacterState,
 } from "@neom/shared";
-import { useMutation, useQuery, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
 import { api, errorMessage } from "./client";
 import { subscribePush, unsubscribePush } from "@/lib/push";
 import { toast } from "@/store/ui";
@@ -503,7 +503,17 @@ export function useDmGrant(cid: string) {
     }),
   );
 }
-export const useMessages = (cid: string) => useQuery({ queryKey: qk.messages(cid), queryFn: () => api.get<MessageDto[]>(`/campaigns/${cid}/messages`) });
+export const useMessages = (cid: string) => useQuery({ queryKey: qk.messages(cid), queryFn: () => api.get<MessageDto[]>(`/campaigns/${cid}/messages?limit=200`) });
+export const CHAT_PAGE = 40;
+/** One chat thread, newest page first; `fetchNextPage` loads older messages (cursor = oldest createdAt). */
+export const useMessageThread = (cid: string, peerUserId: string | null) =>
+  useInfiniteQuery({
+    queryKey: [...qk.messages(cid), "thread", peerUserId ?? ""],
+    enabled: Boolean(peerUserId),
+    initialPageParam: null as string | null,
+    queryFn: ({ pageParam }) => api.get<MessageDto[]>(`/campaigns/${cid}/messages?limit=${CHAT_PAGE}&peer=${encodeURIComponent(peerUserId ?? "")}${pageParam ? `&before=${encodeURIComponent(pageParam)}` : ""}`),
+    getNextPageParam: (last) => (last.length === CHAT_PAGE ? last[last.length - 1]!.createdAt : undefined),
+  });
 export function useSendMessage(cid: string) {
   const qc = useQueryClient();
   return useMutation(

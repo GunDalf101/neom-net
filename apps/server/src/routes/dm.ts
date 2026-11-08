@@ -1,5 +1,6 @@
 import { DmGrantSchema, DmMessageSchema, MarkMessagesReadSchema, OverrideInputSchema, RollRequestCreateSchema } from "@neom/shared";
 import { Router } from "express";
+import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { prisma } from "../db.js";
 import { wrap } from "../errors.js";
@@ -51,9 +52,16 @@ dmRouter.post("/:campaignId/messages/read", wrap<AuthedRequest>(async (req, res)
   await requireMember(pid(req), req.user.id);
   res.json(await dm.markMessagesRead(pid(req), req.user.id, parseBody(MarkMessagesReadSchema, req.body).ids));
 }));
+const MessagesQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  before: z.coerce.date().optional(),
+  peer: z.string().min(1).optional(),
+});
+/** `?limit=50&before=<ISO createdAt>&peer=<userId>` pages one thread (or the whole inbox) newest first. */
 dmRouter.get("/:campaignId/messages", wrap<AuthedRequest>(async (req, res) => {
   const m = await requireMember(pid(req), req.user.id);
-  res.json(await dm.listMessages(pid(req), { userId: req.user.id, isDm: m.isDm }));
+  const q = parseBody(MessagesQuery, req.query);
+  res.json(await dm.listMessages(pid(req), { userId: req.user.id, isDm: m.isDm }, { limit: q.limit, before: q.before, peerUserId: q.peer }));
 }));
 
 dmRouter.post("/:campaignId/roll-requests", wrap<AuthedRequest>(async (req, res) => {

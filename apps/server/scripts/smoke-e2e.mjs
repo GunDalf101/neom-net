@@ -275,6 +275,23 @@ try {
 }
 check(noRecipient, "Non-members cannot be addressed (404)");
 
+console.log("    Chat threads page backwards");
+for (let i = 1; i <= 3; i++) await dm.call("POST", `/api/campaigns/${cid}/messages`, { userIds: [antonioUser.userId], message: `Page test ${i} (E2E)`, kind: "whisper" });
+const page1 = await player.call("GET", `/api/campaigns/${cid}/messages?limit=2&peer=${dmUser.userId}`);
+check(page1.length === 2 && page1[0].createdAt >= page1[1].createdAt && page1.every((m) => [m.fromUserId, m.toUserId].includes(dmUser.userId)), "First page: 2 newest messages of the DM thread");
+const page2 = await player.call("GET", `/api/campaigns/${cid}/messages?limit=2&peer=${dmUser.userId}&before=${encodeURIComponent(page1[1].createdAt)}`);
+check(page2.length >= 1 && page2.every((m) => m.createdAt < page1[1].createdAt) && !page2.some((m) => page1.some((p) => p.id === m.id)), "Second page: strictly older, no overlap");
+const otherThread = await player.call("GET", `/api/campaigns/${cid}/messages?limit=50&peer=${claimerUser.userId}`);
+check(otherThread.every((m) => [m.fromUserId, m.toUserId].includes(claimerUser.userId)), "peer filter scopes the thread");
+let badLimit = false;
+try {
+  await player.call("GET", `/api/campaigns/${cid}/messages?limit=999`);
+} catch (e) {
+  badLimit = e.status === 400;
+}
+check(badLimit, "Page size is capped (400 above 200)");
+await player.call("POST", `/api/campaigns/${cid}/messages/read`, {});
+
 console.log("    Crew-only missions are visible only to assigned players and notify them");
 const crewMission = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Quiet Job (E2E)", description: "Crew only.", objectives: [{ id: "o1", text: "Find the fixer", done: false }], status: "available", rewards: { xp: 50, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [charId], visibleToPlayers: true, assignedOnly: true });
 check(crewMission.assignedOnly === true, "Mission saved as crew-only");

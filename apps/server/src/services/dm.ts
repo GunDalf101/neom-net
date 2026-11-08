@@ -116,12 +116,29 @@ export async function markMessagesRead(campaignId: string, userId: string, ids?:
   return { unread };
 }
 
-export async function listMessages(campaignId: string, viewer: { userId: string; isDm: boolean }): Promise<MessageDto[]> {
+export interface ListMessagesOpts {
+  /** Page size (1-200). */
+  limit?: number;
+  /** Only messages created strictly before this instant (cursor for older pages). */
+  before?: Date;
+  /** Only the thread with this user (messages between the viewer and them). */
+  peerUserId?: string;
+}
+
+/** Newest first. Pass `before` = createdAt of the oldest message you have to page further back. */
+export async function listMessages(campaignId: string, viewer: { userId: string; isDm: boolean }, opts: ListMessagesOpts = {}): Promise<MessageDto[]> {
+  const limit = Math.min(200, Math.max(1, opts.limit ?? 100));
+  const own = { OR: [{ toUserId: viewer.userId }, { fromUserId: viewer.userId }] };
+  const thread = opts.peerUserId
+    ? { OR: [{ fromUserId: viewer.userId, toUserId: opts.peerUserId }, { fromUserId: opts.peerUserId, toUserId: viewer.userId }] }
+    : viewer.isDm
+      ? {}
+      : own;
   const rows = await prisma.message.findMany({
-    where: viewer.isDm ? { campaignId } : { campaignId, OR: [{ toUserId: viewer.userId }, { fromUserId: viewer.userId }] },
+    where: { campaignId, ...thread, ...(opts.before ? { createdAt: { lt: opts.before } } : {}) },
     include: messageInclude,
     orderBy: { createdAt: "desc" },
-    take: 300,
+    take: limit,
   });
   return rows.map(toMessageDto);
 }
