@@ -1,8 +1,10 @@
 import type { CampaignDto, UserDto } from "@neom/shared";
 import clsx from "clsx";
+import { useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useMe, usePending, useSession, useSessionControl } from "@/api/hooks";
-import { Button, Icon, Spinner } from "@/components/ui";
+import { Button, Drawer, Icon, Spinner } from "@/components/ui";
+import { ChatPanel } from "@/components/ChatPanel";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PushToggle } from "@/components/PushToggle";
 import { useCampaignRealtime } from "@/realtime/socket";
@@ -33,6 +35,7 @@ export function DmShell() {
   const session = useSession(campaignId);
   const control = useSessionControl(campaignId);
   const pending = usePending(campaignId);
+  const [chat, setChat] = useState(false);
 
   if (me.isLoading || campaign.isLoading) return <Spinner label="Loading command center" />;
   if (!me.data || !campaign.data) return <div className="p-6 text-crimson">Campaign unavailable.</div>;
@@ -48,8 +51,11 @@ export function DmShell() {
           <Link to={`/c/${campaignId}`} className="font-display text-base font-black tracking-[0.18em] text-crimson">
             DM<span className="text-cyan">//</span>CONTROL
           </Link>
-          <NotificationBell campaignId={campaignId} userId={me.data.id} />
+          <NotificationBell campaignId={campaignId} userId={me.data.id} onOpenChat={() => setChat(true)} />
         </div>
+        <Button size="xs" variant="ghost" icon="message-square" className="mt-2 w-full" onClick={() => setChat(true)}>
+          Chat with players
+        </Button>
         <div className="mt-0.5 truncate text-[0.65rem] uppercase tracking-wider text-muted">{campaign.data.name}</div>
         <nav className="mt-4 flex flex-col gap-1">
           {NAV.map((n) => (
@@ -82,7 +88,7 @@ export function DmShell() {
               <Icon name={n.icon} size={12} />
             </NavLink>
           ))}
-          <NotificationBell campaignId={campaignId} userId={me.data.id} className="ml-auto shrink-0" />
+          <NotificationBell campaignId={campaignId} userId={me.data.id} className="ml-auto shrink-0" onOpenChat={() => setChat(true)} />
           <Button size="xs" color={live ? "crimson" : "ok"} onClick={() => control.mutate(live ? "end" : "start")}>
             {live ? "End" : "Live"}
           </Button>
@@ -90,6 +96,9 @@ export function DmShell() {
         <main className="flex-1 p-3">
           <Outlet context={{ campaign: campaign.data, me: me.data, connected } satisfies DmContext} />
         </main>
+        <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber">
+          <ChatPanel campaign={campaign.data} meId={me.data.id} />
+        </Drawer>
       </div>
     </div>
   );

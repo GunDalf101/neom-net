@@ -387,6 +387,8 @@ export const MissionInputSchema = z.object({
     .default({}),
   assignedCharacterIds: z.array(z.string()).max(20).default([]),
   visibleToPlayers: z.boolean().default(true),
+  /** With visibleToPlayers: only the assigned crew's players see the mission. */
+  assignedOnly: z.boolean().default(false),
 });
 
 export const JournalInputSchema = z.object({

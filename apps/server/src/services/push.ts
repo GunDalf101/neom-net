@@ -126,6 +126,8 @@ const WHEN_AWAY: Record<string, string> = {
   "grant.xp": "Experience",
   "grant.progressionPoints": "Progression points",
   "level.up": "Level up",
+  "mission.status": "Mission update",
+  "mission.created": "New mission",
 };
 
 /** Called for every logged event: decides who gets a push notification. */

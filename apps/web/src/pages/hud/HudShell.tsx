@@ -3,12 +3,13 @@ import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useCharacter, useCharacters, useImportCharacter, useLogout, useMe, useResetCharacter, useRoll, useRollRequests } from "@/api/hooks";
-import { Button, ConfirmButton, Icon, Modal, Spinner } from "@/components/ui";
+import { Button, ConfirmButton, Drawer, Icon, Modal, Spinner } from "@/components/ui";
 import { PushToggle } from "@/components/PushToggle";
 import { SendSheet } from "@/components/SendSheet";
 import { ShareLink } from "@/components/ShareLink";
 import { HandOffLink } from "@/components/HandOffLink";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ChatPanel } from "@/components/ChatPanel";
 import { downloadSheet, readSheetFile } from "@/lib/sheetFile";
 import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
 import { toast, useUi } from "@/store/ui";
@@ -57,6 +58,7 @@ export function HudShell() {
   const requests = useRollRequests(campaignId);
   const roll = useRoll(campaignId);
   const [menu, setMenu] = useState(false);
+  const [chat, setChat] = useState(false);
   const importSheet = useImportCharacter(characterId);
   const resetSheet = useResetCharacter(characterId);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -123,7 +125,10 @@ export function HudShell() {
               <span className={clsx("inline-block h-2 w-2 rounded-full", connected ? "bg-ok pulse-ok" : "bg-amber")} />
               <span className="hidden sm:inline">{connected ? "CONNECTED" : "LINK LOST"}</span>
             </span>
-            <NotificationBell campaignId={campaignId} userId={me.data.id} />
+            <NotificationBell campaignId={campaignId} userId={me.data.id} onOpenChat={() => setChat(true)} />
+            <button type="button" onClick={() => setChat(true)} className="nav-box hidden !px-2 !py-1.5 sm:inline-flex" aria-label="Chat with the DM">
+              <Icon name="message-square" size={14} />
+            </button>
             <button type="button" onClick={() => setMenu(true)} className="nav-box !px-2 !py-1.5" aria-label="Menu">
               <Icon name="settings" size={14} />
             </button>
@@ -173,6 +178,10 @@ export function HudShell() {
       <main className="flex-1 p-3 lg:min-h-0 lg:overflow-y-auto">
         <Outlet context={ctx} />
       </main>
+
+      <Drawer open={chat} onClose={() => setChat(false)} title="Comms" color="amber">
+        <ChatPanel campaign={campaign.data} meId={me.data.id} />
+      </Drawer>
 
       <Modal open={menu} onClose={() => setMenu(false)} title="System" width="max-w-sm">
         <div className="space-y-3 text-sm">

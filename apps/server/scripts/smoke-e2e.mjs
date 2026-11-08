@@ -275,6 +275,20 @@ try {
 }
 check(noRecipient, "Non-members cannot be addressed (404)");
 
+console.log("    Crew-only missions are visible only to assigned players and notify them");
+const crewMission = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Quiet Job (E2E)", description: "Crew only.", objectives: [{ id: "o1", text: "Find the fixer", done: false }], status: "available", rewards: { xp: 50, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [charId], visibleToPlayers: true, assignedOnly: true });
+check(crewMission.assignedOnly === true, "Mission saved as crew-only");
+check((await player.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === crewMission.id), "Assigned player sees the crew-only mission");
+check(!(await claimer.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === crewMission.id), "Unassigned member does not see it");
+const missionAssignedEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.assigned" && e.payload.missionId === crewMission.id);
+check(Boolean(missionAssignedEvt), "mission.assigned notification logged for the assigned player");
+await dm.call("PUT", `/api/campaigns/${cid}/missions/${crewMission.id}`, { ...crewMission, status: "active" });
+const statusEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.status" && e.payload.missionId === crewMission.id);
+check(Boolean(statusEvt), "Crew-only status change reaches the assigned player");
+await dm.call("DELETE", `/api/campaigns/${cid}/missions/${crewMission.id}`);
+const seen = await player.call("POST", `/api/campaigns/${cid}/notifications/seen`, {});
+check(typeof seen.seenAt === "string" && (await player.call("GET", `/api/campaigns/${cid}`)).notificationsSeenAt === seen.seenAt, "Notification seen marker stored per member");
+
 console.log("    Push subscriptions register per device");
 const pushCfg = await player.call("GET", "/api/push/config");
 check(typeof pushCfg.enabled === "boolean" && (pushCfg.enabled ? typeof pushCfg.publicKey === "string" : true), `Push config: enabled=${pushCfg.enabled}`);

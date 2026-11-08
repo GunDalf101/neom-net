@@ -97,6 +97,7 @@ export async function getCampaign(campaignId: string, userId: string): Promise<C
       joinedAt: m.joinedAt.toISOString(),
       online: online.has(m.userId),
     })),
+    notificationsSeenAt: campaign.members.find((m) => m.userId === userId)?.notificationsSeenAt?.toISOString() ?? null,
     ...(membership.isDm ? { inviteCode: campaign.inviteCode } : {}),
   };
 }

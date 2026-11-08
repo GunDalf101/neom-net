@@ -60,7 +60,9 @@ const missionInclude = { assignments: true } satisfies Prisma.MissionInclude;
 
 export async function listMissions(campaignId: string, viewer: { userId: string; isDm: boolean }): Promise<MissionDto[]> {
   const rows = await prisma.mission.findMany({
-    where: viewer.isDm ? { campaignId } : { campaignId, visibleToPlayers: true },
+    where: viewer.isDm
+      ? { campaignId }
+      : { campaignId, visibleToPlayers: true, OR: [{ assignedOnly: false }, { assignments: { some: { character: { ownerUserId: viewer.userId } } } }] },
     include: missionInclude,
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   });
@@ -77,6 +79,7 @@ async function writeMission(campaignId: string, input: MissionInput, id?: string
     status: input.status,
     rewards: input.rewards as unknown as Prisma.InputJsonValue,
     visibleToPlayers: input.visibleToPlayers,
+    assignedOnly: input.assignedOnly,
   };
   return prisma.$transaction(async (tx) => {
     const m = id
@@ -90,19 +93,63 @@ async function writeMission(campaignId: string, input: MissionInput, id?: string
   });
 }
 
+/** Who may see a mission's public events: everyone, or only the assigned crew (per-owner events). */
+function missionAudience(input: MissionInput): "public" | "crew" | "dm" {
+  if (!input.visibleToPlayers) return "dm";
+  return input.assignedOnly ? "crew" : "public";
+}
+
+/** Notifies newly assigned characters' players (always pushed, see push.ts ALWAYS). */
+async function notifyAssignments(campaignId: string, dmUserId: string, mission: { id: string; name: string }, newCharacterIds: string[], audience: "public" | "crew" | "dm") {
+  if (newCharacterIds.length === 0 || audience === "dm") return;
+  const chars = await prisma.character.findMany({ where: { id: { in: newCharacterIds } }, select: { id: true, name: true, ownerUserId: true } });
+  for (const c of chars) {
+    await logEvent({
+      campaignId,
+      type: "mission.assigned",
+      actorUserId: dmUserId,
+      characterId: c.id,
+      summary: `Mission "${mission.name}" assigned to ${c.name}`,
+      payload: { missionId: mission.id },
+      visibility: "owner",
+      ownerUserId: c.ownerUserId,
+    });
+  }
+}
+
+/** For crew-only missions, status changes go to each assigned player instead of the whole campaign. */
+async function notifyCrew(campaignId: string, dmUserId: string, mission: { id: string; name: string }, characterIds: string[], type: string, summary: string) {
+  const chars = await prisma.character.findMany({ where: { id: { in: characterIds } }, select: { id: true, ownerUserId: true } });
+  for (const c of chars) await logEvent({ campaignId, type, actorUserId: dmUserId, characterId: c.id, summary, payload: { missionId: mission.id }, visibility: "owner", ownerUserId: c.ownerUserId });
+}
+
 export async function createMission(campaignId: string, dmUserId: string, input: MissionInput): Promise<MissionDto> {
   const m = await writeMission(campaignId, input);
-  await logEvent({ campaignId, type: "mission.created", actorUserId: dmUserId, summary: `Mission "${m.name}" posted`, visibility: input.visibleToPlayers ? "public" : "dm" });
+  const audience = missionAudience(input);
+  if (audience === "public") await logEvent({ campaignId, type: "mission.created", actorUserId: dmUserId, summary: `Mission "${m.name}" posted`, visibility: "public" });
+  else await logEvent({ campaignId, type: "mission.created", actorUserId: dmUserId, summary: `Mission "${m.name}" posted${audience === "crew" ? " (crew only)" : " (hidden)"}`, visibility: "dm" });
+  await notifyAssignments(campaignId, dmUserId, m, m.assignments.map((a) => a.characterId), audience);
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
   return toMissionDto(m);
 }
 
 export async function updateMission(campaignId: string, dmUserId: string, id: string, input: MissionInput): Promise<MissionDto> {
-  const existing = await prisma.mission.findFirst({ where: { id, campaignId } });
+  const existing = await prisma.mission.findFirst({ where: { id, campaignId }, include: missionInclude });
   if (!existing) throw notFound("Mission");
   const m = await writeMission(campaignId, input, id);
+  const audience = missionAudience(input);
+  const before = new Set(existing.assignments.map((a) => a.characterId));
+  const added = m.assignments.map((a) => a.characterId).filter((cid) => !before.has(cid));
+  // Becoming visible counts as a fresh assignment for everyone on the crew.
+  const revealed = (!existing.visibleToPlayers && input.visibleToPlayers) ? m.assignments.map((a) => a.characterId).filter((cid) => !added.includes(cid)) : [];
+  await notifyAssignments(campaignId, dmUserId, m, [...added, ...revealed], audience);
   if (existing.status !== input.status) {
-    await logEvent({ campaignId, type: "mission.status", actorUserId: dmUserId, summary: `Mission "${m.name}" is now ${input.status}`, visibility: input.visibleToPlayers ? "public" : "dm" });
+    const summary = `Mission "${m.name}" is now ${input.status}`;
+    if (audience === "public") await logEvent({ campaignId, type: "mission.status", actorUserId: dmUserId, summary, visibility: "public" });
+    else {
+      await logEvent({ campaignId, type: "mission.status", actorUserId: dmUserId, summary, visibility: "dm" });
+      if (audience === "crew") await notifyCrew(campaignId, dmUserId, m, m.assignments.map((a) => a.characterId), "mission.status", summary);
+    }
   }
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
   return toMissionDto(m);

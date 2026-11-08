@@ -101,6 +101,13 @@ export async function sendMessage(campaignId: string, fromUserId: string, input:
   return out;
 }
 
+/** Records that the viewer opened their notification bell; events newer than this are unread. */
+export async function markNotificationsSeen(campaignId: string, userId: string): Promise<{ seenAt: string }> {
+  const now = new Date();
+  await prisma.campaignMembership.update({ where: { campaignId_userId: { campaignId, userId } }, data: { notificationsSeenAt: now } });
+  return { seenAt: now.toISOString() };
+}
+
 /** Marks messages addressed to the viewer as read (all of them when `ids` is omitted). Returns the unread count left. */
 export async function markMessagesRead(campaignId: string, userId: string, ids?: string[]): Promise<{ unread: number }> {
   await prisma.message.updateMany({ where: { campaignId, toUserId: userId, readAt: null, ...(ids ? { id: { in: ids } } : {}) }, data: { readAt: new Date() } });
@@ -114,7 +121,7 @@ export async function listMessages(campaignId: string, viewer: { userId: string;
     where: viewer.isDm ? { campaignId } : { campaignId, OR: [{ toUserId: viewer.userId }, { fromUserId: viewer.userId }] },
     include: messageInclude,
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: 300,
   });
   return rows.map(toMessageDto);
 }

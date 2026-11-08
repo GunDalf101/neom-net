@@ -54,6 +54,8 @@ export interface CampaignDto extends CampaignSummaryDto {
   /** Only sent to the DM. */
   inviteCode?: string;
   activeEncounterId: string | null;
+  /** When this viewer last opened their notification bell in this campaign. */
+  notificationsSeenAt: string | null;
 }
 
 export interface CharacterCore {
@@ -411,6 +413,7 @@ export interface MissionDto {
   rewards: { xp: number; credits: number; progressionPoints: number; itemDefinitionIds: string[] };
   assignedCharacterIds: string[];
   visibleToPlayers: boolean;
+  assignedOnly: boolean;
   rewardsGrantedAt: string | null;
   createdAt: string;
   updatedAt: string;

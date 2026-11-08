@@ -43,6 +43,10 @@ dmRouter.post("/:campaignId/messages", wrap<AuthedRequest>(async (req, res) => {
   }
   res.status(201).json(await dm.sendMessage(pid(req), req.user.id, input));
 }));
+dmRouter.post("/:campaignId/notifications/seen", wrap<AuthedRequest>(async (req, res) => {
+  await requireMember(pid(req), req.user.id);
+  res.json(await dm.markNotificationsSeen(pid(req), req.user.id));
+}));
 dmRouter.post("/:campaignId/messages/read", wrap<AuthedRequest>(async (req, res) => {
   await requireMember(pid(req), req.user.id);
   res.json(await dm.markMessagesRead(pid(req), req.user.id, parseBody(MarkMessagesReadSchema, req.body).ids));

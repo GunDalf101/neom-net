@@ -523,6 +523,15 @@ export function useMarkMessagesRead(cid: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.messages(cid) }),
   });
 }
+export function useMarkNotificationsSeen(cid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ seenAt: string }>(`/campaigns/${cid}/notifications/seen`),
+    onSuccess: (r) => {
+      qc.setQueryData<CampaignDto>(qk.campaign(cid), (old) => (old ? { ...old, notificationsSeenAt: r.seenAt } : old));
+    },
+  });
+}
 export const useRollRequests = (cid: string) => useQuery({ queryKey: qk.rollRequests(cid), queryFn: () => api.get<RollRequestDto[]>(`/campaigns/${cid}/roll-requests`) });
 export function useCreateRollRequest(cid: string) {
   const qc = useQueryClient();

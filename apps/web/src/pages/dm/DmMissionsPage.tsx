@@ -6,7 +6,7 @@ import { Badge, Button, ConfirmButton, Empty, Field, Input, Panel, Select, Texta
 import { JournalBoard } from "@/pages/hud/JournalPage";
 import { useDm } from "./DmShell";
 
-const empty = (): MissionInput => ({ name: "", description: "", objectives: [], status: "available", rewards: { xp: 0, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [], visibleToPlayers: true });
+const empty = (): MissionInput => ({ name: "", description: "", objectives: [], status: "available", rewards: { xp: 0, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [], visibleToPlayers: true, assignedOnly: false });
 
 export function DmMissionsPage() {
   const { campaign, me } = useDm();
@@ -37,7 +37,7 @@ function MissionsBoard() {
   const [form, setForm] = useState<MissionInput>(empty());
   const open = (m: MissionDto | "new") => {
     setEditing(m);
-    setForm(m === "new" ? empty() : { name: m.name, description: m.description, objectives: m.objectives, status: m.status, rewards: m.rewards, assignedCharacterIds: m.assignedCharacterIds, visibleToPlayers: m.visibleToPlayers });
+    setForm(m === "new" ? empty() : { name: m.name, description: m.description, objectives: m.objectives, status: m.status, rewards: m.rewards, assignedCharacterIds: m.assignedCharacterIds, visibleToPlayers: m.visibleToPlayers, assignedOnly: m.assignedOnly });
   };
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
@@ -49,7 +49,7 @@ function MissionsBoard() {
               <span>
                 <span className="text-text">{m.name}</span>
                 <span className="block text-dim">
-                  {m.objectives.filter((o) => o.done).length}/{m.objectives.length} objectives · {m.assignedCharacterIds.length} assigned{!m.visibleToPlayers ? " · hidden" : ""}
+                  {m.objectives.filter((o) => o.done).length}/{m.objectives.length} objectives · {m.assignedCharacterIds.length} assigned{!m.visibleToPlayers ? " · hidden" : m.assignedOnly ? " · crew only" : ""}
                 </span>
               </span>
               <Badge color={{ available: "cyan", active: "amber", completed: "ok", failed: "crimson" }[m.status]}>{m.status}</Badge>
@@ -118,10 +118,14 @@ function MissionsBoard() {
               <Field label="Progression points">
                 <Input type="number" min={0} value={form.rewards.progressionPoints} onChange={(e) => setForm({ ...form, rewards: { ...form.rewards, progressionPoints: Number(e.target.value) } })} />
               </Field>
-              <Field label="Visible to players">
-                <Select value={form.visibleToPlayers ? "1" : "0"} onChange={(e) => setForm({ ...form, visibleToPlayers: e.target.value === "1" })}>
-                  <option value="1">yes</option>
-                  <option value="0">no</option>
+              <Field label="Visible to" hint={form.visibleToPlayers && form.assignedOnly ? "Only players whose character is in the crew below see it and get notified" : form.visibleToPlayers ? "Every player sees it" : "DM only until you reveal it"}>
+                <Select
+                  value={!form.visibleToPlayers ? "dm" : form.assignedOnly ? "crew" : "all"}
+                  onChange={(e) => setForm({ ...form, visibleToPlayers: e.target.value !== "dm", assignedOnly: e.target.value === "crew" })}
+                >
+                  <option value="all">all players</option>
+                  <option value="crew">assigned crew only</option>
+                  <option value="dm">DM only (hidden)</option>
                 </Select>
               </Field>
             </div>

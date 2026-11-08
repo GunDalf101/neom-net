@@ -91,6 +91,8 @@ model CampaignMembership {
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role       CampaignRole @default(PLAYER)
   joinedAt   DateTime     @default(now())
+  /// Last time this member opened their notification bell (events newer than this are unread).
+  notificationsSeenAt DateTime?
 
   @@unique([campaignId, userId])
   @@index([userId])
@@ -559,6 +561,8 @@ model Mission {
   status           String    @default("available")
   rewards          Json      @default("{}")
   visibleToPlayers Boolean   @default(true)
+  /// With visibleToPlayers: only players whose character is assigned can see it.
+  assignedOnly     Boolean   @default(false)
   rewardsGrantedAt DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
