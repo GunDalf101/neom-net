@@ -144,11 +144,12 @@ export async function notifyForEvent(e: CampaignEventDto, ownerUserId: string | 
         await pushToUsers([ownerUserId], { title: `${always ?? away} · ${e.characterName ?? "NEOM//NET"}`, body: e.summary, url, tag: `${e.type}:${e.characterId ?? e.campaignId}`, kind: e.type });
       }
     }
-    // DM notifications: approvals waiting while the DM is away.
-    if (e.type === "rule.pending") {
+    // DM notifications: approvals while away; mission answers always.
+    const DM_ALWAYS: Record<string, string> = { "mission.accepted": "Mission accepted", "mission.declined": "Mission declined" };
+    if (e.type === "rule.pending" || DM_ALWAYS[e.type]) {
       const dms = await prisma.campaignMembership.findMany({ where: { campaignId: e.campaignId, role: "DM" }, select: { userId: true } });
-      const away = dms.map((m) => m.userId).filter((id) => !online.has(id) && id !== e.actorUserId);
-      await pushToUsers(away, { title: "Awaiting your ruling", body: e.summary, url: `/c/${e.campaignId}/dm`, tag: `pending:${e.campaignId}`, kind: e.type });
+      const targets = dms.map((m) => m.userId).filter((id) => id !== e.actorUserId && (DM_ALWAYS[e.type] ? true : !online.has(id)));
+      await pushToUsers(targets, { title: DM_ALWAYS[e.type] ?? "Awaiting your ruling", body: e.summary, url: `/c/${e.campaignId}/dm${DM_ALWAYS[e.type] ? "/missions" : ""}`, tag: `${e.type}:${e.campaignId}`, kind: e.type });
     }
   } catch (err) {
     logger.warn({ err }, "notifyForEvent failed");

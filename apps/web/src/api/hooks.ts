@@ -630,6 +630,19 @@ export function useSaveMission(cid: string) {
     }),
   );
 }
+export function useRespondMission(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: ({ id, characterId, response, note }: { id: string; characterId: string; response: "accepted" | "declined"; note?: string }) => api.post<MissionDto>(`/campaigns/${cid}/missions/${id}/respond`, { characterId, response, note: note ?? "" }),
+      onSuccess: (m, v) => {
+        qc.setQueryData<MissionDto[]>(qk.missions(cid), (old) => (old ? old.map((x) => (x.id === m.id ? m : x)) : old));
+        qc.invalidateQueries({ queryKey: qk.missions(cid) });
+        toast("success", v.response === "accepted" ? "Mission accepted — the DM has been notified" : "Mission declined — the DM has been notified");
+      },
+    }),
+  );
+}
 export function useMissionOp(cid: string) {
   const qc = useQueryClient();
   return useMutation(

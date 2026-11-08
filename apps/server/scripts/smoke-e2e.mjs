@@ -299,6 +299,31 @@ check((await player.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m
 check(!(await claimer.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === crewMission.id), "Unassigned member does not see it");
 const missionAssignedEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.assigned" && e.payload.missionId === crewMission.id);
 check(Boolean(missionAssignedEvt), "mission.assigned notification logged for the assigned player");
+console.log("    Player accepts or declines the offer; the DM is notified");
+let objBefore = false;
+try {
+  await player.call("POST", `/api/campaigns/${cid}/missions/${crewMission.id}/objectives/o1`, { done: true });
+} catch (e) {
+  objBefore = e.status === 403;
+}
+check(objBefore, "Objectives are locked until the mission is accepted (403)");
+let notMine = false;
+try {
+  await claimer.call("POST", `/api/campaigns/${cid}/missions/${crewMission.id}/respond`, { characterId: charId, response: "accepted" });
+} catch (e) {
+  notMine = e.status === 403 || e.status === 404;
+}
+check(notMine, "Another player cannot answer for Antonio");
+let declined = await player.call("POST", `/api/campaigns/${cid}/missions/${crewMission.id}/respond`, { characterId: charId, response: "declined", note: "Too hot right now" });
+check(declined.assignments.find((a) => a.characterId === charId)?.response === "declined", "Antonio declined with a note");
+const dmEvents = await dm.call("GET", `/api/campaigns/${cid}/events?limit=10`);
+check(dmEvents.some((e) => e.type === "mission.declined" && e.payload.missionId === crewMission.id && /Too hot/.test(e.summary)), "DM event log shows the decline with the reason");
+check(!(await player.call("GET", `/api/campaigns/${cid}/events?limit=20`)).some((e) => e.type === "mission.declined" && e.payload.missionId === crewMission.id), "The answer is DM-visibility only");
+const acceptedM = await player.call("POST", `/api/campaigns/${cid}/missions/${crewMission.id}/respond`, { characterId: charId, response: "accepted" });
+check(acceptedM.assignments.find((a) => a.characterId === charId)?.response === "accepted", "Antonio changed his mind and accepted");
+check((await dm.call("GET", `/api/campaigns/${cid}/events?limit=10`)).some((e) => e.type === "mission.accepted" && e.payload.missionId === crewMission.id), "DM notified of the acceptance");
+const ticked = await player.call("POST", `/api/campaigns/${cid}/missions/${crewMission.id}/objectives/o1`, { done: true });
+check(ticked.objectives[0].done === true, "Objectives unlock after accepting");
 await dm.call("PUT", `/api/campaigns/${cid}/missions/${crewMission.id}`, { ...crewMission, status: "active" });
 const statusEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.status" && e.payload.missionId === crewMission.id);
 check(Boolean(statusEvt), "Crew-only status change reaches the assigned player");

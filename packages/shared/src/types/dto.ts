@@ -403,6 +403,8 @@ export interface NpcDto {
   createdAt: string;
 }
 
+export type MissionResponse = "pending" | "accepted" | "declined";
+
 export interface MissionDto {
   id: string;
   campaignId: string;
@@ -412,6 +414,8 @@ export interface MissionDto {
   status: "available" | "active" | "completed" | "failed";
   rewards: { xp: number; credits: number; progressionPoints: number; itemDefinitionIds: string[] };
   assignedCharacterIds: string[];
+  /** Per-crew answer to the offer. */
+  assignments: { characterId: string; response: MissionResponse; respondedAt: string | null; note: string }[];
   visibleToPlayers: boolean;
   assignedOnly: boolean;
   rewardsGrantedAt: string | null;

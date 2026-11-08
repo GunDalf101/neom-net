@@ -10,7 +10,7 @@ const EVENT_ICON: Record<string, string> = {
   "character.assigned": "hand-metal", "roll.requested": "dices", "item.granted": "package-plus",
   "hp.damage": "heart-crack", "hp.heal": "heart-pulse", "condition.applied": "alert-triangle", "condition.removed": "check",
   "override.set": "sliders-horizontal", "effect.applied": "zap", "effect.expired": "zap-off", "rule.pending": "gavel",
-  "member.joined": "user-plus", "grant.credits": "coins", "grant.xp": "star", "grant.progressionPoints": "git-branch", "level.up": "trending-up",
+  "member.joined": "user-plus", "mission.accepted": "check-circle", "mission.declined": "x-circle", "grant.credits": "coins", "grant.xp": "star", "grant.progressionPoints": "git-branch", "level.up": "trending-up",
 };
 /** Event types that count as notifications for the person they concern. */
 const NOTIFY_TYPES = new Set(Object.keys(EVENT_ICON));
@@ -49,7 +49,7 @@ export function NotificationBell({ campaignId, userId, className, onOpenChat }: 
       .map((m) => ({ id: `m:${m.id}`, at: m.createdAt, unread: !m.readAt, kind: "message", message: m }));
     const evs: Item[] = (events.data ?? [])
       .filter((e) => e.actorUserId !== userId && NOTIFY_TYPES.has(e.type))
-      .filter((e) => (isDm ? e.type === "rule.pending" || e.type === "member.joined" || e.type === "character.assigned" : (e.characterId ? mine.has(e.characterId) : e.type.startsWith("mission."))))
+      .filter((e) => (isDm ? e.type === "rule.pending" || e.type === "member.joined" || e.type === "character.assigned" || e.type === "mission.accepted" || e.type === "mission.declined" : (e.characterId ? mine.has(e.characterId) : e.type.startsWith("mission."))))
       .map((e) => ({ id: `e:${e.id}`, at: e.createdAt, unread: !seenAt || e.createdAt > seenAt, kind: "event", event: e }));
     return [...msgs, ...evs].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 50);
   }, [messages.data, events.data, characters.data, userId, isDm, seenAt]);

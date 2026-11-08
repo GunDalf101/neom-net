@@ -577,6 +577,10 @@ model MissionAssignment {
   mission     Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
   characterId String
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  /// pending | accepted | declined — the player's answer to the offer; declined crew get no rewards.
+  response    String    @default("pending")
+  respondedAt DateTime?
+  note        String    @default("")
 
   @@id([missionId, characterId])
 }

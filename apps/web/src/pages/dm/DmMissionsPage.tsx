@@ -51,6 +51,15 @@ function MissionsBoard() {
                 <span className="block text-dim">
                   {m.objectives.filter((o) => o.done).length}/{m.objectives.length} objectives · {m.assignedCharacterIds.length} assigned{!m.visibleToPlayers ? " · hidden" : m.assignedOnly ? " · crew only" : ""}
                 </span>
+                {m.assignments.length > 0 && (
+                  <span className="mt-0.5 flex flex-wrap gap-1">
+                    {m.assignments.map((a) => (
+                      <span key={a.characterId} className={clsx("text-[0.6rem]", a.response === "accepted" ? "text-ok" : a.response === "declined" ? "text-crimson" : "text-amber")} title={a.note || undefined}>
+                        {a.response === "accepted" ? "✓" : a.response === "declined" ? "✗" : "…"} {chars.data?.find((c) => c.id === a.characterId)?.name ?? "?"}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </span>
               <Badge color={{ available: "cyan", active: "amber", completed: "ok", failed: "crimson" }[m.status]}>{m.status}</Badge>
             </button>

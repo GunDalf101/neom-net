@@ -1,5 +1,6 @@
-import type { JournalEntryDto, JournalInput, MissionDto, MissionInput, NpcDto, NpcInput } from "@neom/shared";
+import type { JournalEntryDto, JournalInput, MissionDto, MissionInput, MissionResponseSchema, NpcDto, NpcInput } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
+import type { z } from "zod";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign } from "../realtime/io.js";
@@ -167,7 +168,9 @@ export async function toggleObjective(campaignId: string, userId: string, isDm: 
   const m = await prisma.mission.findFirst({ where: { id: missionId, campaignId }, include: { campaign: true, assignments: { include: { character: { select: { ownerUserId: true } } } } } });
   if (!m) throw notFound("Mission");
   if (playerIsReadOnly(m.campaign, isDm)) throw forbidden("This campaign is DM-controlled: only the Dungeon Master updates missions");
-  if (!isDm && !m.assignments.some((a) => a.character.ownerUserId === userId)) throw forbidden("Mission is not assigned to your character");
+  const mine = m.assignments.filter((a) => a.character.ownerUserId === userId);
+  if (!isDm && mine.length === 0) throw forbidden("Mission is not assigned to your character");
+  if (!isDm && !mine.some((a) => a.response === "accepted")) throw forbidden(mine.some((a) => a.response === "declined") ? "You declined this mission" : "Accept the mission before working its objectives");
   const objectives = ((m.objectives as { id: string; text: string; done: boolean }[]) ?? []).map((o) => (o.id === objectiveId ? { ...o, done } : o));
   const updated = await prisma.mission.update({ where: { id: missionId }, data: { objectives }, include: missionInclude });
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
@@ -180,7 +183,8 @@ export async function completeMission(campaignId: string, dmUserId: string, miss
   if (!m) throw notFound("Mission");
   if (m.rewardsGrantedAt) throw ruleViolation("Rewards were already granted for this mission");
   const rewards = (m.rewards as { xp?: number; credits?: number; progressionPoints?: number; itemDefinitionIds?: string[] }) ?? {};
-  const charIds = m.assignments.map((a) => a.characterId);
+  // Crew who declined the offer are not paid.
+  const charIds = m.assignments.filter((a) => a.response !== "declined").map((a) => a.characterId);
   await prisma.$transaction(async (tx) => {
     for (const cid of charIds) {
       await tx.character.update({
@@ -255,4 +259,33 @@ export async function deleteJournal(campaignId: string, userId: string, isDm: bo
   if (existing.authorUserId !== userId && !isDm) throw forbidden("You can only delete your own entries");
   await prisma.journalEntry.delete({ where: { id } });
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "journal" });
+}
+
+/**
+ * A player accepts or declines a mission offered to one of their characters. The DM is told through a
+ * dm-visibility event (bell + push). Accepting is required before objectives can be ticked; declining
+ * removes the character from the reward list. Answers can be changed until the mission completes.
+ */
+export async function respondToMission(campaignId: string, userId: string, isDm: boolean, missionId: string, input: z.infer<typeof MissionResponseSchema>): Promise<MissionDto> {
+  const m = await prisma.mission.findFirst({ where: { id: missionId, campaignId }, include: { assignments: { include: { character: { select: { id: true, name: true, ownerUserId: true } } } } } });
+  if (!m) throw notFound("Mission");
+  const a = m.assignments.find((x) => x.characterId === input.characterId);
+  if (!a) throw forbidden("That character was not offered this mission");
+  if (!isDm && a.character.ownerUserId !== userId) throw forbidden("Not your character");
+  if (m.status === "completed" || m.status === "failed") throw ruleViolation(`Mission is already ${m.status}`);
+  if (!m.visibleToPlayers && !isDm) throw notFound("Mission");
+  await prisma.missionAssignment.update({ where: { missionId_characterId: { missionId, characterId: a.characterId } }, data: { response: input.response, respondedAt: new Date(), note: input.note } });
+  const who = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { username: true } });
+  await logEvent({
+    campaignId,
+    type: input.response === "accepted" ? "mission.accepted" : "mission.declined",
+    actorUserId: userId,
+    characterId: a.characterId,
+    summary: `${a.character.name} ${input.response} mission "${m.name}"${input.note ? ` — "${input.note}"` : ""}${isDm ? ` (set by ${who.username})` : ""}`,
+    payload: { missionId, characterId: a.characterId, response: input.response, note: input.note },
+    visibility: "dm",
+  });
+  emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
+  const refreshed = await prisma.mission.findUniqueOrThrow({ where: { id: missionId }, include: missionInclude });
+  return toMissionDto(refreshed);
 }

@@ -391,6 +391,12 @@ export const MissionInputSchema = z.object({
   assignedOnly: z.boolean().default(false),
 });
 
+export const MissionResponseSchema = z.object({
+  characterId: z.string().min(1),
+  response: z.enum(["accepted", "declined"]),
+  note: z.string().max(300).default(""),
+});
+
 export const JournalInputSchema = z.object({
   title: z.string().min(1).max(120),
   body: z.string().max(20_000).default(""),

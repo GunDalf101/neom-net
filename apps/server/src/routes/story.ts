@@ -1,4 +1,4 @@
-import { JournalInputSchema, MissionInputSchema, NpcInputSchema } from "@neom/shared";
+import { MissionResponseSchema, JournalInputSchema, MissionInputSchema, NpcInputSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -53,6 +53,10 @@ storyRouter.post("/:campaignId/missions/:id/objectives/:objectiveId", wrap<Authe
   const m = await requireMember(pid(req), req.user.id);
   const { done } = parseBody(z.object({ done: z.boolean() }), req.body);
   res.json(await story.toggleObjective(pid(req), req.user.id, m.isDm, id(req), req.params.objectiveId as string, done));
+}));
+storyRouter.post("/:campaignId/missions/:id/respond", wrap<AuthedRequest>(async (req, res) => {
+  const m = await requireMember(pid(req), req.user.id);
+  res.json(await story.respondToMission(pid(req), req.user.id, m.isDm, req.params.id as string, parseBody(MissionResponseSchema, req.body)));
 }));
 storyRouter.post("/:campaignId/missions/:id/complete", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
