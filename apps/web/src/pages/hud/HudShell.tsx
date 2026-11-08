@@ -112,18 +112,19 @@ export function HudShell() {
           </Link>
           <nav className="mx-auto hidden items-center gap-1.5 lg:flex">
             {TABS.map((t) => (
-              <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box", isActive && "active")}>
-                {t.label}
+              <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box flex items-center gap-1.5 !px-2.5 !py-1.5 !text-[0.58rem] 2xl:!px-4 2xl:!text-[0.66rem]", isActive && "active")} title={t.label}>
+                <Icon name={t.icon} size={12} className="xl:hidden" />
+                <span className="hidden xl:inline">{t.label}</span>
               </NavLink>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <span className="nav-box num hidden !px-3 !py-1.5 !text-[0.68rem] !tracking-normal text-text/80 lg:inline">
+            <span className="nav-box num hidden !px-3 !py-1.5 !text-[0.68rem] !tracking-normal text-text/80 xl:inline">
               {clock.date} <span className="ml-2">{clock.time}</span>
             </span>
             <span className={clsx("nav-box flex items-center gap-1.5 !px-3 !py-1.5 !text-[0.62rem]", connected ? "text-ok" : "text-amber")} style={{ borderColor: connected ? "rgba(53,227,154,0.5)" : "rgba(255,176,32,0.5)" }}>
               <span className={clsx("inline-block h-2 w-2 rounded-full", connected ? "bg-ok pulse-ok" : "bg-amber")} />
-              <span className="hidden sm:inline">{connected ? "CONNECTED" : "LINK LOST"}</span>
+              <span className="hidden xl:inline">{connected ? "CONNECTED" : "LINK LOST"}</span>
             </span>
             <NotificationBell campaignId={campaignId} userId={me.data.id} onOpenChat={() => setChat(true)} />
             <button type="button" onClick={() => setChat(true)} className="nav-box hidden !px-2 !py-1.5 sm:inline-flex" aria-label="Chat with the DM">

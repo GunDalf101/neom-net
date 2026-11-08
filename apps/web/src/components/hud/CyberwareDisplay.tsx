@@ -145,18 +145,18 @@ function SlotCard({ slot, item, onOpen, refFn }: { slot: AugmentationSlot; item:
   const effects = item ? [...item.definition.effects, ...(item.customEffects ?? [])] : [];
   const perks = effects.map(describePassiveEffect).slice(0, 2);
   return (
-    <button ref={refFn} type="button" onClick={onOpen} className={clsx("rarity-card w-full p-2 text-left transition hover:brightness-125", status !== "installed" && status !== "empty" && "saturate-50")} style={{ ["--rc" as string]: rc }}>
+    <button ref={refFn} type="button" onClick={onOpen} className={clsx("rarity-card w-full p-1.5 text-left transition hover:brightness-125 2xl:p-2", status !== "installed" && status !== "empty" && "saturate-50")} style={{ ["--rc" as string]: rc }}>
       <div className="flex items-center justify-between gap-1">
         <span className="font-display text-[0.86rem] font-bold uppercase tracking-[0.06em] text-text">{AUGMENTATION_SLOT_META[slot].name}</span>
         <span className="rarity-pill" style={{ ["--rc" as string]: item ? rc : "var(--color-muted)" }}>
           {item ? rarityName(item.definition.rarity) : "Empty"}
         </span>
       </div>
-      <div className="mt-1.5 flex items-center gap-2">
-        <span className="tile" style={{ ["--tile-color" as string]: item ? rc : "var(--color-cyan)", width: 46, height: 46, opacity: item ? 1 : 0.55 }}>
-          <Icon name={SLOT_ICON[slot]} size={22} />
+      <div className="mt-1 flex items-center gap-2">
+        <span className="tile" style={{ ["--tile-color" as string]: item ? rc : "var(--color-cyan)", width: 40, height: 40, opacity: item ? 1 : 0.55 }}>
+          <Icon name={SLOT_ICON[slot]} size={20} />
         </span>
-        <span className="relative flex h-[46px] flex-1 items-center justify-center overflow-hidden border bg-bg-0/70" style={{ borderColor: `color-mix(in srgb, ${rc} 50%, transparent)` }}>
+        <span className="relative flex h-[40px] flex-1 items-center justify-center overflow-hidden border bg-bg-0/70" style={{ borderColor: `color-mix(in srgb, ${rc} 50%, transparent)` }}>
           {item?.definition.imageUrl ? (
             <img src={item.definition.imageUrl} alt="" className="h-full w-full object-cover" />
           ) : item ? (
@@ -169,9 +169,9 @@ function SlotCard({ slot, item, onOpen, refFn }: { slot: AugmentationSlot; item:
           )}
         </span>
       </div>
-      <div className="mt-1.5 text-[0.84rem] font-semibold leading-tight text-text">{item ? item.customName ?? item.definition.name : "—"}</div>
-      <div className="min-h-[1.7rem] text-[0.7rem] leading-[1.15] text-text/70">
-        {item ? perks.map((p, i) => <div key={i} className="truncate">+ {p}</div>) : <div className="text-dim">Click to install from inventory.</div>}
+      <div className="mt-1 truncate text-[0.82rem] font-semibold leading-tight text-text">{item ? item.customName ?? item.definition.name : "—"}</div>
+      <div className="text-[0.68rem] leading-[1.15] text-text/70">
+        {item ? perks.map((p, i) => <div key={i} className="truncate">+ {p}</div>) : <div className="text-dim">Tap to install</div>}
       </div>
       {item && status !== "installed" && <div className="mt-0.5 text-[0.6rem] font-bold uppercase tracking-wider" style={{ color: accent(STATUS_COLOR[status] ?? "muted") }}>{status}</div>}
     </button>

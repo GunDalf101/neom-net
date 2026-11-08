@@ -34,7 +34,8 @@ export function CharacterPage() {
           <SkillCheckBar view={view} />
         </div>
         {/* The body figure needs ~520px; on phones it pans sideways instead of breaking the page. */}
-        <div className={clsx("min-h-[640px] min-w-0 overflow-x-auto lg:h-full lg:min-h-0 lg:overflow-visible", tab !== "core" && "hidden lg:block")}>
+        {/* Desktop: the cyberware column scrolls on its own like the side columns, so the page never grows past the viewport. */}
+        <div className={clsx("min-h-[640px] min-w-0 overflow-x-auto lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain lg:pr-1 [scrollbar-gutter:stable]", tab !== "core" && "hidden lg:block")}>
           <CyberwareDisplay view={view} />
         </div>
         <div className={clsx("space-y-2 @container", col, tab !== "combat" && "hidden lg:block")}>
