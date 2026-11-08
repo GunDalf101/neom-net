@@ -66,6 +66,8 @@ model Campaign {
   rollRequests    RollRequest[]
   messages        Message[]
   sessions        LiveSession[]
+  factions     Faction[]
+  reputations  Reputation[]
 }
 
 /// Web Push subscription (one browser/device). Deleted when the push service reports it gone (404/410).
@@ -184,6 +186,7 @@ model Character {
 
   @@index([campaignId])
   @@index([ownerUserId])
+  reputations   Reputation[]
 }
 
 // ============================================================
@@ -684,4 +687,41 @@ model Message {
 
   @@index([campaignId, createdAt])
   @@index([toUserId, readAt])
+}
+
+/// A gang, corp or the city itself. Each campaign gets the default seven; the DM can add, rename or remove.
+model Faction {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  key         String
+  name        String
+  description String   @default("")
+  color       String   @default("cyan")
+  icon        String   @default("users")
+  /// The city standing (Neon City) is shown first and highlighted.
+  isCity      Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  reputations Reputation[]
+
+  @@unique([campaignId, key])
+  @@index([campaignId, sortOrder])
+}
+
+/// Standing of one character with one faction, -100 (hunted) to +100 (family). Missing row = 0.
+model Reputation {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  factionId   String
+  faction     Faction   @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  value       Int       @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([characterId, factionId])
+  @@index([campaignId])
 }

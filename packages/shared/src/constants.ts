@@ -263,3 +263,50 @@ export function hitDieForClass(characterClass: string | undefined | null): HitDi
 export const DEFAULT_CYBERWARE_CAPACITY = 10;
 export const DEFAULT_SPEED_METERS = 9;
 export const DEFAULT_SPECIAL_MAX_RANK = 5;
+
+// ---------- Reputation ----------
+export const REPUTATION_MIN = -100;
+export const REPUTATION_MAX = 100;
+
+export interface DefaultFaction {
+  key: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  isCity: boolean;
+}
+
+/** Installed into every campaign the first time factions are requested; the DM can edit or remove them. */
+export const DEFAULT_FACTIONS: readonly DefaultFaction[] = [
+  { key: "neonCity", name: "Neon City", description: "The city itself: law, corps, media and the street's opinion of you.", color: "cyan", icon: "building-2", isCity: true },
+  { key: "sandBrokers", name: "Sand Brokers", description: "Information and smuggling brokers of the dust tiers. Everything has a price, including silence.", color: "amber", icon: "hourglass", isCity: false },
+  { key: "metalWings", name: "Metal Wings", description: "Airborne couriers and mercenaries. Fast, loyal to contracts, allergic to betrayal.", color: "blue", icon: "feather", isCity: false },
+  { key: "shimmerBloods", name: "Shimmer Bloods", description: "Bio-mod street gang. Chrome is for cowards; they grow their weapons.", color: "crimson", icon: "droplets", isCity: false },
+  { key: "ms1337", name: "MS 1337", description: "Netrunner collective. If it has a signal, they already own a copy.", color: "lime", icon: "terminal", isCity: false },
+  { key: "chromaticDragons", name: "Chromatic Dragons", description: "Heavy-chrome enforcers with a flair for colour-coded violence.", color: "violet", icon: "flame", isCity: false },
+  { key: "vvz", name: "VVZ", description: "A syndicate nobody can spell out. Their favours come due at the worst moment.", color: "magenta", icon: "radio", isCity: false },
+];
+
+export type ReputationTier = "hunted" | "hostile" | "unfriendly" | "neutral" | "friendly" | "allied" | "family";
+
+/** Seven bands across −100..+100 so the number has a meaning at the table. */
+export function reputationTier(value: number): ReputationTier {
+  if (value <= -85) return "hunted";
+  if (value <= -50) return "hostile";
+  if (value <= -15) return "unfriendly";
+  if (value < 15) return "neutral";
+  if (value < 50) return "friendly";
+  if (value < 85) return "allied";
+  return "family";
+}
+
+export const REPUTATION_TIER_META: Record<ReputationTier, { label: string; hint: string }> = {
+  hunted: { label: "Hunted", hint: "Shoot on sight; bounties posted." },
+  hostile: { label: "Hostile", hint: "Attacked when convenient; no dealings." },
+  unfriendly: { label: "Unfriendly", hint: "Watched, overcharged, doors close." },
+  neutral: { label: "Neutral", hint: "Just another face." },
+  friendly: { label: "Friendly", hint: "Discounts, tips, a warning now and then." },
+  allied: { label: "Allied", hint: "Backup, safehouses, favours owed both ways." },
+  family: { label: "Family", hint: "Their fight is your fight." },
+};

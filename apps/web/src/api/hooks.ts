@@ -8,6 +8,9 @@ import type {
   CampaignSummaryDto,
   CharacterSummaryDto,
   CharacterView,
+  ReputationEntryDto,
+  FactionInput,
+  FactionDto,
   ClaimInfoDto,
   ConditionDefinitionDto,
   ConditionDefinitionInput,
@@ -81,6 +84,8 @@ export const qk = {
   session: (cid: string) => ["session", cid] as const,
   overrides: (cid: string) => ["overrides", cid] as const,
   pushConfig: ["push", "config"] as const,
+  factions: (cid: string) => ["factions", cid] as const,
+  reputation: (characterId: string) => ["reputation", characterId] as const,
   shared: (token: string) => ["shared", token] as const,
   claim: (token: string) => ["claim", token] as const,
 };
@@ -639,6 +644,42 @@ export function useRespondMission(cid: string) {
         qc.setQueryData<MissionDto[]>(qk.missions(cid), (old) => (old ? old.map((x) => (x.id === m.id ? m : x)) : old));
         qc.invalidateQueries({ queryKey: qk.missions(cid) });
         toast("success", v.response === "accepted" ? "Mission accepted — the DM has been notified" : "Mission declined — the DM has been notified");
+      },
+    }),
+  );
+}
+// ---------- Reputation ----------
+export const useFactions = (cid: string) => useQuery({ queryKey: qk.factions(cid), queryFn: () => api.get<FactionDto[]>(`/campaigns/${cid}/factions`) });
+export const useReputation = (characterId: string) => useQuery({ queryKey: qk.reputation(characterId), queryFn: () => api.get<ReputationEntryDto[]>(`/characters/${characterId}/reputation`) });
+export function useChangeReputation(characterId: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: (body: { factionId: string; delta?: number; value?: number; reason?: string }) => api.post<ReputationEntryDto[]>(`/characters/${characterId}/reputation`, body),
+      onSuccess: (rows) => qc.setQueryData(qk.reputation(characterId), rows),
+    }),
+  );
+}
+export function useSaveFaction(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: ({ id, body }: { id?: string; body: FactionInput }) => (id ? api.put<FactionDto>(`/campaigns/${cid}/factions/${id}`, body) : api.post<FactionDto>(`/campaigns/${cid}/factions`, body)),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.factions(cid) });
+        qc.invalidateQueries({ queryKey: ["reputation"] });
+      },
+    }),
+  );
+}
+export function useDeleteFaction(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: (id: string) => api.delete(`/campaigns/${cid}/factions/${id}`),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.factions(cid) });
+        qc.invalidateQueries({ queryKey: ["reputation"] });
       },
     }),
   );

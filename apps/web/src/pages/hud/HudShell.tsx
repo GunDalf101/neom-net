@@ -28,7 +28,7 @@ const TABS = [
   { to: "", label: "Character", icon: "scan-face", end: true },
   { to: "inventory", label: "Inventory", icon: "package" },
   { to: "cyberware", label: "Cyberware", icon: "cpu" },
-  { to: "skills", label: "Skills", icon: "git-branch" },
+  { to: "reputation", label: "Reputation", icon: "users-round" },
   { to: "journal", label: "Journal", icon: "book-open" },
   { to: "missions", label: "Missions", icon: "target" },
   { to: "log", label: "Log", icon: "scroll-text" },
@@ -242,6 +242,9 @@ export function HudShell() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link to={`${base}/skills`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)} title="Skill trees and granted abilities">
+              <Icon name="git-branch" size={13} /> Progression
+            </Link>
             <Link to={`/c/${campaignId}`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)}>
               <Icon name="users" size={13} /> Campaign
             </Link>

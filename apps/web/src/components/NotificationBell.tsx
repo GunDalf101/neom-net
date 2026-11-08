@@ -10,7 +10,7 @@ const EVENT_ICON: Record<string, string> = {
   "character.assigned": "hand-metal", "roll.requested": "dices", "item.granted": "package-plus",
   "hp.damage": "heart-crack", "hp.heal": "heart-pulse", "condition.applied": "alert-triangle", "condition.removed": "check",
   "override.set": "sliders-horizontal", "effect.applied": "zap", "effect.expired": "zap-off", "rule.pending": "gavel",
-  "member.joined": "user-plus", "mission.accepted": "check-circle", "mission.declined": "x-circle", "grant.credits": "coins", "grant.xp": "star", "grant.progressionPoints": "git-branch", "level.up": "trending-up",
+  "member.joined": "user-plus", "reputation.changed": "users-round", "mission.accepted": "check-circle", "mission.declined": "x-circle", "grant.credits": "coins", "grant.xp": "star", "grant.progressionPoints": "git-branch", "level.up": "trending-up",
 };
 /** Event types that count as notifications for the person they concern. */
 const NOTIFY_TYPES = new Set(Object.keys(EVENT_ICON));

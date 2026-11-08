@@ -100,6 +100,9 @@ await dm.call("PATCH", `/api/characters/${charId}`, { name: "Antonio Ettoro", sp
   }
   if (current.claimToken) await dm.call("DELETE", `/api/characters/${charId}/claim-link`);
   if (current.character.cyberpsychosis !== 0) await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 0 });
+  for (const r of await dm.call("GET", `/api/characters/${charId}/reputation`)) {
+    if (r.value !== 0) await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: r.faction.id, value: 0, reason: "e2e cleanup" });
+  }
 }
 await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { playersReadOnly: true, specialExpertiseEnabled: true } });
 
@@ -330,6 +333,36 @@ check(Boolean(statusEvt), "Crew-only status change reaches the assigned player")
 await dm.call("DELETE", `/api/campaigns/${cid}/missions/${crewMission.id}`);
 const seen = await player.call("POST", `/api/campaigns/${cid}/notifications/seen`, {});
 check(typeof seen.seenAt === "string" && (await player.call("GET", `/api/campaigns/${cid}`)).notificationsSeenAt === seen.seenAt, "Notification seen marker stored per member");
+
+console.log("    Reputation: seven default factions, DM-only changes, clamped and notified");
+const factions = await player.call("GET", `/api/campaigns/${cid}/factions`);
+check(factions.length >= 7 && factions[0].isCity && factions[0].name === "Neon City" && ["Sand Brokers", "Metal Wings", "Shimmer Bloods", "MS 1337", "Chromatic Dragons", "VVZ"].every((n) => factions.some((f) => f.name === n)), "Default factions present, Neon City first");
+const repStart = await player.call("GET", `/api/characters/${charId}/reputation`);
+check(repStart.length === factions.length && repStart.every((r) => typeof r.value === "number" && r.tier), "Every faction has a standing with a tier");
+const brokers = factions.find((f) => f.name === "Sand Brokers");
+let repDenied = false;
+try {
+  await player.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, delta: 10 });
+} catch (e) {
+  repDenied = e.status === 403;
+}
+check(repDenied, "Players cannot change reputation (403)");
+const before = repStart.find((r) => r.faction.id === brokers.id).value;
+let rep = await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, delta: 30, reason: "Delivered the shard (E2E)" });
+check(rep.find((r) => r.faction.id === brokers.id).value === Math.min(100, before + 30), `+30 with the Sand Brokers → ${rep.find((r) => r.faction.id === brokers.id).value}`);
+let outOfRange = false;
+try {
+  await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, value: 500 });
+} catch (e) {
+  outOfRange = e.status === 400;
+}
+check(outOfRange, "Setting a value outside −100..100 is rejected (400)");
+rep = await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, delta: 200 });
+check(rep.find((r) => r.faction.id === brokers.id).value === 100 && rep.find((r) => r.faction.id === brokers.id).tier === "family", "A large nudge clamps to +100 (family)");
+const repEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "reputation.changed" && /Delivered the shard/.test(e.summary));
+check(Boolean(repEvt), "Player sees the reputation change with the reason in their log");
+rep = await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, value: before });
+check(rep.find((r) => r.faction.id === brokers.id).value === before, "Standing restored");
 
 console.log("    Push subscriptions register per device");
 const pushCfg = await player.call("GET", "/api/push/config");

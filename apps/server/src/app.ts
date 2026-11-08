@@ -13,6 +13,7 @@ import { authRouter } from "./routes/auth.js";
 import { campaignsRouter } from "./routes/campaigns.js";
 import { charactersRouter } from "./routes/characters.js";
 import { pushRouter } from "./routes/push.js";
+import { reputationRouter } from "./routes/reputation.js";
 import { sharedRouter } from "./routes/shared.js";
 import { contentRouter } from "./routes/content.js";
 import { dmRouter } from "./routes/dm.js";
@@ -49,6 +50,7 @@ export function createApp(): Express {
   app.use("/api/campaigns", storyRouter);
   app.use("/api/characters", charactersRouter);
   app.use("/api/push", pushRouter);
+  app.use("/api", reputationRouter);
   app.use("/api/shared", sharedRouter);
 
   app.use("/api", (_req, _res, next) => next(notFound("Endpoint")));

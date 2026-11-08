@@ -127,6 +127,7 @@ const WHEN_AWAY: Record<string, string> = {
   "grant.progressionPoints": "Progression points",
   "level.up": "Level up",
   "mission.status": "Mission update",
+  "reputation.changed": "Reputation",
   "mission.created": "New mission",
 };
 

@@ -50,6 +50,7 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
 
     const onCharacter: ServerToClientEvents["character.updated"] = ({ characterId }) => {
       invalidate(qk.character(characterId));
+      invalidate(qk.reputation(characterId));
       invalidate(qk.characters(campaignId));
       invalidate(qk.dashboard(campaignId));
     };
@@ -120,6 +121,7 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
         npcs: qk.npcs(campaignId),
         missions: qk.missions(campaignId),
         journal: qk.journal(campaignId),
+        factions: qk.factions(campaignId),
       };
       const key = map[kind];
       if (key) invalidate(key);

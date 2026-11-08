@@ -1,4 +1,5 @@
 import type {
+  ReputationTier,
   AttributeKey,
   AugmentationSlot,
   AutomationMode,
@@ -565,6 +566,26 @@ export interface ClaimInfoDto {
   /** The viewer already owns it (link opened twice): just go to the HUD. */
   alreadyYours: boolean;
   isMember: boolean;
+}
+
+export interface FactionDto {
+  id: string;
+  campaignId: string;
+  key: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  isCity: boolean;
+  sortOrder: number;
+}
+
+/** One character's standing with one faction. */
+export interface ReputationEntryDto {
+  faction: FactionDto;
+  value: number;
+  tier: ReputationTier;
+  updatedAt: string | null;
 }
 
 export interface ApiError {

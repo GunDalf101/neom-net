@@ -397,6 +397,24 @@ export const MissionResponseSchema = z.object({
   note: z.string().max(300).default(""),
 });
 
+export const FactionInputSchema = z.object({
+  name: z.string().min(1).max(60),
+  description: z.string().max(500).default(""),
+  color: z.string().max(20).default("cyan"),
+  icon: z.string().max(40).default("users"),
+  isCity: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).max(999).default(0),
+});
+/** DM: nudge by `delta` or set `value` outright; both clamp to −100..+100. */
+export const ReputationChangeSchema = z
+  .object({
+    factionId: z.string().min(1),
+    delta: z.number().int().min(-200).max(200).optional(),
+    value: z.number().int().min(-100).max(100).optional(),
+    reason: z.string().max(200).default(""),
+  })
+  .refine((v) => v.delta !== undefined || v.value !== undefined, { message: "delta or value is required" });
+
 export const JournalInputSchema = z.object({
   title: z.string().min(1).max(120),
   body: z.string().max(20_000).default(""),
@@ -474,6 +492,8 @@ export type ConditionDefinitionInput = z.infer<typeof ConditionDefinitionInputSc
 export type NpcInput = z.infer<typeof NpcInputSchema>;
 export type MissionInput = z.infer<typeof MissionInputSchema>;
 export type JournalInput = z.infer<typeof JournalInputSchema>;
+export type FactionInput = z.infer<typeof FactionInputSchema>;
+export type ReputationChangeInput = z.infer<typeof ReputationChangeSchema>;
 export type SkillTreeInput = z.infer<typeof SkillTreeInputSchema>;
 export type SkillTreeNodeInput = z.infer<typeof SkillTreeNodeInputSchema>;
 export type AbilityInput = z.infer<typeof AbilityInputSchema>;

@@ -25,6 +25,7 @@ import { SkillsPage } from "@/pages/hud/SkillsPage";
 import { JournalPage } from "@/pages/hud/JournalPage";
 import { MissionsPage } from "@/pages/hud/MissionsPage";
 import { LogPage } from "@/pages/hud/LogPage";
+import { ReputationPage } from "@/pages/hud/ReputationPage";
 
 function RequireAuth() {
   const me = useMe();
@@ -55,6 +56,8 @@ export function App() {
             <Route index element={<CharacterPage />} />
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="cyberware" element={<CyberwarePage />} />
+            <Route path="reputation" element={<ReputationPage />} />
+            {/* Progression trees stay reachable (gear menu) but left the main nav in favour of Reputation. */}
             <Route path="skills" element={<SkillsPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="missions" element={<MissionsPage />} />
