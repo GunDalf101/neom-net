@@ -232,7 +232,7 @@ view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: dmUse
 view = await dm.call("POST", `/api/characters/${charId}/claim-link`, {});
 const claimToken = view.claimToken;
 check(typeof claimToken === "string" && claimToken.length >= 16, "DM created a hand-off link");
-check((await player.call("GET", `/api/characters/${charId}`)).claimToken === null, "Players never see the hand-off token");
+check((await status(() => player.call("GET", `/api/characters/${charId}`))) === 403, "While the DM holds the sheet, the former owner cannot open it (and never sees the hand-off token)");
 const claimer = new Session("CLAIMER");
 const claimerEmail = "e2e-claimer@neom.local";
 try {
@@ -398,6 +398,17 @@ const wiz = await dm.call("POST", "/api/characters", { campaignId: cid, name: "V
 check(wiz.character.hitDieSize === 10, "An explicit hit die overrides the class default");
 const custom = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Zed (E2E)", characterClass: "Netrunner" });
 check(custom.character.hitDieSize === 8, "Unknown classes fall back to d8");
+console.log("    Sheet privacy: full sheets for the owner and the DM, glimpses for everyone else");
+const privRoster = await player.call("GET", `/api/campaigns/${cid}/characters`);
+const ownEntry = privRoster.find((c) => c.id === charId);
+const foreignEntry = privRoster.find((c) => c.id === barb.character.id);
+check(ownEntry?.visibility === "full" && typeof ownEntry.hpCurrent === "number" && typeof ownEntry.ac === "number", "Own roster entry is the full summary");
+check(foreignEntry?.visibility === "glimpse" && foreignEntry.hpCurrent === undefined && foreignEntry.ac === undefined && ["healthy", "wounded", "critical", "down"].includes(foreignEntry.health), "Another player's character is a glimpse: name, owner, coarse health, no numbers");
+check((await status(() => player.call("GET", `/api/characters/${barb.character.id}`))) === 403, "Players cannot open another player's full sheet (403)");
+check((await status(() => player.call("GET", `/api/characters/${barb.character.id}/export`))) === 403, "Players cannot export another player's sheet (403)");
+check((await status(() => player.call("GET", `/api/characters/${barb.character.id}/reputation`))) === 403, "Players cannot read another player's reputation (403)");
+check((await dm.call("GET", `/api/campaigns/${cid}/characters`)).every((c) => c.visibility === "full"), "The DM roster is full for every character");
+check((await dm.call("GET", `/api/characters/${barb.character.id}`)).character.name === "Krak (E2E)", "The DM opens any sheet");
 for (const ch of [barb, wiz, custom]) await dm.call("DELETE", `/api/characters/${ch.character.id}`);
 
 console.log("    DM adjusts AC without an item");

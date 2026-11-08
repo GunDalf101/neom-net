@@ -6,6 +6,7 @@ import type {
   CampaignDto,
   CampaignEventDto,
   CampaignSummaryDto,
+  CharacterListEntryDto,
   CharacterSummaryDto,
   CharacterView,
   ReputationEntryDto,
@@ -184,7 +185,7 @@ export function useSessionControl(cid: string) {
 
 // ---------- Characters ----------
 export const useCharacters = (cid: string | undefined) =>
-  useQuery({ queryKey: qk.characters(cid ?? ""), queryFn: () => api.get<CharacterSummaryDto[]>(`/campaigns/${cid}/characters`), enabled: Boolean(cid) });
+  useQuery({ queryKey: qk.characters(cid ?? ""), queryFn: () => api.get<CharacterListEntryDto[]>(`/campaigns/${cid}/characters`), enabled: Boolean(cid) });
 export const useCharacter = (id: string | undefined) =>
   useQuery({ queryKey: qk.character(id ?? ""), queryFn: () => api.get<CharacterView>(`/characters/${id}`), enabled: Boolean(id) });
 

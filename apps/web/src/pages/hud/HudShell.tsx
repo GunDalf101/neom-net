@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useCharacter, useCharacters, useImportCharacter, useLogout, useMe, useResetCharacter, useRoll, useRollRequests } from "@/api/hooks";
+import { ApiError } from "@/api/client";
 import { Button, ConfirmButton, Drawer, Icon, Modal, Spinner } from "@/components/ui";
 import { PushToggle } from "@/components/PushToggle";
 import { SendSheet } from "@/components/SendSheet";
@@ -96,11 +97,28 @@ export function HudShell() {
 
   if (me.isLoading || campaign.isLoading || view.isLoading) return <Spinner label="Loading HUD" />;
   if (!me.data || !campaign.data) return <div className="p-6 text-crimson">Campaign unavailable.</div>;
-  if (!view.data) return <div className="p-6 text-crimson">Character unavailable: {view.error instanceof Error ? view.error.message : ""}</div>;
+  if (!view.data) {
+    const privateSheet = view.error instanceof ApiError && view.error.status === 403;
+    return (
+      <div className="mx-auto max-w-md p-6" data-testid="sheet-unavailable">
+        <div className="hud-panel space-y-3 p-4" style={{ ["--panel-accent" as string]: "var(--color-crimson)" }}>
+          <div className="flex items-center gap-2 font-display text-sm font-bold tracking-wider text-crimson">
+            <Icon name={privateSheet ? "lock" : "triangle-alert"} size={16} /> {privateSheet ? "Private sheet" : "Character unavailable"}
+          </div>
+          <p className="text-xs text-muted">{privateSheet ? "Only the character's player and the DM can open a full sheet. The crew panel on your own sheet shows what everyone may know." : view.error instanceof Error ? view.error.message : "Unknown error"}</p>
+          <Link to={`/c/${campaignId}`} className="hud-btn !py-1 !text-[0.65rem]">
+            <Icon name="chevron-left" size={12} /> Back to the roster
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const isDm = campaign.data.role === "DM";
   const ctx: HudContext = { view: view.data, campaign: campaign.data, me: me.data, isDm, connected };
   const myRequests = (requests.data ?? []).filter((r) => r.characterId === characterId);
+  // Only sheets this operator may open: their own, or every sheet for the DM.
+  const ownSheets = (characters.data ?? []).filter((c) => c.visibility === "full");
   const base = `/c/${campaignId}/hud/${characterId}`;
 
   return (
@@ -189,11 +207,11 @@ export function HudShell() {
           <div className="text-muted">
             Operator <span className="text-text">{me.data.username}</span> · {campaign.data.name}
           </div>
-          {characters.data && characters.data.length > 1 && (
+          {ownSheets.length > 1 && (
             <div>
               <div className="hud-title mb-1 text-[0.6rem]">Switch character</div>
               <div className="flex flex-wrap gap-1">
-                {characters.data.map((c) => (
+                {ownSheets.map((c) => (
                   <button key={c.id} className={clsx("nav-box !px-3 !py-1 !text-[0.6rem]", c.id === characterId && "active")} onClick={() => { setMenu(false); nav(`/c/${campaignId}/hud/${c.id}`); }}>
                     {c.name}
                   </button>

@@ -3,7 +3,8 @@ import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
 import { parseBody } from "../middleware/validate.js";
-import { requireCharacterAccess, requireDm, requireMember } from "../services/access.js";
+import { requireDm, requireMember } from "../services/access.js";
+import { requireSheetAccess } from "../services/characters.js";
 import * as rep from "../services/reputation.js";
 
 /** Factions (per campaign) and reputation (per character). Mounted at /api. */
@@ -29,11 +30,11 @@ reputationRouter.delete("/campaigns/:campaignId/factions/:id", wrap<AuthedReques
 }));
 
 reputationRouter.get("/characters/:characterId/reputation", wrap<AuthedRequest>(async (req, res) => {
-  const { character } = await requireCharacterAccess(req.params.characterId as string, req.user.id);
+  const { character } = await requireSheetAccess(req.params.characterId as string, req.user.id);
   res.json(await rep.getReputation(character.campaignId, character.id));
 }));
 reputationRouter.post("/characters/:characterId/reputation", wrap<AuthedRequest>(async (req, res) => {
-  const { character, membership } = await requireCharacterAccess(req.params.characterId as string, req.user.id);
+  const { character, membership } = await requireSheetAccess(req.params.characterId as string, req.user.id);
   if (!membership.isDm) {
     res.status(403).json({ error: "Only the DM changes reputation", code: "forbidden" });
     return;

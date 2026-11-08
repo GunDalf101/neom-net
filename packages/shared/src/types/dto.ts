@@ -235,27 +235,41 @@ export interface CharacterView {
   };
 }
 
-export interface CharacterSummaryDto {
+/** Coarse health shown to the rest of the crew instead of exact hit points. */
+export type CrewHealth = "healthy" | "wounded" | "critical" | "down";
+
+/** What everyone in the campaign may know about a character: identity, owner, coarse health, visible conditions. */
+export interface CharacterGlimpseDto {
+  visibility: "glimpse";
   id: string;
   campaignId: string;
   ownerUserId: string;
   ownerUsername: string;
-  cyberpsychosisPercent: number;
   name: string;
   species: string;
   characterClass: string;
   level: number;
   portraitUrl: string | null;
+  health: CrewHealth;
+  conditions: string[];
+  online?: boolean;
+}
+
+/** Full summary: only the DM and the character's owner receive it. */
+export interface CharacterSummaryDto extends Omit<CharacterGlimpseDto, "visibility"> {
+  visibility: "full";
+  cyberpsychosisPercent: number;
   hpCurrent: number;
   hpMax: number;
   hpTemp: number;
   ac: number;
-  conditions: string[];
   capacityUsed: number;
   capacity: number;
   overrideCount: number;
-  online?: boolean;
 }
+
+/** A campaign roster entry: full for your own sheets (and every sheet for the DM), a glimpse for other players' characters. */
+export type CharacterListEntryDto = CharacterSummaryDto | CharacterGlimpseDto;
 
 export interface DiceRollDto {
   id: string;

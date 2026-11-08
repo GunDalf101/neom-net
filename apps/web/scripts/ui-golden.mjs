@@ -19,7 +19,7 @@ const VIEWPORTS = {
   desktop: { width: 1920, height: 1080, mobile: false },
 };
 const HUD_PAGES = [
-  ["", ["Proficiency Bonus", "Attributes"]],
+  ["", ["Proficiency Bonus", "Attributes", "Crew"]],
   ["inventory", ["Inventory", "Currency"]],
   ["cyberware", ["Installed systems", "Known cyberware catalog"]],
   ["reputation", ["Reputation", "Neon City"]],

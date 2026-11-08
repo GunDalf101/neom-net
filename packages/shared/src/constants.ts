@@ -310,3 +310,21 @@ export const REPUTATION_TIER_META: Record<ReputationTier, { label: string; hint:
   allied: { label: "Allied", hint: "Backup, safehouses, favours owed both ways." },
   family: { label: "Family", hint: "Their fight is your fight." },
 };
+
+// ---------- Crew visibility ----------
+
+/** Coarse health band shown to other players instead of exact hit points. */
+export function crewHealth(hpCurrent: number, hpMax: number): "healthy" | "wounded" | "critical" | "down" {
+  if (hpCurrent <= 0) return "down";
+  const ratio = hpMax > 0 ? hpCurrent / hpMax : 1;
+  if (ratio <= 0.25) return "critical";
+  if (ratio <= 0.6) return "wounded";
+  return "healthy";
+}
+
+export const CREW_HEALTH_META: Record<"healthy" | "wounded" | "critical" | "down", { label: string; color: string }> = {
+  healthy: { label: "Healthy", color: "ok" },
+  wounded: { label: "Wounded", color: "amber" },
+  critical: { label: "Critical", color: "crimson" },
+  down: { label: "Down", color: "muted" },
+};

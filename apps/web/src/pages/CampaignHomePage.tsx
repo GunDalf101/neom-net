@@ -1,4 +1,4 @@
-import { ATTRIBUTES, ATTRIBUTE_META, HIT_DIE_SIZES, abilityModifier, hitDieForClass, type AttributeKey, type HitDieSize } from "@neom/shared";
+import { ATTRIBUTES, ATTRIBUTE_META, CREW_HEALTH_META, HIT_DIE_SIZES, abilityModifier, hitDieForClass, type AttributeKey, type HitDieSize } from "@neom/shared";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCampaign, useCharacters, useCreateCharacter, useDeleteCharacter, useMe } from "@/api/hooks";
@@ -91,19 +91,36 @@ export function CampaignHomePage() {
                       <div className="mt-1 flex items-center gap-1.5 text-[0.65rem] text-dim">
                         <span className={onlineSet.has(ch.ownerUserId) ? "text-ok" : ""}>●</span> {ch.ownerUsername}
                       </div>
-                      <div className="mt-2 flex items-center gap-2 text-xs">
-                        <span className="num text-crimson">
-                          {ch.hpCurrent}/{ch.hpMax}
-                        </span>
-                        <Bar value={ch.hpCurrent} max={ch.hpMax} color="crimson" className="flex-1" height={6} />
-                        <span className="num text-cyan">AC {ch.ac}</span>
-                      </div>
+                      {ch.visibility === "full" ? (
+                        <div className="mt-2 flex items-center gap-2 text-xs">
+                          <span className="num text-crimson">
+                            {ch.hpCurrent}/{ch.hpMax}
+                          </span>
+                          <Bar value={ch.hpCurrent} max={ch.hpMax} color="crimson" className="flex-1" height={6} />
+                          <span className="num text-cyan">AC {ch.ac}</span>
+                        </div>
+                      ) : (
+                        <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
+                          <Badge color={CREW_HEALTH_META[ch.health].color}>{CREW_HEALTH_META[ch.health].label}</Badge>
+                          {ch.conditions.map((k) => (
+                            <Badge key={k} color="crimson">
+                              {k}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <Link to={`/c/${campaignId}/hud/${ch.id}`} onClick={() => remember(campaignId, ch.id)} className="hud-btn hud-btn-solid !py-1 !text-[0.6rem]">
-                      <Icon name="scan-face" size={12} /> {mine ? "Enter HUD" : "View sheet"}
-                    </Link>
+                    {ch.visibility === "full" ? (
+                      <Link to={`/c/${campaignId}/hud/${ch.id}`} onClick={() => remember(campaignId, ch.id)} className="hud-btn hud-btn-solid !py-1 !text-[0.6rem]">
+                        <Icon name="scan-face" size={12} /> {mine ? "Enter HUD" : "Open sheet"}
+                      </Link>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[0.6rem] uppercase tracking-wider text-dim" title="Only the character's player and the DM can open the full sheet">
+                        <Icon name="lock" size={11} /> Private sheet
+                      </span>
+                    )}
                     {(mine || isDm) && <ConfirmButton size="xs" label={<Icon name="trash-2" size={12} />} confirmLabel="Delete" onConfirm={() => del.mutate({ id: ch.id, campaignId })} />}
                   </div>
                 </div>

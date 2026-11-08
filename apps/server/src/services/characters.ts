@@ -11,6 +11,8 @@ import {
   type AbilityDto,
   type ApplyConditionInput,
   type CharacterSnapshot,
+  type CharacterGlimpseDto,
+  type CharacterListEntryDto,
   type CharacterSummaryDto,
   type CharacterView,
   type ClaimInfoDto,
@@ -28,6 +30,7 @@ import {
   type ProficiencyMultiplier,
   type SheetChange,
   type SharedSheetDto,
+  crewHealth,
 } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { randomBytes } from "node:crypto";
@@ -207,39 +210,57 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
   };
 }
 
-export function toSummary(full: FullCharacter, derived = derive(full)): CharacterSummaryDto {
+/** What the whole crew may know: identity, owner, coarse health, visible conditions. No numbers. */
+export function toGlimpse(full: FullCharacter, derived = derive(full)): CharacterGlimpseDto {
   return {
+    visibility: "glimpse",
     id: full.id,
     campaignId: full.campaignId,
     ownerUserId: full.ownerUserId,
     ownerUsername: full.owner.username,
-    cyberpsychosisPercent: derived.cyberpsychosis.percent,
     name: full.name,
     species: full.species,
     characterClass: full.characterClass,
     level: full.level,
     portraitUrl: full.portraitUrl,
+    health: crewHealth(full.hpCurrent, derived.maxHp.value),
+    conditions: full.conditions.map((c) => c.definition.name),
+  };
+}
+
+export function toSummary(full: FullCharacter, derived = derive(full)): CharacterSummaryDto {
+  return {
+    ...toGlimpse(full, derived),
+    visibility: "full",
+    cyberpsychosisPercent: derived.cyberpsychosis.percent,
     hpCurrent: full.hpCurrent,
     hpMax: derived.maxHp.value,
     hpTemp: full.hpTemp,
     ac: derived.ac.value,
-    conditions: full.conditions.map((c) => c.definition.name),
     capacityUsed: derived.capacityUsed,
     capacity: derived.capacity.value,
     overrideCount: full.overrides.length,
   };
 }
 
-export async function getView(characterId: string, userId: string): Promise<CharacterView> {
+/** Full sheets are private: the DM and the owner only. Everyone else gets a glimpse from the roster. */
+export async function requireSheetAccess(characterId: string, userId: string) {
   const access = await requireCharacterAccess(characterId, userId);
+  if (!access.isOwner && !access.membership.isDm) throw forbidden("This sheet belongs to another player. Only its owner and the DM can open it.");
+  return access;
+}
+
+export async function getView(characterId: string, userId: string): Promise<CharacterView> {
+  const access = await requireSheetAccess(characterId, userId);
   const full = await loadFull(characterId);
   return buildView(full, { userId, isDm: access.membership.isDm });
 }
 
-export async function listCampaignCharacters(campaignId: string, userId: string): Promise<CharacterSummaryDto[]> {
-  await requireMember(campaignId, userId);
+/** The DM sees every sheet in full; a player sees their own in full and the rest of the crew as glimpses. */
+export async function listCampaignCharacters(campaignId: string, userId: string): Promise<CharacterListEntryDto[]> {
+  const membership = await requireMember(campaignId, userId);
   const rows = await prisma.character.findMany({ where: { campaignId }, include: fullInclude, orderBy: { createdAt: "asc" } });
-  return rows.map((r) => toSummary(r));
+  return rows.map((r) => (membership.isDm || r.ownerUserId === userId ? toSummary(r) : toGlimpse(r)));
 }
 
 // ---------- Create / update / delete ----------
@@ -720,7 +741,7 @@ export async function tickCharacterTurn(characterId: string): Promise<void> {
 // ---------- Export / import / reset ----------
 
 export async function exportCharacter(characterId: string, userId: string) {
-  await requireCharacterAccess(characterId, userId);
+  await requireSheetAccess(characterId, userId);
   return sheetExport(await loadFull(characterId));
 }
 

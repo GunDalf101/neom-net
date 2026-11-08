@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { CombatPanel } from "@/components/hud/CombatPanel";
+import { CrewPanel } from "@/components/hud/CrewPanel";
 import { CyberwareDisplay } from "@/components/hud/CyberwareDisplay";
 import { DicePanel, RollHistory } from "@/components/hud/DicePanel";
 import { IdentityCard } from "@/components/hud/IdentityCard";
@@ -32,6 +33,7 @@ export function CharacterPage() {
           <IdentityCard view={view} />
           <SheetPanel view={view} />
           <SkillCheckBar view={view} />
+          <CrewPanel campaignId={campaign.id} characterId={view.character.id} />
         </div>
         {/* The body figure needs ~520px; on phones it pans sideways instead of breaking the page. */}
         {/* Desktop: the cyberware column scrolls on its own like the side columns, so the page never grows past the viewport. */}
