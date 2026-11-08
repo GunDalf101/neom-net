@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (102 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (128 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
