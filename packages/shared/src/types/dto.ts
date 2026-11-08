@@ -494,9 +494,12 @@ export interface MessageDto {
   fromUserId: string;
   fromName: string;
   toUserId: string | null;
+  toName: string | null;
   characterId: string | null;
   kind: "whisper" | "reveal" | "broadcast";
   body: string;
+  /** When the recipient opened it; null = unread. */
+  readAt: string | null;
   createdAt: string;
 }
 
@@ -581,6 +584,8 @@ export interface ServerToClientEvents {
   "content.updated": (payload: { campaignId: string; kind: string }) => void;
   /** The DM handed a character sheet to this user. */
   "sheet.sent": (payload: { campaignId: string; characterId: string; characterName: string; fromName: string }) => void;
+  /** The viewer marked messages read on another device: refresh the unread badge. */
+  "message.read": (payload: { campaignId: string; unread: number }) => void;
 }
 
 export interface ClientToServerEvents {

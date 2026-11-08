@@ -58,31 +58,61 @@ export async function grantResource(campaignId: string, dmUserId: string, input:
   emitCharacterUpdated(campaignId, full.id);
 }
 
-export async function sendMessage(campaignId: string, fromUserId: string, input: z.infer<typeof DmMessageSchema>): Promise<MessageDto> {
-  let toUserId: string | null = input.userId ?? null;
+const messageInclude = { from: { select: { username: true } }, to: { select: { username: true } } } as const;
+
+/**
+ * Sends one message per recipient so each has its own read state. Recipients: `userIds` ∪ `userId` ∪ the
+ * owner of `characterId`; `broadcast` means every member except the sender. Each recipient gets a socket
+ * event (the DM room sees everything) and a push notification when away from the table.
+ */
+export async function sendMessage(campaignId: string, fromUserId: string, input: z.infer<typeof DmMessageSchema>): Promise<MessageDto[]> {
+  const recipients = new Set<string>(input.userIds ?? []);
+  if (input.userId) recipients.add(input.userId);
   if (input.characterId) {
     const c = await prisma.character.findFirst({ where: { id: input.characterId, campaignId }, select: { ownerUserId: true } });
     if (!c) throw notFound("Character");
-    toUserId = c.ownerUserId;
+    recipients.add(c.ownerUserId);
   }
-  if (input.kind !== "broadcast" && !toUserId) throw notFound("Recipient");
-  const row = await prisma.message.create({
-    data: { campaignId, fromUserId, toUserId: input.kind === "broadcast" ? null : toUserId, characterId: input.characterId ?? null, kind: input.kind, body: input.message },
-    include: { from: { select: { username: true } } },
-  });
-  const dto = toMessageDto(row);
-  if (input.kind === "broadcast") emitToCampaign(campaignId, "message.created", dto);
-  else if (toUserId) emitToDmAndUser(campaignId, toUserId, "message.created", dto);
-  if (toUserId && toUserId !== fromUserId && !onlineUserIds(campaignId).includes(toUserId)) {
-    void pushToUsers([toUserId], { title: `${dto.fromName} (${input.kind})`, body: input.message, url: `/c/${campaignId}`, tag: `message:${campaignId}`, kind: "message" });
+  if (input.kind === "broadcast") {
+    const members = await prisma.campaignMembership.findMany({ where: { campaignId }, select: { userId: true } });
+    for (const m of members) recipients.add(m.userId);
   }
-  return dto;
+  recipients.delete(fromUserId);
+  if (recipients.size === 0) throw notFound("Recipient");
+  // Only campaign members can be addressed.
+  const valid = new Set((await prisma.campaignMembership.findMany({ where: { campaignId, userId: { in: [...recipients] } }, select: { userId: true } })).map((m) => m.userId));
+  const targets = [...recipients].filter((id) => valid.has(id));
+  if (targets.length === 0) throw notFound("Recipient");
+  const from = await prisma.user.findUniqueOrThrow({ where: { id: fromUserId }, select: { username: true } });
+  const online = new Set(onlineUserIds(campaignId));
+  const out: MessageDto[] = [];
+  for (const toUserId of targets) {
+    const row = await prisma.message.create({
+      data: { campaignId, fromUserId, toUserId, characterId: input.characterId ?? null, kind: input.kind, body: input.message },
+      include: messageInclude,
+    });
+    const dto = toMessageDto(row);
+    out.push(dto);
+    emitToDmAndUser(campaignId, toUserId, "message.created", dto);
+    if (!online.has(toUserId)) {
+      void pushToUsers([toUserId], { title: `${from.username} (${input.kind === "broadcast" ? "to everyone" : input.kind})`, body: input.message, url: `/c/${campaignId}`, tag: `message:${campaignId}`, kind: "message" });
+    }
+  }
+  return out;
+}
+
+/** Marks messages addressed to the viewer as read (all of them when `ids` is omitted). Returns the unread count left. */
+export async function markMessagesRead(campaignId: string, userId: string, ids?: string[]): Promise<{ unread: number }> {
+  await prisma.message.updateMany({ where: { campaignId, toUserId: userId, readAt: null, ...(ids ? { id: { in: ids } } : {}) }, data: { readAt: new Date() } });
+  const unread = await prisma.message.count({ where: { campaignId, toUserId: userId, readAt: null } });
+  emitToUser(userId, "message.read", { campaignId, unread });
+  return { unread };
 }
 
 export async function listMessages(campaignId: string, viewer: { userId: string; isDm: boolean }): Promise<MessageDto[]> {
   const rows = await prisma.message.findMany({
-    where: viewer.isDm ? { campaignId } : { campaignId, OR: [{ toUserId: viewer.userId }, { fromUserId: viewer.userId }, { kind: "broadcast" }] },
-    include: { from: { select: { username: true } } },
+    where: viewer.isDm ? { campaignId } : { campaignId, OR: [{ toUserId: viewer.userId }, { fromUserId: viewer.userId }] },
+    include: messageInclude,
     orderBy: { createdAt: "desc" },
     take: 100,
   });

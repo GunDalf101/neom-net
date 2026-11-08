@@ -291,9 +291,12 @@ export const DmGrantSchema = z.object({
 export const DmMessageSchema = z.object({
   characterId: z.string().optional(),
   userId: z.string().optional(),
+  /** Several recipients at once (DM → players). Combined with userId / characterId; duplicates collapse. */
+  userIds: z.array(z.string().min(1)).max(50).optional(),
   message: z.string().min(1).max(2000),
   kind: z.enum(["whisper", "reveal", "broadcast"]).default("whisper"),
 });
+export const MarkMessagesReadSchema = z.object({ ids: z.array(z.string().min(1)).max(200).optional() });
 
 export const RollRequestCreateSchema = z.object({
   characterId: z.string().min(1),

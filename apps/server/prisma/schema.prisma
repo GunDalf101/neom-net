@@ -670,7 +670,10 @@ model Message {
   character   Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
   kind        String     @default("whisper")
   body        String
+  /// Set when the recipient opened it (notification inbox). Broadcasts fan out to one row per member.
+  readAt      DateTime?
   createdAt   DateTime   @default(now())
 
   @@index([campaignId, createdAt])
+  @@index([toUserId, readAt])
 }

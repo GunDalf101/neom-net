@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Link, NavLink, Navigate, Outlet, useOutletContext, useParams } from "react-router-dom";
 import { useCampaign, useMe, usePending, useSession, useSessionControl } from "@/api/hooks";
 import { Button, Icon, Spinner } from "@/components/ui";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PushToggle } from "@/components/PushToggle";
 import { useCampaignRealtime } from "@/realtime/socket";
 
@@ -43,9 +44,12 @@ export function DmShell() {
   return (
     <div className="flex min-h-full">
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-line bg-bg-1/80 p-3 md:flex">
-        <Link to={`/c/${campaignId}`} className="font-display text-base font-black tracking-[0.18em] text-crimson">
-          DM<span className="text-cyan">//</span>CONTROL
-        </Link>
+        <div className="flex items-start justify-between gap-2">
+          <Link to={`/c/${campaignId}`} className="font-display text-base font-black tracking-[0.18em] text-crimson">
+            DM<span className="text-cyan">//</span>CONTROL
+          </Link>
+          <NotificationBell campaignId={campaignId} userId={me.data.id} />
+        </div>
         <div className="mt-0.5 truncate text-[0.65rem] uppercase tracking-wider text-muted">{campaign.data.name}</div>
         <nav className="mt-4 flex flex-col gap-1">
           {NAV.map((n) => (
@@ -78,7 +82,8 @@ export function DmShell() {
               <Icon name={n.icon} size={12} />
             </NavLink>
           ))}
-          <Button size="xs" className="ml-auto" color={live ? "crimson" : "ok"} onClick={() => control.mutate(live ? "end" : "start")}>
+          <NotificationBell campaignId={campaignId} userId={me.data.id} className="ml-auto shrink-0" />
+          <Button size="xs" color={live ? "crimson" : "ok"} onClick={() => control.mutate(live ? "end" : "start")}>
             {live ? "End" : "Live"}
           </Button>
         </header>

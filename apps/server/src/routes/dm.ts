@@ -1,4 +1,4 @@
-import { DmGrantSchema, DmMessageSchema, OverrideInputSchema, RollRequestCreateSchema } from "@neom/shared";
+import { DmGrantSchema, DmMessageSchema, MarkMessagesReadSchema, OverrideInputSchema, RollRequestCreateSchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { prisma } from "../db.js";
@@ -38,10 +38,14 @@ dmRouter.post("/:campaignId/messages", wrap<AuthedRequest>(async (req, res) => {
   // Players may only whisper the DM; the DM may target anyone or broadcast.
   if (!m.isDm) {
     const dmMember = await prisma.campaignMembership.findFirst({ where: { campaignId: pid(req), role: "DM" } });
-    res.status(201).json(await dm.sendMessage(pid(req), req.user.id, { ...input, kind: "whisper", userId: dmMember?.userId, characterId: undefined }));
+    res.status(201).json(await dm.sendMessage(pid(req), req.user.id, { ...input, kind: "whisper", userId: dmMember?.userId, userIds: undefined, characterId: undefined }));
     return;
   }
   res.status(201).json(await dm.sendMessage(pid(req), req.user.id, input));
+}));
+dmRouter.post("/:campaignId/messages/read", wrap<AuthedRequest>(async (req, res) => {
+  await requireMember(pid(req), req.user.id);
+  res.json(await dm.markMessagesRead(pid(req), req.user.id, parseBody(MarkMessagesReadSchema, req.body).ids));
 }));
 dmRouter.get("/:campaignId/messages", wrap<AuthedRequest>(async (req, res) => {
   const m = await requireMember(pid(req), req.user.id);

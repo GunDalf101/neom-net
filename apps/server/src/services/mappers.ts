@@ -429,16 +429,19 @@ export function toRollRequestDto(r: Prisma.RollRequestGetPayload<{ include: { ch
   };
 }
 
-export function toMessageDto(m: Prisma.MessageGetPayload<{ include: { from: { select: { username: true } } } }>): MessageDto {
+type MessageRow = Prisma.MessageGetPayload<{ include: { from: { select: { username: true } } } }> & { to?: { username: string } | null };
+export function toMessageDto(m: MessageRow): MessageDto {
   return {
     id: m.id,
     campaignId: m.campaignId,
     fromUserId: m.fromUserId,
     fromName: m.from.username,
     toUserId: m.toUserId,
+    toName: (m as { to?: { username: string } | null }).to?.username ?? null,
     characterId: m.characterId,
     kind: m.kind as MessageDto["kind"],
     body: m.body,
+    readAt: m.readAt ? iso(m.readAt) : null,
     createdAt: iso(m.createdAt),
   };
 }

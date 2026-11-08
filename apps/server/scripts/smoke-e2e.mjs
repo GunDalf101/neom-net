@@ -254,6 +254,27 @@ check(reused, "The hand-off link is single-use (404 afterwards)");
 view = await dm.call("POST", `/api/characters/${charId}/assign`, { userId: antonioUser.userId });
 check(view.character.ownerUserId === antonioUser.userId, "Sheet handed back to antonio");
 
+console.log("    DM messages several players; each gets a notification with its own read state");
+const claimerUser = (await dm.call("GET", `/api/campaigns/${cid}`)).members.find((m) => m.username.startsWith("e2e-claimer"));
+const sent = await dm.call("POST", `/api/campaigns/${cid}/messages`, { userIds: [antonioUser.userId, claimerUser.userId], message: "Meet at the Neon Garden at dawn. (E2E)", kind: "whisper" });
+check(Array.isArray(sent) && sent.length === 2 && sent.every((m) => m.readAt === null), "One message per recipient, both unread");
+const antonioInbox = await player.call("GET", `/api/campaigns/${cid}/messages`);
+const mine = antonioInbox.filter((m) => m.body.includes("(E2E)") && m.toUserId === antonioUser.userId);
+check(mine.length >= 1 && !antonioInbox.some((m) => m.toUserId === claimerUser.userId), "Antonio sees only his copy, not the other player's");
+const marked = await player.call("POST", `/api/campaigns/${cid}/messages/read`, { ids: [mine[0].id] });
+check(typeof marked.unread === "number", `Marked read; ${marked.unread} unread left`);
+const afterRead = (await player.call("GET", `/api/campaigns/${cid}/messages`)).find((m) => m.id === mine[0].id);
+check(afterRead && afterRead.readAt !== null, "readAt is set after opening");
+const allRead = await player.call("POST", `/api/campaigns/${cid}/messages/read`, {});
+check(allRead.unread === 0, "Mark all read clears the badge");
+let noRecipient = false;
+try {
+  await dm.call("POST", `/api/campaigns/${cid}/messages`, { userIds: ["not-a-member"], message: "x", kind: "whisper" });
+} catch (e) {
+  noRecipient = e.status === 404;
+}
+check(noRecipient, "Non-members cannot be addressed (404)");
+
 console.log("    Push subscriptions register per device");
 const pushCfg = await player.call("GET", "/api/push/config");
 check(typeof pushCfg.enabled === "boolean" && (pushCfg.enabled ? typeof pushCfg.publicKey === "string" : true), `Push config: enabled=${pushCfg.enabled}`);

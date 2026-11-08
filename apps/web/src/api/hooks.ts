@@ -508,13 +508,20 @@ export function useSendMessage(cid: string) {
   const qc = useQueryClient();
   return useMutation(
     withToast({
-      mutationFn: (body: { characterId?: string; userId?: string; message: string; kind: "whisper" | "reveal" | "broadcast" }) => api.post<MessageDto>(`/campaigns/${cid}/messages`, body),
-      onSuccess: () => {
+      mutationFn: (body: { characterId?: string; userId?: string; userIds?: string[]; message: string; kind: "whisper" | "reveal" | "broadcast" }) => api.post<MessageDto[]>(`/campaigns/${cid}/messages`, body),
+      onSuccess: (sent) => {
         qc.invalidateQueries({ queryKey: qk.messages(cid) });
-        toast("success", "Sent");
+        toast("success", sent.length === 1 ? `Sent to ${sent[0]?.toName ?? "player"}` : `Sent to ${sent.length} players`);
       },
     }),
   );
+}
+export function useMarkMessagesRead(cid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids?: string[]) => api.post<{ unread: number }>(`/campaigns/${cid}/messages/read`, { ids }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.messages(cid) }),
+  });
 }
 export const useRollRequests = (cid: string) => useQuery({ queryKey: qk.rollRequests(cid), queryFn: () => api.get<RollRequestDto[]>(`/campaigns/${cid}/roll-requests`) });
 export function useCreateRollRequest(cid: string) {

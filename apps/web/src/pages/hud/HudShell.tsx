@@ -8,6 +8,7 @@ import { PushToggle } from "@/components/PushToggle";
 import { SendSheet } from "@/components/SendSheet";
 import { ShareLink } from "@/components/ShareLink";
 import { HandOffLink } from "@/components/HandOffLink";
+import { NotificationBell } from "@/components/NotificationBell";
 import { downloadSheet, readSheetFile } from "@/lib/sheetFile";
 import { disconnectSocket, useCampaignRealtime } from "@/realtime/socket";
 import { toast, useUi } from "@/store/ui";
@@ -105,7 +106,7 @@ export function HudShell() {
       <header className="sticky top-0 z-40 shrink-0 border-b border-cyan/20 bg-bg-0/92 backdrop-blur lg:static">
         <div className="flex items-center gap-3 px-3 py-1.5">
           <Link to={`/c/${campaignId}`} className="flex items-baseline gap-1 font-display text-xl font-black tracking-[0.08em] text-cyan glow-text">
-            NEOM<span className="text-crimson">//</span>NET <span className="ml-1 text-[0.55rem] font-normal tracking-widest text-muted">v0.1.0</span>
+            NEOM<span className="text-crimson">//</span>NET <span className="ml-1 hidden text-[0.55rem] font-normal tracking-widest text-muted sm:inline">v0.1.0</span>
           </Link>
           <nav className="mx-auto hidden items-center gap-1.5 lg:flex">
             {TABS.map((t) => (
@@ -120,8 +121,9 @@ export function HudShell() {
             </span>
             <span className={clsx("nav-box flex items-center gap-1.5 !px-3 !py-1.5 !text-[0.62rem]", connected ? "text-ok" : "text-amber")} style={{ borderColor: connected ? "rgba(53,227,154,0.5)" : "rgba(255,176,32,0.5)" }}>
               <span className={clsx("inline-block h-2 w-2 rounded-full", connected ? "bg-ok pulse-ok" : "bg-amber")} />
-              {connected ? "CONNECTED" : "LINK LOST"}
+              <span className="hidden sm:inline">{connected ? "CONNECTED" : "LINK LOST"}</span>
             </span>
+            <NotificationBell campaignId={campaignId} userId={me.data.id} />
             <button type="button" onClick={() => setMenu(true)} className="nav-box !px-2 !py-1.5" aria-label="Menu">
               <Icon name="settings" size={14} />
             </button>

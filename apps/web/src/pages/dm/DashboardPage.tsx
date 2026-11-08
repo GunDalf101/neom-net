@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCancelRollRequest, useDashboard, useResolvePending } from "@/api/hooks";
 import { LiveControls } from "@/components/dm/LiveControls";
+import { MessagePlayers } from "@/components/dm/MessagePlayers";
 import { RollRow } from "@/components/hud/DicePanel";
 import { Portrait } from "@/components/hud/Portrait";
 import { Badge, Bar, Button, Empty, Icon, Panel, Spinner } from "@/components/ui";
@@ -10,7 +11,7 @@ import { EventRow } from "./EventsPage";
 import { useDm } from "./DmShell";
 
 export function DashboardPage() {
-  const { campaign } = useDm();
+  const { campaign, me } = useDm();
   const dash = useDashboard(campaign.id);
   const resolve = useResolvePending(campaign.id);
   const cancelReq = useCancelRollRequest(campaign.id);
@@ -108,6 +109,8 @@ export function DashboardPage() {
               ))}
             </div>
           </Panel>
+
+          <MessagePlayers campaign={campaign} meId={me.id} />
         </div>
 
         <div className="min-w-0 space-y-3">
