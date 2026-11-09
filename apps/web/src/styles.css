@@ -536,3 +536,17 @@ select.hud-input option {
     min-height: 40px;
   }
 }
+
+/* Holographic body figure (CyberwareDisplay): slow orbit ring + breathing glow. */
+@keyframes holo-orbit {
+  to { stroke-dashoffset: -60; }
+}
+@keyframes holo-breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
+}
+.holo-orbit { animation: holo-orbit 6s linear infinite; }
+.holo-breathe { animation: holo-breathe 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .holo-orbit, .holo-breathe { animation: none; }
+}
