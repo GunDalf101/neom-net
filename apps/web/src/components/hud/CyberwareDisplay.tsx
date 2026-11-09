@@ -186,10 +186,12 @@ const Figure = forwardRef<SVGSVGElement, { portraitUrl: string | null; installed
   };
   return (
     <div className="relative h-full min-h-[420px] w-full max-w-[280px]">
+      {/* The portrait is only an ambient colour wash here (the real portrait lives on the identity card):
+          drawn sharp it fought the mannequin, two bodies that never line up. */}
       {portraitUrl && (
-        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)" }}>
-          <img src={portraitUrl} alt="" className="h-full w-full object-cover object-top" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg-0" />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)" }}>
+          <img src={portraitUrl} alt="" className="h-full w-full scale-110 object-cover object-top" style={{ filter: "blur(18px) saturate(1.4)", opacity: 0.22 }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-bg-0/40 via-transparent to-bg-0" />
         </div>
       )}
       <svg ref={ref} viewBox="0 0 200 440" className="relative h-full w-full" fill="none" stroke="var(--color-cyan)" strokeWidth="1.2" style={{ filter: "drop-shadow(0 0 6px rgba(25,227,255,0.25))" }}>
@@ -199,7 +201,7 @@ const Figure = forwardRef<SVGSVGElement, { portraitUrl: string | null; installed
             <stop offset="1" stopColor="rgba(255,45,85,0.06)" />
           </linearGradient>
         </defs>
-        <g opacity={portraitUrl ? 0.3 : 1}>
+        <g>
           <ellipse cx="100" cy="50" rx="24" ry="30" fill="url(#bodyGrad)" />
           <path d="M80 60 q20 26 40 0" opacity="0.5" />
           <path d="M100 80 v16" />
