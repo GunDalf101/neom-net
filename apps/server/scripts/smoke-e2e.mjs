@@ -19,10 +19,10 @@ class Session {
     this.name = name;
     this.cookie = "";
   }
-  async call(method, path, body) {
+  async call(method, path, body, extraHeaders = {}) {
     const res = await fetch(BASE + path, {
       method,
-      headers: { "content-type": "application/json", cookie: this.cookie },
+      headers: { "content-type": "application/json", "x-neom-client": "e2e", cookie: this.cookie, ...extraHeaders },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const setCookie = res.headers.get("set-cookie");
@@ -54,6 +54,14 @@ function check(cond, msg) {
   console.log(`  ✓ [${step}] ${msg}`);
 }
 
+const status = async (fn) => {
+  try {
+    await fn();
+    return 200;
+  } catch (e) {
+    return e.status ?? -1;
+  }
+};
 const dm = new Session("DM");
 const player = new Session("PLAYER");
 
@@ -65,6 +73,16 @@ check(campaign && campaign.role === "DM", `DM sees "${campaign?.name}" as DM`);
 const cid = campaign.id;
 const full = await dm.call("GET", `/api/campaigns/${cid}`);
 check(full.inviteCode === "NIGHTCITY", "DM sees the invite code");
+
+console.log("    Hardening: password policy, CSRF guard, rate-limit headers");
+check((await status(() => new Session("WEAK").call("POST", "/api/auth/register", { email: "weak-e2e@neom.local", password: "short1" }))) === 400, "Registration rejects a short passphrase (400)");
+check((await status(() => new Session("WEAK").call("POST", "/api/auth/register", { email: "weak-e2e@neom.local", password: "password123" }))) === 400, "Registration rejects a common passphrase (400)");
+check((await status(() => dm.call("POST", `/api/campaigns/${cid}/messages`, { userIds: [], message: "x" }, { "x-neom-client": "" }))) === 403, "A cookie-authenticated mutation without the client header is refused (403)");
+check((await status(() => dm.call("POST", `/api/campaigns/${cid}/messages`, { userIds: [], message: "x" }, { origin: "https://evil.example" }))) === 403, "A mutation from a foreign Origin is refused (403)");
+{
+  const res = await fetch(`${BASE}/api/auth/login`, { method: "POST", headers: { "content-type": "application/json", "x-neom-client": "e2e" }, body: JSON.stringify({ identifier: "nobody-e2e", password: "definitely-wrong" }) });
+  check(res.status === 401 && res.headers.get("ratelimit-limit") !== null && res.headers.get("x-content-type-options") === "nosniff", "Login answers with RateLimit-* and security headers");
+}
 
 console.log("3-4. Player joins (idempotent) and selects a character");
 await player.call("POST", "/api/auth/login", { identifier: "antonio", password: PASSWORD });
@@ -132,14 +150,6 @@ try {
   roInstall = e.status === 403;
 }
 check(roInstall, "Read-only player cannot remove cyberware (403)");
-const status = async (fn) => {
-  try {
-    await fn();
-    return 200;
-  } catch (e) {
-    return e.status ?? -1;
-  }
-};
 
 console.log("    Portraits: owners upload their own picture even in DM-controlled mode");
 const PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";

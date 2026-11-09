@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (155 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (160 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -98,6 +98,15 @@ By default a campaign runs in **DM-controlled mode** (`playersReadOnly: true`): 
 **Hit dice.** A new character's hit die follows its class (d12 barbarian; d10 fighter, paladin, ranger; d6 sorcerer, wizard; d8 for everything else, including custom classes), matched on the first word so "Rogue // Netrunner" is a rogue. The New character form and the Identity editor both expose the die, so the DM can override it for homebrew classes. Level 1 HP defaults to the die plus the CON modifier.
 
 **Armor class without items.** The DM can set a character's unarmored base AC (default 10) and a flat adjustment from the Combat panel on the sheet or from the HP tab of the dashboard live controls. Both show up as their own lines in the AC breakdown, and gear, cyberware and conditions still add on top. Temporary changes are better done as a DM override (Override tab), which keeps the calculated value visible.
+
+## Security
+
+- **Sessions**: HS256 JWT in an `httpOnly`, `SameSite=Lax`, `Secure` (production) cookie, sliding expiry.
+- **CSRF**: on top of `SameSite=Lax`, every state-changing `/api` request is checked against the request's own origin or `CORS_ORIGINS` (`Origin`, falling back to `Referer`), and a request that carries the session cookie must also send the `x-neom-client` header, which HTML forms and image tags cannot add and cross-origin scripts cannot add without a CORS preflight we do not grant. The web client sends it on every call. The Socket.IO handshake rejects foreign origins the same way.
+- **Rate limiting** (in-memory, per IP, fixed window): 2400 `/api` requests per minute as a safety net, 60 per minute on share and hand-off links, 20 registrations per hour, and failed logins only: 30 per 15 minutes per IP and 10 per 15 minutes per account identifier, so a whole table behind one router can still sign in. Responses carry `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` and, when throttled, `Retry-After` with a 429 body that tells the user how long to wait.
+- **Passwords**: at least 10 characters, not equal to the email local part or the handle, not in a short list of the usual suspects; bcrypt cost 12. Login always runs a hash compare so missing accounts do not answer faster.
+- **Headers**: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, and HSTS in production.
+- **Presence**: a socket that re-sends `campaign.join` counts once, so leaving always clears the online marker.
 
 ## Moving a campaign between databases
 
@@ -167,7 +176,8 @@ Not yet implemented or simplified (honest list):
 - Rule expiry branches evaluate their conditions when the rule fires, not at expiry time.
 - Player-to-DM messaging is whisper-only; no group chat.
 - Portrait images are stored as (browser-compressed) data URLs in Postgres; no object storage. Item images remain URL-only.
-- No rate limiting or CSRF token (cookies are `SameSite=Lax`, `httpOnly`; the dev proxy keeps everything same-origin). Add both before exposing publicly.
+- No Content-Security-Policy header yet (portraits are data URLs, fonts come from Google Fonts, the hologram model is fetched at runtime); add one in report-only mode first.
+- Rate limiting is in-process (fixed window per IP); a multi-instance deployment needs a shared store.
 - The web bundle is one chunk (~1.4 MB minified) because the icon picker imports the whole Lucide set; split before production.
 
 ## Review note

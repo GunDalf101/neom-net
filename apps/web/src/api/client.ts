@@ -13,7 +13,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const res = await fetch(`/api${path}`, {
     method,
     credentials: "include",
-    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    // The server refuses state-changing requests without this header (CSRF defence in depth).
+    headers: { "x-neom-client": "web", ...(body === undefined ? {} : { "content-type": "application/json" }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();

@@ -22,6 +22,10 @@ import {
 import { RuleGraphSchema } from "../rules/graph.js";
 
 // ---------- Auth ----------
+export const PASSWORD_MIN_LENGTH = 10;
+/** The usual suspects; a real breach list would be overkill for a private table. */
+const COMMON_PASSWORDS = new Set(["password", "password1", "password12", "password123", "1234567890", "qwertyuiop", "iloveyou12", "letmein123", "admin12345", "neomnet123"]);
+
 export const RegisterSchema = z.object({
   email: z.string().email().max(200),
   /** Handle shown to other players. Optional: defaults to the email's local part. */
@@ -31,7 +35,14 @@ export const RegisterSchema = z.object({
     .max(32)
     .regex(/^[a-zA-Z0-9_\-.]*$/, "Handle may only contain letters, numbers, _ - . (no @)")
     .optional(),
-  password: z.string().min(4, "Passphrase must be at least 4 characters").max(200),
+  password: z.string().min(PASSWORD_MIN_LENGTH, `Passphrase must be at least ${PASSWORD_MIN_LENGTH} characters`).max(200),
+}).superRefine((v, ctx) => {
+  const local = v.email.split("@")[0]?.toLowerCase() ?? "";
+  const pw = v.password.toLowerCase();
+  if ((local.length >= 4 && pw === local) || (v.username && v.username.length >= 4 && pw === v.username.toLowerCase())) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: "Passphrase must not be your email or handle" });
+  }
+  if (COMMON_PASSWORDS.has(pw)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["password"], message: "That passphrase is far too common" });
 });
 export const LoginSchema = z.object({
   identifier: z.string().min(1).max(200),

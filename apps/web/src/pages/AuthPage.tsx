@@ -1,3 +1,4 @@
+import { PASSWORD_MIN_LENGTH } from "@neom/shared";
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useLogin, useMe, useRegister } from "@/api/hooks";
@@ -68,7 +69,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                 </Field>
               </>
             )}
-            <Field label="Passphrase" hint={mode === "register" ? "At least 4 characters" : undefined}>
+            <Field label="Passphrase" hint={mode === "register" ? `At least ${PASSWORD_MIN_LENGTH} characters; a few words you will remember` : undefined}>
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} required />
             </Field>
             {err && <div className="text-xs text-crimson">{errorMessage(err)}</div>}

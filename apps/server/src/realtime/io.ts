@@ -26,8 +26,14 @@ export function createRealtime(httpServer: HttpServer): IoServer {
     path: "/socket.io",
   });
 
+  const allowedOrigins = new Set(config.corsOrigins.map((o) => o.replace(/\/$/, "")));
   io.use(async (socket, next) => {
     try {
+      // Cross-site WebSocket hijacking: browsers always send Origin on the handshake; reject foreign ones.
+      const origin = socket.handshake.headers.origin;
+      const host = socket.handshake.headers.host;
+      const sameOrigin = origin && host && (origin === `https://${host}` || origin === `http://${host}`);
+      if (origin && !sameOrigin && !allowedOrigins.has(origin)) return next(new Error("forbidden origin"));
       const cookies = parseCookies(socket.handshake.headers.cookie);
       const user = await userFromToken(cookies[config.cookieName]);
       if (!user) return next(new Error("unauthorized"));
@@ -51,8 +57,11 @@ export function createRealtime(httpServer: HttpServer): IoServer {
         if (!membership) return ack(false, "Not a member of this campaign");
         socket.join(rooms.campaign(campaignId));
         if (membership.role === "DM") socket.join(rooms.dm(campaignId));
-        joined.add(campaignId);
-        markOnline(campaignId, user.id, +1);
+        // A socket may re-send join (reconnect handlers, React effects); count its presence once.
+        if (!joined.has(campaignId)) {
+          joined.add(campaignId);
+          markOnline(campaignId, user.id, +1);
+        }
         ack(true);
       } catch (err) {
         logger.error({ err }, "campaign.join failed");

@@ -3,7 +3,22 @@ import { Router } from "express";
 import { clearSessionCookie, hashPassword, requireAuth, setSessionCookie, signToken, verifyPassword, type AuthedRequest } from "../auth/auth.js";
 import { prisma } from "../db.js";
 import { conflict, unauthorized, wrap } from "../errors.js";
+import { rateLimit } from "../middleware/rateLimit.js";
 import { parseBody } from "../middleware/validate.js";
+
+const WINDOW_15_MIN = 15 * 60 * 1000;
+/** Per IP: failed logins only, so a table full of people behind one NAT can still sign in. */
+const loginIpLimit = rateLimit({ name: "login-ip", windowMs: WINDOW_15_MIN, max: 30, failuresOnly: true, message: "Too many failed logins from this network. Try again in 15 minutes." });
+/** Per account: stops a distributed guess against one identifier. */
+const loginAccountLimit = rateLimit({
+  name: "login-account",
+  windowMs: WINDOW_15_MIN,
+  max: 10,
+  failuresOnly: true,
+  key: (req) => (typeof req.body?.identifier === "string" ? req.body.identifier.trim().toLowerCase() : null),
+  message: "Too many failed logins for this account. Try again in 15 minutes.",
+});
+const registerLimit = rateLimit({ name: "register", windowMs: 60 * 60 * 1000, max: 20, message: "Too many accounts created from this network. Try again later." });
 
 export const authRouter = Router();
 
@@ -16,6 +31,7 @@ const publicUser = (u: { id: string; email: string; username: string; createdAt:
 
 authRouter.post(
   "/register",
+  registerLimit,
   wrap(async (req, res) => {
     const input = parseBody(RegisterSchema, req.body);
     const email = input.email.toLowerCase();
@@ -46,6 +62,8 @@ authRouter.post(
 
 authRouter.post(
   "/login",
+  loginIpLimit,
+  loginAccountLimit,
   wrap(async (req, res) => {
     const input = parseBody(LoginSchema, req.body);
     const id = input.identifier.trim();

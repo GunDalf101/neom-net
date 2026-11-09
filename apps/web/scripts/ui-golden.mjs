@@ -195,7 +195,7 @@ for (const vp of Object.keys(VIEWPORTS)) {
     await pl.page.waitForTimeout(1200);
     const after = await pl.page.evaluate(async (id) => (await (await fetch(`/api/characters/${id}`)).json()).character.portraitUrl, characterId);
     if (!after || !after.startsWith("data:image/")) fail(`[G11] portrait upload did not persist (got ${String(after).slice(0, 30)})`);
-    await pl.page.evaluate(async ([id, url]) => fetch(`/api/characters/${id}/portrait`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ portraitUrl: url }) }), [characterId, before]);
+    await pl.page.evaluate(async ([id, url]) => fetch(`/api/characters/${id}/portrait`, { method: "PUT", headers: { "content-type": "application/json", "x-neom-client": "test" }, body: JSON.stringify({ portraitUrl: url }) }), [characterId, before]);
   }
 
   // Share link from the System menu (G3: visible to the owner, G6: answers with a link).
@@ -239,7 +239,7 @@ for (const vp of Object.keys(VIEWPORTS)) {
     const m = await session("antonio", "phone");
     await m.page.goto(`${BASE}/s/${token}`);
     await m.page.waitForURL(/\/hud\//, { timeout: 8000 }).catch(() => fail(`[G11] member following the link landed on ${m.page.url()} instead of the HUD`));
-    await m.page.evaluate(async (id) => fetch(`/api/characters/${id}/share`, { method: "DELETE" }), characterId);
+    await m.page.evaluate(async (id) => fetch(`/api/characters/${id}/share`, { method: "DELETE", headers: { "x-neom-client": "test" } }), characterId);
     await m.ctx.close();
   } else fail("[G11] no share token produced");
 }
