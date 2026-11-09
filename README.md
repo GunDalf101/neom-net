@@ -138,6 +138,12 @@ WEB_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:ui
 - Hand-off by link: the DM creates a one-time link from the live controls ("Hand-off link") or the HUD gear menu. The first player to open it signs in or registers, joins the campaign if needed, becomes the owner of the sheet, and the link stops working. The read-only share link (`/s/<token>`) remains for viewing or importing a copy.
 - Change log: every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
 
+## The hologram figure
+
+The cyberware column of the Character page renders `apps/web/public/models/hologram.glb` with three.js as a hologram: every material is replaced by a fresnel-rim shader with scanlines, a sweeping band and a faint wireframe pass, standing on a lit platform with a turning ring and a projection beam. The figure sways slowly (still under `prefers-reduced-motion`), pauses when the tab is hidden, and the slot connector lines follow it every frame. Slot anchors are snapped to the nearest surface point of the mesh from the normalised targets in `HoloModel.tsx`, so another humanoid model works without retuning. Without the file, or without WebGL, the page falls back to the built-in SVG figure.
+
+The shipped model is a Sketchfab fan model of David Martinez (Cyberpunk: Edgerunners) supplied by the campaign's DM for this private table; check the model's licence before using it anywhere public. Textures are irrelevant to the shader, so strip them before committing a model: `npm run model:slim -w @neom/web -- in.glb apps/web/public/models/hologram.glb` (18.8 MB → 3.1 MB for this one). The model and the Draco decoder under `/draco/` are fetched on demand and cached by the service worker for offline use.
+
 ## What works / what is next
 
 Working and verified end to end (API tests + build):

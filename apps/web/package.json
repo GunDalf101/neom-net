@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
     "test:ui": "node scripts/ui-golden.mjs",
-    "pw:install": "playwright install chromium"
+    "pw:install": "playwright install chromium",
+    "model:slim": "node scripts/slim-glb.mjs"
   },
   "dependencies": {
     "@neom/shared": "*",
@@ -21,6 +22,7 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
     "socket.io-client": "^4.8.0",
+    "three": "^0.170.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.0"
   },
@@ -28,6 +30,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^4.3.3",
     "playwright": "^1.49.1",
     "tailwindcss": "^4.0.0",

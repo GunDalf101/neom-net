@@ -51,6 +51,12 @@ export default defineConfig({
         skipWaiting: true,
         runtimeCaching: [
           {
+            // The hologram model and Draco decoder are fetched on demand, then kept for offline use.
+            urlPattern: /\/(models|draco)\//,
+            handler: "CacheFirst",
+            options: { cacheName: "neom-models", expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//,
             handler: "CacheFirst",
             options: { cacheName: "neom-fonts", expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 365 } },

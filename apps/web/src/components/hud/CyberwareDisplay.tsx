@@ -1,10 +1,14 @@
 import { AUGMENTATION_SLOTS, AUGMENTATION_SLOT_META, describePassiveEffect, type AugmentationSlot, type CharacterView, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
-import { forwardRef, useLayoutEffect, useRef, useState } from "react";
+import { Suspense, forwardRef, lazy, useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui";
 import { StatBreakdown } from "@/components/StatBreakdown";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { AugmentationDrawer } from "./AugmentationDrawer";
+import type { AnchorReader } from "./HoloModel";
+
+// three.js only loads when the figure mounts; the SVG figure is the fallback when there is no model (or no WebGL).
+const HoloModel = lazy(() => import("./HoloModel").then((m) => ({ default: m.HoloModel })));
 
 const LEFT: AugmentationSlot[] = ["eyes", "ears", "arms", "hands", "legs", "feet"];
 const RIGHT: AugmentationSlot[] = ["brain", "mouth", "torso", "back"];
@@ -41,42 +45,62 @@ const STATUS_COLOR: Record<string, string> = { installed: "ok", damaged: "amber"
 export function CyberwareDisplay({ view }: { view: CharacterView }) {
   const { character: c, derived } = view;
   const [openSlot, setOpenSlot] = useState<AugmentationSlot | null>(null);
+  const [mode, setMode] = useState<"model" | "svg">("model");
+  const [modelReady, setModelReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<SVGSVGElement>(null);
+  const anchorReader = useRef<AnchorReader | null>(null);
   const cardRefs = useRef<Partial<Record<AugmentationSlot, HTMLButtonElement | null>>>({});
-  const [lines, setLines] = useState<{ slot: AugmentationSlot; x1: number; y1: number; x2: number; y2: number; color: string }[]>([]);
+  const lineRefs = useRef<Partial<Record<AugmentationSlot, { line: SVGPolylineElement | null; a: SVGCircleElement | null; b: SVGCircleElement | null; ring: SVGCircleElement | null }>>>({});
 
   const installed = new Map<AugmentationSlot, ItemInstanceDto>();
   for (const i of view.items) if (i.installedSlot) installed.set(i.installedSlot, i);
 
+  /** Anchors in client coordinates: from the 3D projection when the model is up, else from the SVG figure. */
+  const readAnchors = useCallback((): Partial<Record<AugmentationSlot, [number, number]>> | null => {
+    const fromModel = anchorReader.current?.();
+    if (fromModel) return fromModel;
+    const svg = figureRef.current;
+    if (!svg) return null;
+    const sRect = svg.getBoundingClientRect();
+    const out: Partial<Record<AugmentationSlot, [number, number]>> = {};
+    for (const slot of AUGMENTATION_SLOTS) {
+      const [ax, ay] = ANCHORS[slot];
+      out[slot] = [sRect.left + (ax / 200) * sRect.width, sRect.top + (ay / 440) * sRect.height];
+    }
+    return out;
+  }, []);
+
+  /** Imperative so the 3D sway can move the lines every frame without re-rendering React. */
+  const measure = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const anchors = readAnchors();
+    if (!anchors) return;
+    const cRect = container.getBoundingClientRect();
+    for (const slot of AUGMENTATION_SLOTS) {
+      const card = cardRefs.current[slot];
+      const refs = lineRefs.current[slot];
+      const anchor = anchors[slot];
+      if (!card || !refs?.line || !anchor) continue;
+      const r = card.getBoundingClientRect();
+      const isLeft = LEFT.includes(slot);
+      const x1 = (isLeft ? r.right : r.left) - cRect.left;
+      const y1 = r.top + r.height / 2 - cRect.top;
+      const x2 = anchor[0] - cRect.left;
+      const y2 = anchor[1] - cRect.top;
+      const midX = x1 + (x2 - x1) * 0.5;
+      refs.line.setAttribute("points", `${x1},${y1} ${midX},${y1} ${x2},${y2}`);
+      refs.a?.setAttribute("cx", String(x1));
+      refs.a?.setAttribute("cy", String(y1));
+      refs.b?.setAttribute("cx", String(x2));
+      refs.b?.setAttribute("cy", String(y2));
+      refs.ring?.setAttribute("cx", String(x2));
+      refs.ring?.setAttribute("cy", String(y2));
+    }
+  }, [readAnchors]);
+
   useLayoutEffect(() => {
-    const measure = () => {
-      const container = containerRef.current;
-      const svg = figureRef.current;
-      if (!container || !svg) return;
-      const cRect = container.getBoundingClientRect();
-      const sRect = svg.getBoundingClientRect();
-      const scaleX = sRect.width / 200;
-      const scaleY = sRect.height / 440;
-      const next: typeof lines = [];
-      for (const slot of AUGMENTATION_SLOTS) {
-        const card = cardRefs.current[slot];
-        if (!card) continue;
-        const r = card.getBoundingClientRect();
-        const isLeft = LEFT.includes(slot);
-        const [ax, ay] = ANCHORS[slot];
-        const item = installed.get(slot);
-        next.push({
-          slot,
-          x1: (isLeft ? r.right : r.left) - cRect.left,
-          y1: r.top + r.height / 2 - cRect.top,
-          x2: sRect.left - cRect.left + ax * scaleX,
-          y2: sRect.top - cRect.top + ay * scaleY,
-          color: item ? accent(RARITY_COLOR[item.definition.rarity]) : "rgba(25,227,255,0.35)",
-        });
-      }
-      setLines(next);
-    };
     measure();
     const ro = new ResizeObserver(measure);
     if (containerRef.current) ro.observe(containerRef.current);
@@ -85,8 +109,7 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view.items.map((i) => `${i.id}:${i.status}:${i.installedSlot}`).join("|")]);
+  }, [measure, mode, modelReady, view.items.map((i) => `${i.id}:${i.status}:${i.installedSlot}`).join("|")]);
 
   const cap = derived.capacity.value;
   const used = derived.capacityUsed;
@@ -96,13 +119,16 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
       {/* Track minimums must stay under the centre column's 560px floor (516px here); the roomier set only applies on wide screens. */}
       <div ref={containerRef} className="relative grid flex-1 grid-cols-[minmax(170px,1fr)_minmax(160px,1.05fr)_minmax(170px,1fr)] gap-2 2xl:grid-cols-[minmax(190px,1fr)_minmax(200px,1.15fr)_minmax(190px,1fr)]">
         <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible">
-          {lines.map((l) => {
-            const midX = l.x1 + (l.x2 - l.x1) * 0.5;
+          {AUGMENTATION_SLOTS.map((slot) => {
+            const item = installed.get(slot);
+            const color = item ? accent(RARITY_COLOR[item.definition.rarity]) : "rgba(25,227,255,0.35)";
+            const refs = (lineRefs.current[slot] ??= { line: null, a: null, b: null, ring: null });
             return (
-              <g key={l.slot}>
-                <polyline points={`${l.x1},${l.y1} ${midX},${l.y1} ${l.x2},${l.y2}`} fill="none" stroke={l.color} strokeWidth={1.2} strokeDasharray={installed.has(l.slot) ? undefined : "3 4"} opacity={0.9} />
-                <circle cx={l.x1} cy={l.y1} r={2.5} fill={l.color} />
-                <circle cx={l.x2} cy={l.y2} r={3.5} fill={l.color} style={{ filter: `drop-shadow(0 0 5px ${l.color})` }} />
+              <g key={slot}>
+                <polyline ref={(el) => (refs.line = el)} points="0,0 0,0 0,0" fill="none" stroke={color} strokeWidth={1.2} strokeDasharray={item ? undefined : "3 4"} opacity={0.9} />
+                <circle ref={(el) => (refs.a = el)} r={2.5} fill={color} />
+                <circle ref={(el) => (refs.ring = el)} r={6.5} fill="rgba(4,6,10,0.75)" stroke={color} strokeWidth={1.2} />
+                <circle ref={(el) => (refs.b = el)} r={2.8} fill={color} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
               </g>
             );
           })}
@@ -113,7 +139,24 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
           ))}
         </div>
         <div className="relative z-0 flex items-center justify-center">
-          <Figure ref={figureRef} portraitUrl={c.portraitUrl} installed={installed} />
+          {mode === "model" ? (
+            <div className="relative h-full min-h-[420px] w-full max-w-[300px]" data-testid="holo-stage">
+              {!modelReady && <Figure ref={figureRef} portraitUrl={c.portraitUrl} installed={installed} dim />}
+              <Suspense fallback={null}>
+                <HoloModel
+                  anchorRef={anchorReader}
+                  onFrame={measure}
+                  onReady={() => setModelReady(true)}
+                  onUnavailable={() => {
+                    setModelReady(false);
+                    setMode("svg");
+                  }}
+                />
+              </Suspense>
+            </div>
+          ) : (
+            <Figure ref={figureRef} portraitUrl={c.portraitUrl} installed={installed} />
+          )}
         </div>
         <div className="relative z-10 flex flex-col justify-between gap-1.5 py-1">
           {RIGHT.map((slot) => (
@@ -190,16 +233,11 @@ const HOLO = {
   leg: "M100 226 C112 222 128 216 134 214 C136 240 134 270 130 300 C132 320 130 350 128 380 L128 396 L134 404 L138 410 L106 410 L109 398 L112 380 C110 350 108 320 110 300 C106 270 103 250 100 226 Z",
 };
 
-const Figure = forwardRef<SVGSVGElement, { portraitUrl: string | null; installed: Map<AugmentationSlot, ItemInstanceDto> }>(function Figure({ portraitUrl, installed }, ref) {
-  const glow = (slot: AugmentationSlot) => {
-    const item = installed.get(slot);
-    if (!item) return "rgba(25,227,255,0.35)";
-    return accent(item.status === "installed" ? RARITY_COLOR[item.definition.rarity] : STATUS_COLOR[item.status] ?? "ok");
-  };
+const Figure = forwardRef<SVGSVGElement, { portraitUrl: string | null; installed: Map<AugmentationSlot, ItemInstanceDto>; dim?: boolean }>(function Figure({ portraitUrl, dim }, ref) {
   const body = `${HOLO.head} ${HOLO.torso} ${HOLO.arm} ${HOLO.leg}`;
   const mirror = "translate(200 0) scale(-1 1)";
   return (
-    <div className="relative h-full min-h-[420px] w-full max-w-[280px]">
+    <div className={clsx("relative h-full min-h-[420px] w-full max-w-[280px] transition-opacity", dim && "opacity-40")}>
       {/* The portrait is only an ambient colour wash here (the real portrait lives on the identity card). */}
       {portraitUrl && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: "polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)" }}>
@@ -307,17 +345,6 @@ const Figure = forwardRef<SVGSVGElement, { portraitUrl: string | null; installed
           <circle cx="100" cy="122" r="3" fill="rgba(190,250,255,0.95)" stroke="none" />
         </g>
 
-        {/* Slot anchors */}
-        {AUGMENTATION_SLOTS.map((slot) => {
-          const [x, y] = ANCHORS[slot];
-          const color = glow(slot);
-          return (
-            <g key={slot}>
-              <circle cx={x} cy={y} r="5" stroke={color} fill="rgba(4,6,10,0.8)" />
-              <circle cx={x} cy={y} r="2" fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
-            </g>
-          );
-        })}
       </svg>
       <div className="hud-scan" />
     </div>
