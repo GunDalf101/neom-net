@@ -68,6 +68,7 @@ export function App() {
             <Route path="workshop" element={<WorkshopPage />} />
             <Route path="rules" element={<RulesPage />} />
             <Route path="rules/:ruleId" element={<RulesPage />} />
+            {/* Not in the sidebar any more; still reachable from the dashboard Encounter tile for turn tracking. */}
             <Route path="encounters" element={<EncountersPage />} />
             <Route path="npcs" element={<NpcsPage />} />
             <Route path="missions" element={<DmMissionsPage />} />

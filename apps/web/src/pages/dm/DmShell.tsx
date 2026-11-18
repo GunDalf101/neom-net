@@ -20,7 +20,6 @@ const NAV = [
   { to: "", label: "Dashboard", icon: "layout-dashboard", end: true },
   { to: "workshop", label: "Workshop", icon: "hammer" },
   { to: "rules", label: "Rules", icon: "git-fork" },
-  { to: "encounters", label: "Encounters", icon: "swords" },
   { to: "npcs", label: "NPCs", icon: "users-round" },
   { to: "missions", label: "Missions & lore", icon: "target" },
   { to: "events", label: "Event log", icon: "scroll-text" },

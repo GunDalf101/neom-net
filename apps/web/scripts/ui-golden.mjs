@@ -31,7 +31,6 @@ const DM_PAGES = [
   ["", ["Character roster", "Live control", "Recent events"]],
   ["workshop", ["Catalog", "Workshop"]],
   ["rules", ["Rules"]],
-  ["encounters", ["Encounters"]],
   ["npcs", ["NPC"]],
   ["missions", ["Mission"]],
   ["events", ["Campaign event history"]],
