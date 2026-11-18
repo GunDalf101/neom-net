@@ -340,6 +340,7 @@ export function toMissionDto(m: Prisma.MissionGetPayload<{ include: { assignment
     description: m.description,
     objectives: arr<MissionDto["objectives"][number]>(m.objectives),
     status: m.status as MissionDto["status"],
+    kind: (m.kind as MissionDto["kind"]) ?? "main",
     rewards: obj<MissionDto["rewards"]>(m.rewards, { xp: 0, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }),
     assignedCharacterIds: m.assignments.map((a) => a.characterId),
     assignments: m.assignments.map((a) => ({ characterId: a.characterId, response: a.response as MissionDto["assignments"][number]["response"], respondedAt: a.respondedAt ? iso(a.respondedAt) : null, note: a.note })),

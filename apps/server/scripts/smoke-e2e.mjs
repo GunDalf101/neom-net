@@ -306,8 +306,8 @@ check(badLimit, "Page size is capped (400 above 200)");
 await player.call("POST", `/api/campaigns/${cid}/messages/read`, {});
 
 console.log("    Crew-only missions are visible only to assigned players and notify them");
-const crewMission = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Quiet Job (E2E)", description: "Crew only.", objectives: [{ id: "o1", text: "Find the fixer", done: false }], status: "available", rewards: { xp: 50, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [charId], visibleToPlayers: true, assignedOnly: true });
-check(crewMission.assignedOnly === true, "Mission saved as crew-only");
+const crewMission = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Quiet Job (E2E)", description: "Crew only.", objectives: [{ id: "o1", text: "Find the fixer", done: false }], status: "available", kind: "secondary", rewards: { xp: 50, credits: 0, progressionPoints: 0, itemDefinitionIds: [] }, assignedCharacterIds: [charId], visibleToPlayers: true, assignedOnly: true });
+check(crewMission.assignedOnly === true && crewMission.kind === "secondary", "Secondary mission saved as crew-only");
 check((await player.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === crewMission.id), "Assigned player sees the crew-only mission");
 check(!(await claimer.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === crewMission.id), "Unassigned member does not see it");
 const missionAssignedEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.assigned" && e.payload.missionId === crewMission.id);
@@ -341,6 +341,24 @@ await dm.call("PUT", `/api/campaigns/${cid}/missions/${crewMission.id}`, { ...cr
 const statusEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).find((e) => e.type === "mission.status" && e.payload.missionId === crewMission.id);
 check(Boolean(statusEvt), "Crew-only status change reaches the assigned player");
 await dm.call("DELETE", `/api/campaigns/${cid}/missions/${crewMission.id}`);
+
+console.log("    Mission kinds: main cannot be refused, personal is private, completed missions stay with the DM");
+for (const m of await dm.call("GET", `/api/campaigns/${cid}/missions`)) if (m.name.includes("(E2E)")) await dm.call("DELETE", `/api/campaigns/${cid}/missions/${m.id}`);
+const mainM = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Story Beat (E2E)", description: "Main line.", objectives: [{ id: "o1", text: "Go", done: false }], status: "active", assignedCharacterIds: [charId], visibleToPlayers: true });
+check(mainM.kind === "main", "Missions default to the main kind");
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/missions/${mainM.id}/respond`, { characterId: charId, response: "declined", note: "nope" }))) === 422, "A main mission cannot be declined (422)");
+const mainTicked = await player.call("POST", `/api/campaigns/${cid}/missions/${mainM.id}/objectives/o1`, { done: true });
+check(mainTicked.objectives[0].done === true, "Main-mission objectives need no acceptance");
+const personalM = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Old Debt (E2E)", description: "Personal.", objectives: [], status: "available", kind: "personal", assignedCharacterIds: [charId], visibleToPlayers: true, assignedOnly: false });
+check(personalM.kind === "personal" && personalM.assignedOnly === true, "Personal missions are forced crew-only");
+check((await player.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === personalM.id), "The assigned character's player sees the personal mission");
+check(!(await claimer.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === personalM.id), "Other players do not");
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/missions/${personalM.id}/respond`, { characterId: charId, response: "declined" }))) === 422, "A personal mission cannot be declined (422)");
+await dm.call("PUT", `/api/campaigns/${cid}/missions/${mainM.id}`, { ...mainM, status: "completed" });
+check(!(await player.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === mainM.id), "Completed missions disappear from the player list");
+check((await dm.call("GET", `/api/campaigns/${cid}/missions`)).some((m) => m.id === mainM.id && m.status === "completed"), "The DM still sees the completed mission");
+await dm.call("DELETE", `/api/campaigns/${cid}/missions/${mainM.id}`);
+await dm.call("DELETE", `/api/campaigns/${cid}/missions/${personalM.id}`);
 const seen = await player.call("POST", `/api/campaigns/${cid}/notifications/seen`, {});
 check(typeof seen.seenAt === "string" && (await player.call("GET", `/api/campaigns/${cid}`)).notificationsSeenAt === seen.seenAt, "Notification seen marker stored per member");
 

@@ -6,6 +6,7 @@ import {
   DAMAGE_TYPES,
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
+  MISSION_KINDS,
   RARITIES,
   ROLL_CATEGORIES,
   ROLL_VISIBILITIES,
@@ -392,6 +393,8 @@ export const MissionInputSchema = z.object({
     .max(30)
     .default([]),
   status: z.enum(["available", "active", "completed", "failed"]).default("available"),
+  /** main (story, cannot be refused) | secondary (optional) | personal (one character, cannot be refused). */
+  kind: z.enum(MISSION_KINDS).default("main"),
   rewards: z
     .object({
       xp: z.number().int().min(0).default(0),

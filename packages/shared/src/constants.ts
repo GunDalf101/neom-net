@@ -262,6 +262,20 @@ export function hitDieForClass(characterClass: string | undefined | null): HitDi
 export const DEFAULT_SPEED_METERS = 9;
 export const DEFAULT_SPECIAL_MAX_RANK = 5;
 
+// ---------- Missions ----------
+export const MISSION_KINDS = ["main", "secondary", "personal"] as const;
+export type MissionKind = (typeof MISSION_KINDS)[number];
+/**
+ * main: the story line, offered to the whole crew, cannot be refused.
+ * secondary: optional side work, each assigned player accepts or declines.
+ * personal: one character's own thread, visible to that character alone, cannot be refused.
+ */
+export const MISSION_KIND_META: Record<MissionKind, { label: string; color: string; refusable: boolean; personal: boolean; blurb: string }> = {
+  main: { label: "Main", color: "amber", refusable: false, personal: false, blurb: "The story. Assigned crew are in; no refusing." },
+  secondary: { label: "Secondary", color: "cyan", refusable: true, personal: false, blurb: "Optional side work. Accept or decline." },
+  personal: { label: "Personal", color: "violet", refusable: false, personal: true, blurb: "One character's own thread. Only they see it." },
+};
+
 // ---------- Reputation ----------
 export const REPUTATION_MIN = -100;
 export const REPUTATION_MAX = 100;

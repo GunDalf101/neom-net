@@ -7,6 +7,7 @@ import type {
   EquipmentSlot,
   ItemCategory,
   ItemStatus,
+  MissionKind,
   Rarity,
   RollCategory,
   RollVisibility,
@@ -424,6 +425,7 @@ export interface MissionDto {
   description: string;
   objectives: { id: string; text: string; done: boolean }[];
   status: "available" | "active" | "completed" | "failed";
+  kind: MissionKind;
   rewards: { xp: number; credits: number; progressionPoints: number; itemDefinitionIds: string[] };
   assignedCharacterIds: string[];
   /** Per-crew answer to the offer. */

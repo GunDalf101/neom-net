@@ -517,6 +517,8 @@ model Mission {
   description      String    @default("")
   objectives       Json      @default("[]")
   status           String    @default("available")
+  /// main | secondary | personal (see MISSION_KIND_META in @neom/shared).
+  kind             String    @default("main")
   rewards          Json      @default("{}")
   visibleToPlayers Boolean   @default(true)
   /// With visibleToPlayers: only players whose character is assigned can see it.

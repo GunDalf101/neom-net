@@ -1,4 +1,4 @@
-import type { JournalEntryDto, JournalInput, MissionDto, MissionInput, MissionResponseSchema, NpcDto, NpcInput } from "@neom/shared";
+import { MISSION_KIND_META, type JournalEntryDto, type JournalInput, type MissionDto, type MissionInput, type MissionKind, type MissionResponseSchema, type NpcDto, type NpcInput } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { prisma } from "../db.js";
@@ -59,11 +59,20 @@ export async function deleteNpc(campaignId: string, id: string): Promise<void> {
 
 const missionInclude = { assignments: true } satisfies Prisma.MissionInclude;
 
+/**
+ * Players see open missions only (completed and failed stay with the DM), never hidden ones, and crew-only or
+ * personal missions only when one of their characters is assigned. The DM sees everything.
+ */
 export async function listMissions(campaignId: string, viewer: { userId: string; isDm: boolean }): Promise<MissionDto[]> {
   const rows = await prisma.mission.findMany({
     where: viewer.isDm
       ? { campaignId }
-      : { campaignId, visibleToPlayers: true, OR: [{ assignedOnly: false }, { assignments: { some: { character: { ownerUserId: viewer.userId } } } }] },
+      : {
+          campaignId,
+          visibleToPlayers: true,
+          status: { in: ["available", "active"] },
+          OR: [{ assignedOnly: false, kind: { not: "personal" } }, { assignments: { some: { character: { ownerUserId: viewer.userId } } } }],
+        },
     include: missionInclude,
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
   });
@@ -78,9 +87,11 @@ async function writeMission(campaignId: string, input: MissionInput, id?: string
     description: input.description,
     objectives: input.objectives as unknown as Prisma.InputJsonValue,
     status: input.status,
+    kind: input.kind,
     rewards: input.rewards as unknown as Prisma.InputJsonValue,
     visibleToPlayers: input.visibleToPlayers,
-    assignedOnly: input.assignedOnly,
+    // A personal mission is always crew-only: the assigned character alone sees it.
+    assignedOnly: input.kind === "personal" ? true : input.assignedOnly,
   };
   return prisma.$transaction(async (tx) => {
     const m = id
@@ -97,7 +108,7 @@ async function writeMission(campaignId: string, input: MissionInput, id?: string
 /** Who may see a mission's public events: everyone, or only the assigned crew (per-owner events). */
 function missionAudience(input: MissionInput): "public" | "crew" | "dm" {
   if (!input.visibleToPlayers) return "dm";
-  return input.assignedOnly ? "crew" : "public";
+  return input.assignedOnly || input.kind === "personal" ? "crew" : "public";
 }
 
 /** Notifies newly assigned characters' players (always pushed, see push.ts ALWAYS). */
@@ -170,7 +181,10 @@ export async function toggleObjective(campaignId: string, userId: string, isDm: 
   if (playerIsReadOnly(m.campaign, isDm)) throw forbidden("This campaign is DM-controlled: only the Dungeon Master updates missions");
   const mine = m.assignments.filter((a) => a.character.ownerUserId === userId);
   if (!isDm && mine.length === 0) throw forbidden("Mission is not assigned to your character");
-  if (!isDm && !mine.some((a) => a.response === "accepted")) throw forbidden(mine.some((a) => a.response === "declined") ? "You declined this mission" : "Accept the mission before working its objectives");
+  // Only secondary missions are offers; main and personal assignments are binding, so no acceptance is needed.
+  if (!isDm && MISSION_KIND_META[(m.kind as MissionKind) ?? "main"].refusable && !mine.some((a) => a.response === "accepted")) {
+    throw forbidden(mine.some((a) => a.response === "declined") ? "You declined this mission" : "Accept the mission before working its objectives");
+  }
   const objectives = ((m.objectives as { id: string; text: string; done: boolean }[]) ?? []).map((o) => (o.id === objectiveId ? { ...o, done } : o));
   const updated = await prisma.mission.update({ where: { id: missionId }, data: { objectives }, include: missionInclude });
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
@@ -274,6 +288,8 @@ export async function respondToMission(campaignId: string, userId: string, isDm:
   if (!isDm && a.character.ownerUserId !== userId) throw forbidden("Not your character");
   if (m.status === "completed" || m.status === "failed") throw ruleViolation(`Mission is already ${m.status}`);
   if (!m.visibleToPlayers && !isDm) throw notFound("Mission");
+  const kind = (m.kind as MissionKind) ?? "main";
+  if (input.response === "declined" && !MISSION_KIND_META[kind].refusable) throw ruleViolation(`${MISSION_KIND_META[kind].label} missions cannot be declined`);
   await prisma.missionAssignment.update({ where: { missionId_characterId: { missionId, characterId: a.characterId } }, data: { response: input.response, respondedAt: new Date(), note: input.note } });
   const who = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { username: true } });
   await logEvent({

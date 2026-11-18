@@ -24,7 +24,7 @@ const HUD_PAGES = [
   ["cyberware", ["Installed systems", "Known cyberware catalog"]],
   ["reputation", ["Reputation", "Neon City"]],
   ["journal", ["Campaign lore", "Private notes"]],
-  ["missions", ["Active"]],
+  ["missions", ["Main", "Secondary", "Personal"]],
   ["log", ["Change log"]],
 ];
 const DM_PAGES = [
