@@ -153,7 +153,11 @@ function HpTab({ characterId, acBase, acBonus, ac, psychPoints, psych }: { chara
         <span className="text-muted">Cyberpsychosis</span>
         <span className="num font-bold text-violet">{psych.percent}%</span>
         <span className="text-dim">{psych.current} / {psych.max} (threshold = cyberware capacity) · {psych.fromCyberware} cyberware + {psych.points} points</span>
-        <Input type="number" min={0} max={999} key={`p${psychPoints}`} defaultValue={psychPoints} className="num !w-16" title="Cyberpsychosis points (trauma, botched installs)" onBlur={(e) => Number(e.target.value) !== psychPoints && update.mutate({ cyberpsychosis: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+        <Button size="xs" variant="ghost" icon="minus" disabled={psychPoints <= 0 || update.isPending} onClick={() => update.mutate({ cyberpsychosis: psychPoints - 1 })} aria-label="Remove one cyberpsychosis point" />
+        <Input type="number" min={0} max={999} key={`p${psychPoints}`} defaultValue={psychPoints} className="num !w-16" title="Cyberpsychosis points (trauma, botched installs): type a value or use − / +" onBlur={(e) => Number(e.target.value) !== psychPoints && update.mutate({ cyberpsychosis: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+        <Button size="xs" variant="ghost" icon="plus" disabled={psychPoints >= 999 || update.isPending} onClick={() => update.mutate({ cyberpsychosis: psychPoints + 1 })} aria-label="Add one cyberpsychosis point" />
+        <Button size="xs" variant="ghost" disabled={psychPoints <= 4 || update.isPending} onClick={() => update.mutate({ cyberpsychosis: psychPoints - 5 })}>−5</Button>
+        <Button size="xs" variant="ghost" disabled={psychPoints >= 995 || update.isPending} onClick={() => update.mutate({ cyberpsychosis: psychPoints + 5 })}>+5</Button>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
         <span className="text-muted">Armor class</span>

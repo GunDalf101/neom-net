@@ -206,9 +206,15 @@ function CombatTab({ view }: { view: CharacterView }) {
             </StatBreakdown>
             <Bar value={Math.min(derived.cyberpsychosis.current, derived.cyberpsychosis.max)} max={derived.cyberpsychosis.max} color={derived.cyberpsychosis.percent >= 100 ? "crimson" : derived.cyberpsychosis.percent >= 75 ? "amber" : "violet"} className="w-full" height={6} />
             {permissions.isDm && (
-              <span className="flex items-center gap-1 text-[0.6rem] text-muted" title="DM: cyberpsychosis points from trauma, botched installs, etc. Cyberware load is added automatically.">
+              <span className="flex items-center gap-1 text-[0.6rem] text-muted" title="DM: cyberpsychosis points from trauma, botched installs, etc. Cyberware load is added automatically." data-testid="psych-points">
                 <span className="font-display text-[0.5rem] tracking-[0.2em] text-crimson">DM</span> pts
-                <IntBox value={c.cyberpsychosis} min={0} max={999} onCommit={(v) => update.mutate({ cyberpsychosis: v })} title="Cyberpsychosis points" />
+                <button type="button" className="adj-btn" disabled={c.cyberpsychosis <= 0} onClick={() => update.mutate({ cyberpsychosis: c.cyberpsychosis - 1 })} aria-label="Remove one cyberpsychosis point">
+                  <Icon name="minus" size={10} />
+                </button>
+                <IntBox value={c.cyberpsychosis} min={0} max={999} onCommit={(v) => update.mutate({ cyberpsychosis: v })} title="Cyberpsychosis points (type a value)" />
+                <button type="button" className="adj-btn" disabled={c.cyberpsychosis >= 999} onClick={() => update.mutate({ cyberpsychosis: c.cyberpsychosis + 1 })} aria-label="Add one cyberpsychosis point">
+                  <Icon name="plus" size={10} />
+                </button>
               </span>
             )}
           </div>
