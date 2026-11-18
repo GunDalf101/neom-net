@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useEvents } from "@/api/hooks";
 import { Empty, Panel, Spinner } from "@/components/ui";
 import { EventRow } from "@/pages/dm/EventsPage";
@@ -16,11 +17,13 @@ const FILTERS: { id: string; label: string; match: (type: string) => boolean }[]
 
 /** Every logged change to this character, newest first, with field-level diffs for sheet edits. */
 export function LogPage() {
-  const { view, campaign } = useHud();
+  const { view, campaign, isDm } = useHud();
   const events = useEvents(campaign.id, view.character.id);
   const [filter, setFilter] = useState("all");
   const active = FILTERS.find((f) => f.id === filter) ?? FILTERS[0]!;
   const rows = useMemo(() => (events.data ?? []).filter((e) => active.match(e.type)), [events.data, active]);
+  // The change log is a DM tool; players who land here go back to their sheet.
+  if (!isDm) return <Navigate to={`/c/${campaign.id}/hud/${view.character.id}`} replace />;
 
   return (
     <div className="mx-auto max-w-4xl">

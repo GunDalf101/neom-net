@@ -16,7 +16,7 @@ const CATS: { id: string; label: string; icon: string; match: (i: ItemInstanceDt
   { id: "armor", label: "Armor", icon: "shield", match: (i) => i.definition.category === "armor" },
   { id: "consumable", label: "Consumables", icon: "syringe", match: (i) => i.definition.category === "consumable" },
   { id: "tool", label: "Gear", icon: "wrench", match: (i) => i.definition.category === "tool" || i.definition.category === "misc" || i.definition.category === "custom" },
-  { id: "quest", label: "Quest", icon: "key-round", match: (i) => i.definition.category === "quest" },
+  { id: "quest", label: "Quest item", icon: "key-round", match: (i) => i.definition.category === "quest" },
 ];
 
 const RARITY_ORDER = ["artifact", "legendary", "veryRare", "rare", "uncommon", "common"];
