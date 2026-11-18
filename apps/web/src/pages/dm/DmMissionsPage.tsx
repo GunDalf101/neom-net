@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { useCharacters, useItemDefinitions, useMissionOp, useMissions, useSaveMission } from "@/api/hooks";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
+import { EncyclopediaBoard } from "@/pages/hud/EncyclopediaPage";
 import { JournalBoard } from "@/pages/hud/JournalPage";
 import { useDm } from "./DmShell";
 
@@ -11,18 +12,23 @@ const empty = (kind: MissionKind = "main"): MissionInput => ({ name: "", descrip
 
 export function DmMissionsPage() {
   const { campaign, me } = useDm();
-  const [tab, setTab] = useState<"missions" | "journal">("missions");
+  const [tab, setTab] = useState<"missions" | "encyclopedia" | "journal">("missions");
   return (
     <div className="space-y-3">
-      <div className="flex gap-1">
+      <div className="flex flex-wrap gap-1">
         <button className={clsx("hud-tab", tab === "missions" && "active danger")} onClick={() => setTab("missions")}>
           Missions
         </button>
+        <button className={clsx("hud-tab", tab === "encyclopedia" && "active danger")} onClick={() => setTab("encyclopedia")}>
+          Encyclopedia
+        </button>
         <button className={clsx("hud-tab", tab === "journal" && "active danger")} onClick={() => setTab("journal")}>
-          Lore & journal
+          Journal
         </button>
       </div>
-      {tab === "missions" ? <MissionsBoard /> : <JournalBoard campaignId={campaign.id} meId={me.id} isDm />}
+      {tab === "missions" && <MissionsBoard />}
+      {tab === "encyclopedia" && <EncyclopediaBoard campaignId={campaign.id} isDm />}
+      {tab === "journal" && <JournalBoard campaignId={campaign.id} meId={me.id} isDm />}
     </div>
   );
 }

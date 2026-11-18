@@ -23,9 +23,9 @@ const HUD_PAGES = [
   ["inventory", ["Inventory", "Currency"]],
   ["cyberware", ["Installed systems", "Known cyberware catalog"]],
   ["reputation", ["Reputation", "Neon City"]],
+  ["encyclopedia", ["NPCs", "Locations", "Items", "Lore"]],
   ["journal", ["Campaign lore", "Private notes"]],
   ["missions", ["Main", "Secondary", "Personal"]],
-  ["log", ["Change log"]],
 ];
 const DM_PAGES = [
   ["", ["Character roster", "Live control", "Recent events"]],

@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (189 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (196 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -146,7 +146,8 @@ WEB_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:ui
 - Mission visibility: each mission is visible to all players, to the assigned crew only, or to the DM only. Assigned players are notified (bell + push) when they are added and when a crew-only mission changes status.
 - Messages and the notification bell: the DM writes to one, several or all players from the dashboard ("Message players") or to a single sheet from the live controls Comms tab. Every recipient gets their own copy with read state, a toast when connected, a push when away, and a bell in the navbar (HUD and DM//CONTROL) with an unread badge; opening it marks the shown messages read. Players can still whisper the DM.
 - Hand-off by link: the DM creates a one-time link from the live controls ("Hand-off link") or the HUD gear menu. The first player to open it signs in or registers, joins the campaign if needed, becomes the owner of the sheet, and the link stops working. The read-only share link (`/s/<token>`) remains for viewing or importing a copy.
-- Change log: every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
+- Encyclopedia (HUD **Encyclopedia** tab, replaces Journal in the nav; notes stay under the gear menu → Notes): the DM writes NPCs, locations, items and lore, optionally linked to an NPC sheet or item definition for its portrait or icon, and publishes or hides each entry. Players browse by kind and tap a title to read it. The DM also edits it from Missions & lore → Encyclopedia.
+- Change log (DM only in the HUD; players do not get the Log tab): every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
 
 ## The hologram figure
 

@@ -120,6 +120,7 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
         npcs: qk.npcs(campaignId),
         missions: qk.missions(campaignId),
         journal: qk.journal(campaignId),
+        encyclopedia: qk.encyclopedia(campaignId),
         factions: qk.factions(campaignId),
       };
       const key = map[kind];

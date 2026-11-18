@@ -1,4 +1,4 @@
-import { MissionResponseSchema, JournalInputSchema, MissionInputSchema, NpcInputSchema } from "@neom/shared";
+import { EncyclopediaEntryInputSchema, MissionResponseSchema, JournalInputSchema, MissionInputSchema, NpcInputSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -61,6 +61,25 @@ storyRouter.post("/:campaignId/missions/:id/respond", wrap<AuthedRequest>(async 
 storyRouter.post("/:campaignId/missions/:id/complete", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
   res.json(await story.completeMission(pid(req), req.user.id, id(req)));
+}));
+
+// Encyclopedia (DM writes, everyone reads what is published)
+storyRouter.get("/:campaignId/encyclopedia", wrap<AuthedRequest>(async (req, res) => {
+  const m = await requireMember(pid(req), req.user.id);
+  res.json(await story.listEncyclopedia(pid(req), m.isDm));
+}));
+storyRouter.post("/:campaignId/encyclopedia", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.status(201).json(await story.createEncyclopediaEntry(pid(req), req.user.id, parseBody(EncyclopediaEntryInputSchema, req.body)));
+}));
+storyRouter.put("/:campaignId/encyclopedia/:id", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.json(await story.updateEncyclopediaEntry(pid(req), req.user.id, id(req), parseBody(EncyclopediaEntryInputSchema, req.body)));
+}));
+storyRouter.delete("/:campaignId/encyclopedia/:id", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  await story.deleteEncyclopediaEntry(pid(req), id(req));
+  res.json({ ok: true });
 }));
 
 // Journal

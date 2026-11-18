@@ -4,6 +4,7 @@ import type {
   AugmentationSlot,
   AutomationMode,
   DamageType,
+  EncyclopediaKind,
   EquipmentSlot,
   ItemCategory,
   ItemStatus,
@@ -433,6 +434,19 @@ export interface MissionDto {
   visibleToPlayers: boolean;
   assignedOnly: boolean;
   rewardsGrantedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EncyclopediaEntryDto {
+  id: string;
+  campaignId: string;
+  kind: EncyclopediaKind;
+  name: string;
+  body: string;
+  imageUrl: string | null;
+  refId: string | null;
+  visibleToPlayers: boolean;
   createdAt: string;
   updatedAt: string;
 }

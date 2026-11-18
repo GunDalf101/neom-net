@@ -276,6 +276,16 @@ export const MISSION_KIND_META: Record<MissionKind, { label: string; color: stri
   personal: { label: "Personal", color: "violet", refusable: false, personal: true, blurb: "One character's own thread. Only they see it." },
 };
 
+// ---------- Encyclopedia ----------
+export const ENCYCLOPEDIA_KINDS = ["npc", "location", "item", "lore"] as const;
+export type EncyclopediaKind = (typeof ENCYCLOPEDIA_KINDS)[number];
+export const ENCYCLOPEDIA_KIND_META: Record<EncyclopediaKind, { label: string; singular: string; icon: string; color: string }> = {
+  npc: { label: "NPCs", singular: "NPC", icon: "user-round", color: "magenta" },
+  location: { label: "Locations", singular: "location", icon: "map-pin", color: "cyan" },
+  item: { label: "Items", singular: "item", icon: "package", color: "violet" },
+  lore: { label: "Lore", singular: "lore entry", icon: "scroll", color: "amber" },
+};
+
 // ---------- Reputation ----------
 export const REPUTATION_MIN = -100;
 export const REPUTATION_MAX = 100;

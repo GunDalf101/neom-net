@@ -6,6 +6,7 @@ import type {
   CharacterCore,
   DiceRollDto,
   EncounterDto,
+  EncyclopediaEntryDto,
   EncounterParticipantDto,
   InstantEffect,
   ItemDefinitionDto,
@@ -349,6 +350,21 @@ export function toMissionDto(m: Prisma.MissionGetPayload<{ include: { assignment
     rewardsGrantedAt: m.rewardsGrantedAt ? iso(m.rewardsGrantedAt) : null,
     createdAt: iso(m.createdAt),
     updatedAt: iso(m.updatedAt),
+  };
+}
+
+export function toEncyclopediaDto(e: Prisma.EncyclopediaEntryGetPayload<Record<string, never>>): EncyclopediaEntryDto {
+  return {
+    id: e.id,
+    campaignId: e.campaignId,
+    kind: e.kind as EncyclopediaEntryDto["kind"],
+    name: e.name,
+    body: e.body,
+    imageUrl: e.imageUrl,
+    refId: e.refId,
+    visibleToPlayers: e.visibleToPlayers,
+    createdAt: iso(e.createdAt),
+    updatedAt: iso(e.updatedAt),
   };
 }
 

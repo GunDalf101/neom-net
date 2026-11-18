@@ -342,6 +342,21 @@ const statusEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=
 check(Boolean(statusEvt), "Crew-only status change reaches the assigned player");
 await dm.call("DELETE", `/api/campaigns/${cid}/missions/${crewMission.id}`);
 
+console.log("    Encyclopedia: the DM publishes NPCs, locations and items; players read what is published");
+for (const e of await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)) if (e.name.includes("(E2E)")) await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${e.id}`);
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/encyclopedia`, { kind: "npc", name: "Nope (E2E)", body: "" }))) === 403, "Players cannot write encyclopedia entries (403)");
+const draftEntry = await dm.call("POST", `/api/campaigns/${cid}/encyclopedia`, { kind: "location", name: "Back Alley (E2E)", body: "Draft.", visibleToPlayers: false });
+check(draftEntry.kind === "location" && draftEntry.visibleToPlayers === false, "DM created a hidden location entry");
+check(!(await player.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.id === draftEntry.id), "Players do not see hidden entries");
+const npcEntry = await dm.call("POST", `/api/campaigns/${cid}/encyclopedia`, { kind: "npc", name: "Fixer Dax (E2E)", body: "Runs the Tier 2 clinic." });
+check((await player.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.id === npcEntry.id && e.kind === "npc"), "Players see published NPC entries");
+const revealed = await dm.call("PUT", `/api/campaigns/${cid}/encyclopedia/${draftEntry.id}`, { ...draftEntry, visibleToPlayers: true });
+check(revealed.visibleToPlayers && (await player.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.id === draftEntry.id), "Revealing an entry shows it to players");
+check((await status(() => dm.call("POST", `/api/campaigns/${cid}/encyclopedia`, { kind: "item", name: "Bad link (E2E)", body: "", refId: "not-a-thing" }))) === 422, "A link outside the campaign is refused (422)");
+await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${draftEntry.id}`);
+await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${npcEntry.id}`);
+check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.name.includes("(E2E)")), "Encyclopedia cleaned up");
+
 console.log("    Mission kinds: main cannot be refused, personal is private, completed missions stay with the DM");
 for (const m of await dm.call("GET", `/api/campaigns/${cid}/missions`)) if (m.name.includes("(E2E)")) await dm.call("DELETE", `/api/campaigns/${cid}/missions/${m.id}`);
 const mainM = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Story Beat (E2E)", description: "Main line.", objectives: [{ id: "o1", text: "Go", done: false }], status: "active", assignedCharacterIds: [charId], visibleToPlayers: true });

@@ -723,6 +723,16 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
       assignments: { create: { characterId: antonio.id } },
     },
   });
+  // ---- Encyclopedia ----
+  await prisma.encyclopediaEntry.createMany({
+    data: [
+      { campaignId: cid, kind: "npc", name: "Agent Vey", body: "Netwatch liaison working out of the Neon Garden. Pays in favours first, kamas second. Knows more about the datashard than she lets on.", visibleToPlayers: true },
+      { campaignId: cid, kind: "location", name: "Neon Garden", body: "Tier 3 hydroponics dome turned night market. Netwatch keeps a front office behind the orchid stalls; K&F patrols stop at the elevator.", visibleToPlayers: true },
+      { campaignId: cid, kind: "item", name: "Encrypted Datashard", body: "Military-grade shard, K&F courier markings. The encryption rotates every six hours; whoever holds the key is not in Tier 1.", refId: defs.get("Encrypted Datashard") ?? null, visibleToPlayers: true },
+      { campaignId: cid, kind: "lore", name: "Kobolds & Ferkus Co.", body: "The corp that runs Tier 1 logistics. Their enforcers wear grey; their accountants wear worse.", visibleToPlayers: false },
+    ],
+  });
+
   await prisma.journalEntry.create({
     data: {
       campaignId: cid,

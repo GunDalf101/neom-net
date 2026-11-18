@@ -30,9 +30,10 @@ const TABS = [
   { to: "inventory", label: "Inventory", icon: "package" },
   { to: "cyberware", label: "Cyberware", icon: "cpu" },
   { to: "reputation", label: "Reputation", icon: "users-round" },
-  { to: "journal", label: "Journal", icon: "book-open" },
+  { to: "encyclopedia", label: "Encyclopedia", icon: "book-open" },
   { to: "missions", label: "Missions", icon: "target" },
-  { to: "log", label: "Log", icon: "scroll-text" },
+  /** DM only: players do not get the change log. */
+  { to: "log", label: "Log", icon: "scroll-text", dmOnly: true },
 ];
 
 function useClock() {
@@ -115,6 +116,7 @@ export function HudShell() {
   }
 
   const isDm = campaign.data.role === "DM";
+  const tabs = TABS.filter((t) => !("dmOnly" in t && t.dmOnly) || isDm);
   const ctx: HudContext = { view: view.data, campaign: campaign.data, me: me.data, isDm, connected };
   const myRequests = (requests.data ?? []).filter((r) => r.characterId === characterId);
   // Only sheets this operator may open: their own, or every sheet for the DM.
@@ -129,7 +131,7 @@ export function HudShell() {
             NEOM<span className="text-crimson">//</span>NET <span className="ml-1 hidden text-[0.55rem] font-normal tracking-widest text-muted sm:inline">v0.1.0</span>
           </Link>
           <nav className="mx-auto hidden items-center gap-1.5 lg:flex">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box flex items-center gap-1.5 !px-2.5 !py-1.5 !text-[0.58rem] 2xl:!px-4 2xl:!text-[0.66rem]", isActive && "active")} title={t.label}>
                 <Icon name={t.icon} size={12} className="xl:hidden" />
                 <span className="hidden xl:inline">{t.label}</span>
@@ -154,7 +156,7 @@ export function HudShell() {
           </div>
         </div>
         <nav className="flex items-center gap-1 overflow-x-auto px-2 pb-1.5 lg:hidden">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <NavLink key={t.to} to={`${base}/${t.to}`} end={t.end} className={({ isActive }) => clsx("nav-box !px-2.5 !py-1 !text-[0.58rem]", isActive && "active")}>
               <Icon name={t.icon} size={12} />
             </NavLink>
@@ -260,6 +262,9 @@ export function HudShell() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link to={`${base}/journal`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)} title="Your private notes and shared journal">
+              <Icon name="notebook-pen" size={13} /> Notes
+            </Link>
             <Link to={`/c/${campaignId}`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)}>
               <Icon name="users" size={13} /> Campaign
             </Link>

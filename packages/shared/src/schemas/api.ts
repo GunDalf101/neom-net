@@ -4,6 +4,7 @@ import {
   AUGMENTATION_SLOTS,
   AUTOMATION_MODES,
   DAMAGE_TYPES,
+  ENCYCLOPEDIA_KINDS,
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
   MISSION_KINDS,
@@ -433,6 +434,17 @@ export const ReputationChangeSchema = z
   })
   .refine((v) => v.delta !== undefined || v.value !== undefined, { message: "delta or value is required" });
 
+/** DM-written world knowledge: an NPC, a location, an item or a piece of lore. */
+export const EncyclopediaEntryInputSchema = z.object({
+  kind: z.enum(ENCYCLOPEDIA_KINDS).default("lore"),
+  name: z.string().min(1).max(100),
+  body: z.string().max(20_000).default(""),
+  imageUrl: PortraitSchema.default(null),
+  /** Optional NpcDefinition or ItemDefinition id of this campaign (portrait / icon). */
+  refId: z.string().max(60).nullable().default(null),
+  visibleToPlayers: z.boolean().default(true),
+});
+
 export const JournalInputSchema = z.object({
   title: z.string().min(1).max(120),
   body: z.string().max(20_000).default(""),
@@ -487,6 +499,7 @@ export type ConditionDefinitionInput = z.infer<typeof ConditionDefinitionInputSc
 export type NpcInput = z.infer<typeof NpcInputSchema>;
 export type MissionInput = z.infer<typeof MissionInputSchema>;
 export type JournalInput = z.infer<typeof JournalInputSchema>;
+export type EncyclopediaEntryInput = z.infer<typeof EncyclopediaEntryInputSchema>;
 export type FactionInput = z.infer<typeof FactionInputSchema>;
 export type ReputationChangeInput = z.infer<typeof ReputationChangeSchema>;
 export type AbilityInput = z.infer<typeof AbilityInputSchema>;

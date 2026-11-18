@@ -1,4 +1,4 @@
-import { MISSION_KIND_META, type JournalEntryDto, type JournalInput, type MissionDto, type MissionInput, type MissionKind, type MissionResponseSchema, type NpcDto, type NpcInput } from "@neom/shared";
+import { MISSION_KIND_META, type EncyclopediaEntryDto, type EncyclopediaEntryInput, type JournalEntryDto, type JournalInput, type MissionDto, type MissionInput, type MissionKind, type MissionResponseSchema, type NpcDto, type NpcInput } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { prisma } from "../db.js";
@@ -7,7 +7,7 @@ import { emitCharacterUpdated, emitToCampaign } from "../realtime/io.js";
 import { playerIsReadOnly } from "./access.js";
 import { logEvent } from "./events.js";
 import { grantItem } from "./items.js";
-import { toJournalDto, toMissionDto, toNpcDto } from "./mappers.js";
+import { toEncyclopediaDto, toJournalDto, toMissionDto, toNpcDto } from "./mappers.js";
 
 // ---------- NPCs ----------
 
@@ -230,6 +230,50 @@ export async function completeMission(campaignId: string, dmUserId: string, miss
   emitToCampaign(campaignId, "content.updated", { campaignId, kind: "missions" });
   const refreshed = await prisma.mission.findUniqueOrThrow({ where: { id: missionId }, include: missionInclude });
   return toMissionDto(refreshed);
+}
+
+// ---------- Encyclopedia ----------
+
+/** Players see published entries only; the DM sees drafts too. */
+export async function listEncyclopedia(campaignId: string, isDm: boolean): Promise<EncyclopediaEntryDto[]> {
+  const rows = await prisma.encyclopediaEntry.findMany({ where: isDm ? { campaignId } : { campaignId, visibleToPlayers: true }, orderBy: [{ kind: "asc" }, { name: "asc" }] });
+  return rows.map(toEncyclopediaDto);
+}
+
+async function encyclopediaData(campaignId: string, input: EncyclopediaEntryInput) {
+  // A link must point at something in this campaign (an NPC or an item definition), or be dropped.
+  let refId: string | null = input.refId ?? null;
+  if (refId) {
+    const [npc, item] = await Promise.all([
+      prisma.npcDefinition.findFirst({ where: { id: refId, campaignId }, select: { id: true } }),
+      prisma.itemDefinition.findFirst({ where: { id: refId, campaignId }, select: { id: true } }),
+    ]);
+    if (!npc && !item) throw ruleViolation("Linked NPC or item does not belong to this campaign");
+  }
+  return { kind: input.kind, name: input.name, body: input.body, imageUrl: input.imageUrl ?? null, refId, visibleToPlayers: input.visibleToPlayers };
+}
+
+export async function createEncyclopediaEntry(campaignId: string, dmUserId: string, input: EncyclopediaEntryInput): Promise<EncyclopediaEntryDto> {
+  const row = await prisma.encyclopediaEntry.create({ data: { campaignId, ...(await encyclopediaData(campaignId, input)) } });
+  if (row.visibleToPlayers) await logEvent({ campaignId, type: "encyclopedia.published", actorUserId: dmUserId, summary: `Encyclopedia: "${row.name}" (${row.kind}) added`, payload: { entryId: row.id, kind: row.kind }, visibility: "public" });
+  emitToCampaign(campaignId, "content.updated", { campaignId, kind: "encyclopedia" });
+  return toEncyclopediaDto(row);
+}
+
+export async function updateEncyclopediaEntry(campaignId: string, dmUserId: string, id: string, input: EncyclopediaEntryInput): Promise<EncyclopediaEntryDto> {
+  const existing = await prisma.encyclopediaEntry.findFirst({ where: { id, campaignId } });
+  if (!existing) throw notFound("Encyclopedia entry");
+  const row = await prisma.encyclopediaEntry.update({ where: { id }, data: await encyclopediaData(campaignId, input) });
+  if (!existing.visibleToPlayers && row.visibleToPlayers) await logEvent({ campaignId, type: "encyclopedia.published", actorUserId: dmUserId, summary: `Encyclopedia: "${row.name}" (${row.kind}) revealed`, payload: { entryId: row.id, kind: row.kind }, visibility: "public" });
+  emitToCampaign(campaignId, "content.updated", { campaignId, kind: "encyclopedia" });
+  return toEncyclopediaDto(row);
+}
+
+export async function deleteEncyclopediaEntry(campaignId: string, id: string): Promise<void> {
+  const existing = await prisma.encyclopediaEntry.findFirst({ where: { id, campaignId } });
+  if (!existing) throw notFound("Encyclopedia entry");
+  await prisma.encyclopediaEntry.delete({ where: { id } });
+  emitToCampaign(campaignId, "content.updated", { campaignId, kind: "encyclopedia" });
 }
 
 // ---------- Journal ----------

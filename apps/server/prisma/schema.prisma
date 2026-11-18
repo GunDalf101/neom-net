@@ -56,6 +56,7 @@ model Campaign {
   npcs            NpcDefinition[]
   encounters      Encounter[]
   missions        Mission[]
+  encyclopedia    EncyclopediaEntry[]
   journal         JournalEntry[]
   rolls           DiceRoll[]
   events          CampaignEvent[]
@@ -543,6 +544,25 @@ model MissionAssignment {
   note        String    @default("")
 
   @@id([missionId, characterId])
+}
+
+/// Campaign encyclopedia: NPCs, locations, items and lore the DM publishes for the crew. Players read; the DM writes.
+model EncyclopediaEntry {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  /// npc | location | item | lore
+  kind             String   @default("lore")
+  name             String
+  body             String   @default("")
+  imageUrl         String?
+  /// Optional link to an NpcDefinition or ItemDefinition of this campaign (the HUD pulls its portrait or icon).
+  refId            String?
+  visibleToPlayers Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([campaignId, kind])
 }
 
 model JournalEntry {

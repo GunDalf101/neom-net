@@ -20,6 +20,8 @@ import type {
   DmDashboardDto,
   EncounterAction,
   EncounterDto,
+  EncyclopediaEntryDto,
+  EncyclopediaEntryInput,
   GrantItemInput,
   HpActionInput,
   ItemActionInput,
@@ -75,6 +77,7 @@ export const qk = {
   npcs: (cid: string) => ["npcs", cid] as const,
   missions: (cid: string) => ["missions", cid] as const,
   journal: (cid: string) => ["journal", cid] as const,
+  encyclopedia: (cid: string) => ["encyclopedia", cid] as const,
   abilities: (cid: string) => ["abilities", cid] as const,
   dashboard: (cid: string) => ["dashboard", cid] as const,
   rollRequests: (cid: string) => ["rollRequests", cid] as const,
@@ -683,6 +686,23 @@ export function useMissionOp(cid: string) {
       },
     }),
   );
+}
+export const useEncyclopedia = (cid: string) => useQuery({ queryKey: qk.encyclopedia(cid), queryFn: () => api.get<EncyclopediaEntryDto[]>(`/campaigns/${cid}/encyclopedia`) });
+export function useSaveEncyclopediaEntry(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: ({ id, body }: { id?: string; body: EncyclopediaEntryInput }) => (id ? api.put<EncyclopediaEntryDto>(`/campaigns/${cid}/encyclopedia/${id}`, body) : api.post<EncyclopediaEntryDto>(`/campaigns/${cid}/encyclopedia`, body)),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.encyclopedia(cid) });
+        toast("success", "Encyclopedia saved");
+      },
+    }),
+  );
+}
+export function useDeleteEncyclopediaEntry(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/encyclopedia/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.encyclopedia(cid) }) }));
 }
 export const useJournal = (cid: string) => useQuery({ queryKey: qk.journal(cid), queryFn: () => api.get<JournalEntryDto[]>(`/campaigns/${cid}/journal`) });
 export function useSaveJournal(cid: string) {
