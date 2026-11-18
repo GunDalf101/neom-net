@@ -1,6 +1,6 @@
 /**
  * Exports one campaign (campaign row, DM/player memberships, characters with their items, conditions,
- * effects, overrides, unlocks, and the event log) as an idempotent Prisma data migration.
+ * effects, overrides, and the event log) as an idempotent Prisma data migration.
  *
  *   npm run campaign:export-migration -w @neom/server -- "<campaign id or exact name>" [migrationName]
  *
@@ -65,7 +65,6 @@ async function main() {
   const conditions = await prisma.characterCondition.findMany({ where: { characterId: { in: charIds } } });
   const effects = await prisma.activeEffect.findMany({ where: { characterId: { in: charIds } } });
   const overrides = await prisma.dMOverride.findMany({ where: { campaignId: cid } });
-  const unlocks = await prisma.characterUnlock.findMany({ where: { characterId: { in: charIds } } });
   const events = await prisma.campaignEvent.findMany({ where: { campaignId: cid }, orderBy: { createdAt: "asc" } });
 
   // Every user referenced anywhere becomes an email lookup at apply time.
@@ -83,8 +82,6 @@ async function main() {
   const defIds = new Set((await prisma.itemDefinition.findMany({ where: { campaignId: cid }, select: { id: true } })).map((d) => d.id));
   const keptItems = items.filter((i) => defIds.has(i.definitionId));
   if (keptItems.length !== items.length) console.warn(`skipping ${items.length - keptItems.length} item instance(s) whose definitions live in another campaign`);
-  const keptUnlocks: typeof unlocks = []; // skill tree nodes are campaign content; export them separately if needed
-  if (unlocks.length) console.warn(`skipping ${unlocks.length} skill-tree unlock(s): export skill trees first`);
 
   const strip = <T extends Row>(r: T, drop: string[] = []): Row => Object.fromEntries(Object.entries(r).filter(([k]) => !drop.includes(k)));
   const campaignRow = { ...strip(campaign as unknown as Row), ownerId: mapUser(campaign.ownerId) };
@@ -135,7 +132,6 @@ ${insert("ItemInstance", keptItems as unknown as Row[])}
 ${insert("CharacterCondition", conditions as unknown as Row[])}
 ${insert("ActiveEffect", effects as unknown as Row[])}
 ${insert("DMOverride", overrideRows, ["createdById"]).replace(/user_id\(/g, "pg_temp.user_id(")}
-${insert("CharacterUnlock", keptUnlocks as unknown as Row[])}
 ${insert("CampaignEvent", eventRows, ["actorUserId"]).replace(/user_id\(/g, "pg_temp.user_id(")}
 
   SELECT count(*) INTO v_count FROM "Character" WHERE "campaignId" = ${lit(cid)};

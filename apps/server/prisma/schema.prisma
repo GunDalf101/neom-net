@@ -52,7 +52,6 @@ model Campaign {
   itemDefinitions ItemDefinition[]
   conditionDefs   ConditionDefinition[]
   rules           RuleDefinition[]
-  skillTrees      SkillTreeDefinition[]
   abilities       AbilityDefinition[]
   npcs            NpcDefinition[]
   encounters      Encounter[]
@@ -155,13 +154,18 @@ model Character {
   acBonus          Int     @default(0)
   hitDieSize       Int     @default(8)
   hitDiceUsed      Int     @default(0)
-  inspiration      Boolean @default(false)
+  /// Stackable inspiration counter.
+  inspiration      Int     @default(0)
   deathSaveSuccess Int     @default(0)
   deathSaveFailure Int     @default(0)
   credits          Int     @default(0)
   /// Cyberpsychosis points the DM has assigned (trauma, botched installs); installed cyberware load is added on top.
   cyberpsychosis   Int     @default(0)
   progressionPoints Int    @default(0)
+  /// Flat DM adjustments keyed by stat target (`skill.athletics`: 2). Shown as a "DM adjustment" breakdown line.
+  adjustments      Json    @default("{}")
+  /// Abilities the DM granted directly (AbilityDefinition ids); items and conditions can grant more through effects.
+  abilityIds       Json    @default("[]")
 
   /// Optimistic concurrency token, bumped on every mutation.
   version   Int      @default(1)
@@ -172,7 +176,6 @@ model Character {
   conditions    CharacterCondition[]
   activeEffects ActiveEffect[]
   overrides     DMOverride[]
-  unlocks       CharacterUnlock[]
   rolls         DiceRoll[]
   events        CampaignEvent[]
   participants  EncounterParticipant[]
@@ -415,54 +418,6 @@ model PendingAction {
 // ============================================================
 // Progression
 // ============================================================
-
-model SkillTreeDefinition {
-  id          String   @id @default(cuid())
-  campaignId  String
-  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  branch      String
-  name        String
-  description String   @default("")
-  createdAt   DateTime @default(now())
-
-  nodes SkillTreeNode[]
-
-  @@unique([campaignId, branch])
-}
-
-model SkillTreeNode {
-  id           String              @id @default(cuid())
-  treeId       String
-  tree         SkillTreeDefinition @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  key          String
-  name         String
-  description  String              @default("")
-  icon         String              @default("zap")
-  maxRank      Int                 @default(1)
-  cost         Int                 @default(1)
-  parentKeys   Json                @default("[]")
-  requirements Json                @default("[]")
-  effects      Json                @default("[]")
-  ruleIds      Json                @default("[]")
-  position     Json                @default("{\"x\":0,\"y\":0}")
-  tier         Int                 @default(0)
-
-  unlocks CharacterUnlock[]
-
-  @@unique([treeId, key])
-}
-
-model CharacterUnlock {
-  id          String        @id @default(cuid())
-  characterId String
-  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  nodeId      String
-  node        SkillTreeNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
-  rank        Int           @default(1)
-  createdAt   DateTime      @default(now())
-
-  @@unique([characterId, nodeId])
-}
 
 model AbilityDefinition {
   id             String   @id @default(cuid())

@@ -4,8 +4,6 @@ import {
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
   RARITIES,
-  SPECIAL_SKILLS,
-  SPECIAL_SKILL_META,
   describePassiveEffect,
   type AbilityDto,
   type AbilityInput,
@@ -13,8 +11,6 @@ import {
   type ConditionDefinitionInput,
   type ItemDefinitionDto,
   type ItemDefinitionInput,
-  type SkillTreeDto,
-  type SkillTreeNodeInput,
 } from "@neom/shared";
 import clsx from "clsx";
 import { useState } from "react";
@@ -29,15 +25,13 @@ import {
   useSaveAbility,
   useSaveCondition,
   useSaveItemDefinition,
-  useSaveSkillTree,
-  useSkillTrees,
 } from "@/api/hooks";
 import { InstantEffectListEditor, PassiveEffectListEditor, RequirementListEditor } from "@/components/editors/EffectEditors";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { useDm } from "./DmShell";
 
-type Tab = "items" | "conditions" | "abilities" | "trees";
+type Tab = "items" | "conditions" | "abilities";
 
 export function WorkshopPage() {
   const [tab, setTab] = useState<Tab>("items");
@@ -49,7 +43,6 @@ export function WorkshopPage() {
             ["items", "Items & cyberware", "package"],
             ["conditions", "Conditions", "alert-triangle"],
             ["abilities", "Abilities", "zap"],
-            ["trees", "Skill trees", "git-branch"],
           ] as [Tab, string, string][]
         ).map(([id, label, icon]) => (
           <button key={id} className={clsx("hud-tab flex items-center gap-2", tab === id && "active danger")} onClick={() => setTab(id)}>
@@ -60,7 +53,6 @@ export function WorkshopPage() {
       {tab === "items" && <ItemsWorkshop />}
       {tab === "conditions" && <ConditionsWorkshop />}
       {tab === "abilities" && <AbilitiesWorkshop />}
-      {tab === "trees" && <TreesWorkshop />}
     </div>
   );
 }
@@ -384,6 +376,7 @@ function AbilitiesWorkshop() {
   const save = useSaveAbility(campaign.id);
   const del = useDeleteAbility(campaign.id);
   const conditions = useConditionDefinitions(campaign.id);
+  const rules = useRules(campaign.id);
   const empty = (): AbilityInput => ({ name: "", description: "", icon: "zap", actionType: "action", cost: { resource: "none", amount: 0 }, usesPer: "unlimited", maxUses: 1, effects: [], passiveEffects: [], ruleIds: [] });
   const [editing, setEditing] = useState<AbilityDto | "new" | null>(null);
   const [form, setForm] = useState<AbilityInput>(empty());
@@ -391,6 +384,7 @@ function AbilitiesWorkshop() {
     setEditing(a);
     setForm(a === "new" ? empty() : { name: a.name, description: a.description, icon: a.icon, actionType: a.actionType, cost: a.cost as AbilityInput["cost"], usesPer: a.usesPer, maxUses: a.maxUses, effects: a.effects, passiveEffects: a.passiveEffects, ruleIds: a.ruleIds });
   };
+  const passiveSummary = form.passiveEffects.map(describePassiveEffect).join(" · ");
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
       <Panel title="Abilities" icon="zap" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
@@ -405,7 +399,7 @@ function AbilitiesWorkshop() {
               <Badge color="amber">{a.actionType}</Badge>
             </button>
           ))}
-          {abilities.data?.length === 0 && <Empty>No abilities yet. Grant them through skill-tree nodes or item effects.</Empty>}
+          {abilities.data?.length === 0 && <Empty>No abilities yet. Create one here, then grant it from a character sheet or through item effects.</Empty>}
         </div>
       </Panel>
       {editing && (
@@ -453,8 +447,18 @@ function AbilitiesWorkshop() {
             <Field label="Description">
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </Field>
+            <Section title="Stat points & skills (while the character holds this ability)">
+              <p className="mb-2 text-xs text-muted">
+                Add or subtract attribute scores, skills, saves, AC and the rest: a modifier with a positive value adds, a negative one subtracts, and <span className="text-text">base</span> writes the base figure outright. These apply as long as the ability is granted, and every breakdown names this ability as the source.
+              </p>
+              <PassiveEffectListEditor value={form.passiveEffects} onChange={(v) => setForm({ ...form, passiveEffects: v })} abilities={(abilities.data ?? []).filter((a) => editing === "new" || a.id !== editing.id)} />
+              {passiveSummary && <div className="mt-2 text-xs text-violet">{passiveSummary}</div>}
+            </Section>
             <Section title="On activation">
               <InstantEffectListEditor value={form.effects} onChange={(v) => setForm({ ...form, effects: v })} conditionKeys={conditions.data ?? []} />
+            </Section>
+            <Section title="Attached rules (run while the ability is held)">
+              <RulePicker value={form.ruleIds} onChange={(v) => setForm({ ...form, ruleIds: v })} rules={rules.data ?? []} />
             </Section>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setEditing(null)}>
@@ -467,98 +471,6 @@ function AbilitiesWorkshop() {
           </form>
         </Panel>
       )}
-    </div>
-  );
-}
-
-// ---------- Skill trees ----------
-
-function TreesWorkshop() {
-  const { campaign } = useDm();
-  const trees = useSkillTrees(campaign.id);
-  const save = useSaveSkillTree(campaign.id);
-  const abilities = useAbilities(campaign.id);
-  const [branch, setBranch] = useState<(typeof SPECIAL_SKILLS)[number]>("hacking");
-  const existing = trees.data?.find((t) => t.branch === branch);
-  const [draft, setDraft] = useState<{ branch: string; name: string; description: string; nodes: SkillTreeNodeInput[] } | null>(null);
-  const [loadedBranch, setLoadedBranch] = useState<string | null>(null);
-
-  const fromTree = (t: SkillTreeDto | undefined) => ({
-    branch,
-    name: t?.name ?? SPECIAL_SKILL_META[branch].name,
-    description: t?.description ?? "",
-    nodes: (t?.nodes ?? []).map((n) => ({ key: n.key, name: n.name, description: n.description, icon: n.icon, maxRank: n.maxRank, cost: n.cost, parentKeys: n.parentKeys, requirements: n.requirements, effects: n.effects, ruleIds: n.ruleIds, position: n.position, tier: n.tier })),
-  });
-  if (!trees.isLoading && loadedBranch !== branch) {
-    setLoadedBranch(branch);
-    setDraft(fromTree(existing));
-  }
-  if (!draft) return null;
-  const setNode = (i: number, n: SkillTreeNodeInput) => setDraft({ ...draft, nodes: draft.nodes.map((x, j) => (j === i ? n : x)) });
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-1">
-        {SPECIAL_SKILLS.map((s) => (
-          <button key={s} className={clsx("hud-tab", branch === s && "active")} onClick={() => setBranch(s)}>
-            {SPECIAL_SKILL_META[s].name}
-          </button>
-        ))}
-      </div>
-      <Panel title={`${SPECIAL_SKILL_META[branch].name} tree`} icon="git-branch" color="crimson" actions={<Button size="xs" variant="solid" color="crimson" icon="save" disabled={save.isPending} onClick={() => save.mutate({ branch, name: draft.name, description: draft.description, nodes: draft.nodes })}>Save tree</Button>}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="Tree name">
-            <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          </Field>
-          <Field label="Description">
-            <Input value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          </Field>
-        </div>
-        <div className="mt-3 space-y-2">
-          {draft.nodes.map((n, i) => (
-            <div key={i} className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
-                <Field label="Key">
-                  <Input value={n.key} onChange={(e) => setNode(i, { ...n, key: e.target.value })} />
-                </Field>
-                <Field label="Name" className="md:col-span-2">
-                  <Input value={n.name} onChange={(e) => setNode(i, { ...n, name: e.target.value })} />
-                </Field>
-                <Field label="Icon">
-                  <Input value={n.icon} onChange={(e) => setNode(i, { ...n, icon: e.target.value })} />
-                </Field>
-                <Field label="Tier">
-                  <Input type="number" min={0} value={n.tier} onChange={(e) => setNode(i, { ...n, tier: Number(e.target.value) })} />
-                </Field>
-                <Field label="Cost / max rank">
-                  <div className="flex gap-1">
-                    <Input type="number" min={0} value={n.cost} onChange={(e) => setNode(i, { ...n, cost: Number(e.target.value) })} />
-                    <Input type="number" min={1} value={n.maxRank} onChange={(e) => setNode(i, { ...n, maxRank: Number(e.target.value) })} />
-                  </div>
-                </Field>
-                <Field label="Description" className="md:col-span-4">
-                  <Input value={n.description} onChange={(e) => setNode(i, { ...n, description: e.target.value })} />
-                </Field>
-                <Field label="Parents (keys, comma-separated)" className="md:col-span-2">
-                  <Input value={n.parentKeys.join(", ")} onChange={(e) => setNode(i, { ...n, parentKeys: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
-                </Field>
-              </div>
-              <Section title="Effects per rank">
-                <PassiveEffectListEditor value={n.effects} onChange={(v) => setNode(i, { ...n, effects: v })} abilities={abilities.data ?? []} />
-              </Section>
-              <Section title="Requirements">
-                <RequirementListEditor value={n.requirements} onChange={(v) => setNode(i, { ...n, requirements: v })} />
-              </Section>
-              <div className="mt-2 flex justify-end">
-                <ConfirmButton size="xs" label="Remove node" onConfirm={() => setDraft({ ...draft, nodes: draft.nodes.filter((_, j) => j !== i) })} />
-              </div>
-            </div>
-          ))}
-          <Button icon="plus" onClick={() => setDraft({ ...draft, nodes: [...draft.nodes, { key: `node${draft.nodes.length + 1}`, name: "New node", description: "", icon: "zap", maxRank: 1, cost: 1, parentKeys: [], requirements: [], effects: [], ruleIds: [], position: { x: 0, y: 0 }, tier: 0 }] })}>
-            Add node
-          </Button>
-        </div>
-      </Panel>
     </div>
   );
 }

@@ -189,8 +189,8 @@ function ImportPanel({ sheet, name }: { sheet: Parameters<typeof saveSheetFile>[
         </Button>
       </div>
       <p className="mt-2 text-[0.65rem] text-muted">
-        Import overwrites identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die on the chosen character (the same as importing a file). Gear and unlocks are campaign-specific and
-        are not copied. DM-controlled campaigns only let the DM import.
+        Import overwrites identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die on the chosen character (the same as importing a file). Gear is campaign-specific and
+        is not copied. DM-controlled campaigns only let the DM import.
       </p>
     </Panel>
   );

@@ -230,6 +230,28 @@ input.valbox:focus {
   box-shadow: 0 0 8px var(--check-color, var(--color-cyan));
 }
 
+/* Tiny − / + nudge buttons next to a number (DM adjustments, inspiration counter) */
+.adj-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  border: 1px solid var(--color-line-2);
+  color: var(--color-muted);
+  background: transparent;
+}
+.adj-btn:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-cyan) 40%, transparent);
+}
+.adj-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 /* Rarity frame for item/slot cards */
 .rarity-card {
   --rc: var(--color-muted);

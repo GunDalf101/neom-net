@@ -259,8 +259,6 @@ export function hitDieForClass(characterClass: string | undefined | null): HitDi
   return CLASS_HIT_DIE[key] ?? 8;
 }
 
-/** Base cyberware capacity before modifiers. Campaign-configurable. */
-export const DEFAULT_CYBERWARE_CAPACITY = 10;
 export const DEFAULT_SPEED_METERS = 9;
 export const DEFAULT_SPECIAL_MAX_RANK = 5;
 

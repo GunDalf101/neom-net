@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { AbilitiesPanel } from "@/components/hud/AbilitiesPanel";
 import { CombatPanel } from "@/components/hud/CombatPanel";
 import { CrewPanel } from "@/components/hud/CrewPanel";
 import { CyberwareDisplay } from "@/components/hud/CyberwareDisplay";
@@ -33,6 +34,7 @@ export function CharacterPage() {
           <IdentityCard view={view} />
           <SheetPanel view={view} />
           <SkillCheckBar view={view} />
+          <AbilitiesPanel view={view} />
           <CrewPanel campaignId={campaign.id} characterId={view.character.id} />
         </div>
         {/* The body figure needs ~520px; on phones it pans sideways instead of breaking the page. */}

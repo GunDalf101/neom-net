@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOTS, AUGMENTATION_SLOT_META, describePassiveEffect, type AugmentationSlot, type CharacterView, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
 import { Suspense, forwardRef, lazy, useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Icon } from "@/components/ui";
+import { Bar, Icon } from "@/components/ui";
 import { StatBreakdown } from "@/components/StatBreakdown";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { AugmentationDrawer } from "./AugmentationDrawer";
@@ -111,8 +111,11 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
     };
   }, [measure, mode, modelReady, view.items.map((i) => `${i.id}:${i.status}:${i.installedSlot}`).join("|")]);
 
+  // One meter: cyberware capacity is the cyberpsychosis threshold; load = installed cyberware + DM points.
   const cap = derived.capacity.value;
-  const used = derived.capacityUsed;
+  const used = derived.cyberpsychosis.current;
+  const pct = derived.cyberpsychosis.percent;
+  const meterColor = pct >= 100 ? "var(--color-crimson)" : pct >= 75 ? "var(--color-amber)" : "var(--color-cyan)";
 
   return (
     <div className="relative flex h-full min-w-[520px] flex-col lg:min-w-0">
@@ -164,16 +167,20 @@ export function CyberwareDisplay({ view }: { view: CharacterView }) {
           ))}
         </div>
       </div>
-      <div className="hud-panel mt-2 flex items-center gap-3 px-3 py-2" style={{ ["--panel-accent" as string]: used > cap ? "var(--color-crimson)" : "var(--color-cyan)" }}>
-        <span className="font-display text-[0.78rem] font-bold uppercase tracking-[0.1em] text-text">Cyberware capacity</span>
-        <div className="seg-meter flex-1" style={{ ["--meter-color" as string]: used > cap ? "var(--color-crimson)" : "var(--color-cyan)" }}>
-          {Array.from({ length: Math.max(cap, used) }).map((_, i) => (
-            <span key={i} className={clsx(i < used && "on")} />
-          ))}
-        </div>
-        <StatBreakdown stat={derived.capacity} label="Cyberware capacity" format={(n) => String(n)}>
-          <span className={clsx("num text-[1.1rem] font-bold", used > cap ? "text-crimson" : "text-cyan")}>
-            {used} / {cap}
+      <div className="hud-panel mt-2 flex items-center gap-3 px-3 py-2" style={{ ["--panel-accent" as string]: meterColor }} title={`${derived.cyberpsychosis.fromCyberware} from cyberware${derived.cyberpsychosis.points ? ` + ${derived.cyberpsychosis.points} DM points` : ""} of a ${cap} threshold`}>
+        <span className="font-display text-[0.78rem] font-bold uppercase tracking-[0.1em] text-text">Cyberpsychosis</span>
+        {Math.max(cap, used) <= 48 ? (
+          <div className="seg-meter flex-1" style={{ ["--meter-color" as string]: meterColor }}>
+            {Array.from({ length: Math.max(cap, used) }).map((_, i) => (
+              <span key={i} className={clsx(i < used && "on")} />
+            ))}
+          </div>
+        ) : (
+          <Bar value={Math.min(used, cap)} max={cap} color={pct >= 100 ? "crimson" : pct >= 75 ? "amber" : "cyan"} className="flex-1" height={8} />
+        )}
+        <StatBreakdown stat={derived.capacity} label="Cyberpsychosis threshold (cyberware capacity)" format={(n) => String(n)}>
+          <span className="num text-[1.1rem] font-bold" style={{ color: meterColor }}>
+            {used} / {cap} <span className="text-[0.75rem] opacity-80">{pct}%</span>
           </span>
         </StatBreakdown>
       </div>

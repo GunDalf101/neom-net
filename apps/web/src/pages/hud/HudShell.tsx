@@ -250,19 +250,16 @@ export function HudShell() {
                     {importSheet.isPending ? "Importing…" : "Import sheet"}
                   </Button>
                   <input ref={fileInput} type="file" accept=".json,application/json" className="hidden" onChange={(e) => void onImportFile(e.target.files?.[0])} />
-                  <ConfirmButton size="sm" icon="rotate-ccw" label="Reset to level 1" confirmLabel="Wipe gear, unlocks, level?" disabled={resetSheet.isPending} onConfirm={() => resetSheet.mutate()} />
+                  <ConfirmButton size="sm" icon="rotate-ccw" label="Reset to level 1" confirmLabel="Wipe gear and level?" disabled={resetSheet.isPending} onConfirm={() => resetSheet.mutate()} />
                 </>
               )}
             </div>
             <p className="mt-1 text-[0.65rem] text-muted">
-              Export writes a JSON file with the full sheet plus a list of items, conditions and unlocks. Import restores identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die
-              {view.data.permissions.isDm ? ", and as DM also level, XP, kamas and progression points" : ""}; gear and unlocks stay as they are.
+              Export writes a JSON file with the full sheet plus a list of items and conditions. Import restores identity, attributes, skills, cyberpunk skills, saves, HP, speed and hit die
+              {view.data.permissions.isDm ? ", and as DM also level, XP, kamas, progression points and adjustments" : ""}; gear stays as it is.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to={`${base}/skills`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)} title="Skill trees and granted abilities">
-              <Icon name="git-branch" size={13} /> Progression
-            </Link>
             <Link to={`/c/${campaignId}`} className="hud-btn hud-btn-ghost" onClick={() => setMenu(false)}>
               <Icon name="users" size={13} /> Campaign
             </Link>

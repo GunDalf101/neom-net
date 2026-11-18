@@ -6,7 +6,7 @@ import { notFound } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign, emitToDmAndUser, emitToUser, onlineUserIds } from "../realtime/io.js";
 import { pushToUsers } from "./push.js";
 import { getActiveSession, getCampaign } from "./campaigns.js";
-import { fullInclude, loadFull, toSummary } from "./characters.js";
+import { loadCampaignFull, loadFull, toSummary } from "./characters.js";
 import { listRolls } from "./dice.js";
 import { getEncounter } from "./encounters.js";
 import { listEvents, logEvent } from "./events.js";
@@ -15,7 +15,7 @@ import { listPending } from "./rules.js";
 
 export async function getDashboard(campaignId: string, dmUserId: string): Promise<DmDashboardDto> {
   const campaign = await getCampaign(campaignId, dmUserId);
-  const chars = await prisma.character.findMany({ where: { campaignId }, include: fullInclude, orderBy: { createdAt: "asc" } });
+  const chars = await loadCampaignFull(campaignId);
   const online = new Set(onlineUserIds(campaignId));
   const viewer = { userId: dmUserId, isDm: true };
   const [recentRolls, recentEvents, pendingActions, pendingRollRequests, liveSession] = await Promise.all([

@@ -21,7 +21,6 @@ import { HudShell } from "@/pages/hud/HudShell";
 import { CharacterPage } from "@/pages/hud/CharacterPage";
 import { InventoryPage } from "@/pages/hud/InventoryPage";
 import { CyberwarePage } from "@/pages/hud/CyberwarePage";
-import { SkillsPage } from "@/pages/hud/SkillsPage";
 import { JournalPage } from "@/pages/hud/JournalPage";
 import { MissionsPage } from "@/pages/hud/MissionsPage";
 import { LogPage } from "@/pages/hud/LogPage";
@@ -57,8 +56,6 @@ export function App() {
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="cyberware" element={<CyberwarePage />} />
             <Route path="reputation" element={<ReputationPage />} />
-            {/* Progression trees stay reachable (gear menu) but left the main nav in favour of Reputation. */}
-            <Route path="skills" element={<SkillsPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="missions" element={<MissionsPage />} />
             <Route path="log" element={<LogPage />} />

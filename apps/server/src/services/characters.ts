@@ -32,7 +32,7 @@ import {
   type SharedSheetDto,
   crewHealth,
 } from "@neom/shared";
-import type { Prisma } from "@prisma/client";
+import type { AbilityDefinition, Prisma } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { prisma, type Db } from "../db.js";
 import { badRequest, conflict, forbidden, notFound, ruleViolation } from "../errors.js";
@@ -63,15 +63,25 @@ export const fullInclude = {
   conditions: { include: { definition: true }, orderBy: { appliedAt: "asc" } },
   activeEffects: { orderBy: { createdAt: "asc" } },
   overrides: { where: { active: true }, include: { createdBy: { select: { username: true } } } },
-  unlocks: { include: { node: true } },
 } satisfies Prisma.CharacterInclude;
 
-export type FullCharacter = Prisma.CharacterGetPayload<{ include: typeof fullInclude }>;
+/** The character with everything the calculator needs, plus the campaign's ability catalog (abilities carry passive effects). */
+export type FullCharacter = Prisma.CharacterGetPayload<{ include: typeof fullInclude }> & { abilityDefs: AbilityDefinition[] };
 
 export async function loadFull(characterId: string, db: Db = prisma): Promise<FullCharacter> {
   const c = await db.character.findUnique({ where: { id: characterId }, include: fullInclude });
   if (!c) throw notFound("Character");
-  return c;
+  const abilityDefs = await db.abilityDefinition.findMany({ where: { campaignId: c.campaignId } });
+  return { ...c, abilityDefs };
+}
+
+/** Every character of a campaign in full form, sharing one ability-catalog query. */
+export async function loadCampaignFull(campaignId: string, db: Db = prisma): Promise<FullCharacter[]> {
+  const [rows, abilityDefs] = await Promise.all([
+    db.character.findMany({ where: { campaignId }, include: fullInclude, orderBy: { createdAt: "asc" } }),
+    db.abilityDefinition.findMany({ where: { campaignId } }),
+  ]);
+  return rows.map((c) => ({ ...c, abilityDefs }));
 }
 
 // ---------- Snapshot & derived ----------
@@ -113,18 +123,24 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
   for (const eff of full.activeEffects) {
     sources.push({ id: eff.id, kind: "temporary", name: eff.label, active: true, effects: (eff.effects as unknown as PassiveEffect[]) ?? [] });
   }
-  for (const unlock of full.unlocks) {
-    const effects = (unlock.node.effects as unknown as PassiveEffect[]) ?? [];
-    // Each rank grants the node's effects again (ranked nodes stack).
-    for (let r = 1; r <= unlock.rank; r++) {
-      sources.push({
-        id: `${unlock.id}:${r}`,
-        kind: "skillNode",
-        name: unlock.rank > 1 ? `${unlock.node.name} (rank ${r})` : unlock.node.name,
-        active: true,
-        effects,
-      });
-    }
+  // Abilities: granted directly by the DM or through a grantAbility effect on an active source. Each one is a
+  // source of its own so its passive effects (stat and skill modifiers, proficiencies…) reach the calculator.
+  const direct = new Set((full.abilityIds as unknown as string[]) ?? []);
+  const granted = new Set(direct);
+  for (const s of sources) {
+    if (!s.active) continue;
+    for (const e of s.effects) if (e.kind === "grantAbility") granted.add(e.abilityId);
+  }
+  for (const a of full.abilityDefs) {
+    if (!granted.has(a.id)) continue;
+    const passive = (a.passiveEffects as unknown as PassiveEffect[]) ?? [];
+    sources.push({
+      id: `ability:${a.id}`,
+      kind: "ability",
+      name: a.name,
+      active: true,
+      effects: direct.has(a.id) ? [{ kind: "grantAbility", abilityId: a.id }, ...passive] : passive,
+    });
   }
 
   return {
@@ -138,6 +154,7 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
     acBase: full.acBase,
     acBonus: full.acBonus,
     cyberpsychosisPoints: full.cyberpsychosis,
+    adjustments: (full.adjustments as unknown as Record<string, number>) ?? {},
     sources,
     overrides: full.overrides.map((o) => ({ id: o.id, target: o.target, value: o.value, reason: o.reason })),
     settings,
@@ -168,7 +185,7 @@ export function buildRuleState(full: FullCharacter, derived: DerivedStats): Rule
       hitDice: Math.max(0, full.level - full.hitDiceUsed),
       progressionPoints: full.progressionPoints,
       credits: full.credits,
-      inspiration: full.inspiration ? 1 : 0,
+      inspiration: full.inspiration,
     },
   };
 }
@@ -191,7 +208,6 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
     conditions: full.conditions.map(toCharacterConditionDto),
     activeEffects: full.activeEffects.map(toActiveEffectDto),
     overrides: viewer.isDm || isOwner ? full.overrides.map(toOverrideDto) : [],
-    unlocks: full.unlocks.map((u) => ({ nodeId: u.nodeId, nodeKey: u.node.key, treeId: u.node.treeId, rank: u.rank })),
     abilities,
     shareToken: viewer.isDm || isOwner ? full.shareToken : null,
     claimToken: viewer.isDm ? full.claimToken : null,
@@ -237,8 +253,8 @@ export function toSummary(full: FullCharacter, derived = derive(full)): Characte
     hpMax: derived.maxHp.value,
     hpTemp: full.hpTemp,
     ac: derived.ac.value,
-    capacityUsed: derived.capacityUsed,
-    capacity: derived.capacity.value,
+    cyberpsychosisCurrent: derived.cyberpsychosis.current,
+    cyberpsychosisMax: derived.capacity.value,
     overrideCount: full.overrides.length,
   };
 }
@@ -259,7 +275,7 @@ export async function getView(characterId: string, userId: string): Promise<Char
 /** The DM sees every sheet in full; a player sees their own in full and the rest of the crew as glimpses. */
 export async function listCampaignCharacters(campaignId: string, userId: string): Promise<CharacterListEntryDto[]> {
   const membership = await requireMember(campaignId, userId);
-  const rows = await prisma.character.findMany({ where: { campaignId }, include: fullInclude, orderBy: { createdAt: "asc" } });
+  const rows = await loadCampaignFull(campaignId);
   return rows.map((r) => (membership.isDm || r.ownerUserId === userId ? toSummary(r) : toGlimpse(r)));
 }
 
@@ -317,7 +333,7 @@ const SHEET_LABELS: Record<string, string> = {
   name: "name", species: "species", characterClass: "class", subclass: "subclass", faction: "faction", alignment: "alignment",
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
-  acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points",
+  acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -326,7 +342,7 @@ function diffSheet(before: Prisma.CharacterGetPayload<Record<string, never>>, da
   const prev = before as unknown as Record<string, unknown>;
   for (const [k, v] of Object.entries(data)) {
     if (k === "version") continue;
-    if (k === "attributes" || k === "saveProficiencies" || k === "skills" || k === "specialSkills") {
+    if (k === "attributes" || k === "saveProficiencies" || k === "skills" || k === "specialSkills" || k === "adjustments") {
       const a = (prev[k] ?? {}) as Record<string, unknown>;
       const b = (v ?? {}) as Record<string, unknown>;
       for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
@@ -334,7 +350,7 @@ function diffSheet(before: Prisma.CharacterGetPayload<Record<string, never>>, da
       }
       continue;
     }
-    if (prev[k] !== v) out.push({ field: k, from: k === "portraitUrl" ? (prev[k] ? "(image)" : null) : prev[k] ?? null, to: k === "portraitUrl" ? (v ? "(image)" : null) : (v as unknown) ?? null });
+    if (JSON.stringify(prev[k]) !== JSON.stringify(v)) out.push({ field: k, from: k === "portraitUrl" ? (prev[k] ? "(image)" : null) : prev[k] ?? null, to: k === "portraitUrl" ? (v ? "(image)" : null) : (v as unknown) ?? null });
   }
   return out;
 }
@@ -361,7 +377,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -387,6 +403,21 @@ export async function updateCharacter(characterId: string, userId: string, input
       merged[k] = v;
     }
     data.specialSkills = merged;
+  }
+  if (input.adjustments) {
+    // Key-by-key merge; a zero clears the entry so the breakdown line disappears.
+    const merged = { ...((character.adjustments as Record<string, number> | null) ?? {}) };
+    for (const [k, v] of Object.entries(input.adjustments)) {
+      if (v) merged[k] = v;
+      else delete merged[k];
+    }
+    data.adjustments = merged;
+  }
+  if (input.abilityIds) {
+    const ids = [...new Set(input.abilityIds)];
+    const known = ids.length ? await prisma.abilityDefinition.count({ where: { id: { in: ids }, campaignId: character.campaignId } }) : 0;
+    if (known !== ids.length) throw badRequest("One of those abilities does not belong to this campaign");
+    data.abilityIds = ids;
   }
 
   const where: Prisma.CharacterWhereUniqueInput = { id: characterId };
@@ -755,14 +786,13 @@ function sheetExport(full: FullCharacter): SharedSheetDto["sheet"] {
       ...core,
       items: full.items.map((i) => ({ definitionName: i.definition.name, definitionId: i.definitionId, quantity: i.quantity, status: i.status, installedSlot: i.installedSlot, equippedSlot: i.equippedSlot, charges: i.charges, customName: i.customName })),
       conditions: full.conditions.map((c) => ({ key: c.definition.key, level: c.level, note: c.note })),
-      unlocks: full.unlocks.map((u) => ({ nodeKey: u.node.key, rank: u.rank })),
     },
   };
 }
 
 /**
  * Imports sheet fields from an export (identity, attributes, skills, HP, speed, hit die; level/XP/credits/points for the DM).
- * Items, conditions and unlocks are campaign-specific and are not re-created automatically.
+ * Items and conditions are campaign-specific and are not re-created automatically.
  */
 export async function importCharacter(characterId: string, userId: string, payload: Record<string, unknown>): Promise<CharacterView> {
   const { membership } = await requireCharacterEdit(characterId, userId);
@@ -784,7 +814,8 @@ export async function importCharacter(characterId: string, userId: string, paylo
     hpMaxBase: pick("hpMaxBase"),
     baseSpeed: pick("baseSpeed"),
     hitDieSize: pick("hitDieSize"),
-    inspiration: pick("inspiration"),
+    // Files written before inspiration became a counter carry a boolean.
+    inspiration: typeof payload.inspiration === "boolean" ? (payload.inspiration ? 1 : 0) : pick("inspiration"),
   };
   if (membership.isDm) {
     input.level = pick("level");
@@ -794,6 +825,7 @@ export async function importCharacter(characterId: string, userId: string, paylo
     input.acBase = pick("acBase");
     input.acBonus = pick("acBonus");
     input.cyberpsychosis = pick("cyberpsychosis");
+    input.adjustments = pick("adjustments");
   }
   const cleaned = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
   if (Object.keys(cleaned).length === 0) throw badRequest("Nothing importable in payload");
@@ -823,7 +855,6 @@ export async function resetCharacter(characterId: string, userId: string): Promi
     prisma.itemInstance.deleteMany({ where: { characterId } }),
     prisma.characterCondition.deleteMany({ where: { characterId } }),
     prisma.activeEffect.deleteMany({ where: { characterId } }),
-    prisma.characterUnlock.deleteMany({ where: { characterId } }),
     prisma.dMOverride.updateMany({ where: { characterId, active: true }, data: { active: false, revokedAt: new Date() } }),
     prisma.ruleUsage.deleteMany({ where: { characterId } }),
     prisma.character.update({
@@ -836,7 +867,7 @@ export async function resetCharacter(characterId: string, userId: string): Promi
         hitDiceUsed: 0,
         deathSaveSuccess: 0,
         deathSaveFailure: 0,
-        inspiration: false,
+        inspiration: 0,
         progressionPoints: 0,
         version: { increment: 1 },
       },

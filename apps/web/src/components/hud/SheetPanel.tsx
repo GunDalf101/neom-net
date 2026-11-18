@@ -10,6 +10,7 @@ import {
   type ProficiencyMultiplier,
   type SkillKey,
   type SpecialSkillKey,
+  type StatValue,
 } from "@neom/shared";
 import clsx from "clsx";
 import { useState } from "react";
@@ -77,6 +78,52 @@ function SqCheck({ on, color, onChange, disabled, label }: { on: boolean; color:
       <span className={clsx("sq-check", on && "on")} style={{ ["--check-color" as string]: color }} />
       {label}
     </button>
+  );
+}
+
+/**
+ * DM only: nudge (− / +) or type the final bonus of a skill. Stored as a flat "DM adjustment" on the character, so the
+ * number keeps moving with attributes, proficiency and gear, and the breakdown shows the adjustment as its own line.
+ */
+function DmAdjust({ view, target, stat, color, label, exact }: { view: CharacterView; target: string; stat: StatValue; color: string; label: string; exact?: boolean }) {
+  const update = useUpdateCharacter(view.character.id);
+  const [draft, setDraft] = useState<string | null>(null);
+  if (!view.permissions.isDm) return null;
+  const adj = view.character.adjustments[target] ?? 0;
+  const set = (n: number) => update.mutate({ adjustments: { [target]: Math.max(-50, Math.min(50, n)) } });
+  const locked = Boolean(stat.override);
+  return (
+    <span className="inline-flex items-center gap-0.5" data-testid={`adjust-${target}`} title={`DM: adjust ${label}${adj ? ` (adjustment ${fmtMod(adj)})` : ""}`}>
+      <button type="button" className="adj-btn" onClick={() => set(adj - 1)} aria-label={`Lower ${label} by 1`}>
+        <Icon name="minus" size={10} />
+      </button>
+      {exact && (
+        <input
+          className="valbox !min-w-0 !w-11 !text-[0.75rem]"
+          style={{ ["--val-color" as string]: adj ? "var(--color-amber)" : color } as React.CSSProperties}
+          value={draft ?? fmtMod(stat.value)}
+          inputMode="numeric"
+          disabled={locked}
+          aria-label={`${label} total`}
+          title={locked ? "Lift the DM override to type a value" : "Type the final bonus, then Enter"}
+          onFocus={(e) => {
+            setDraft(String(stat.value));
+            const el = e.target;
+            requestAnimationFrame(() => el.select());
+          }}
+          onChange={(e) => setDraft(e.target.value.replace(/[^0-9-]/g, ""))}
+          onBlur={() => {
+            const n = Number(draft);
+            if (draft !== null && draft !== "" && Number.isInteger(n) && n !== stat.value) set(adj + n - stat.value);
+            setDraft(null);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        />
+      )}
+      <button type="button" className="adj-btn" onClick={() => set(adj + 1)} aria-label={`Raise ${label} by 1`}>
+        <Icon name="plus" size={10} />
+      </button>
+    </span>
   );
 }
 
@@ -150,8 +197,9 @@ function SkillChip({ skill, view, color, onRoll, onToggle }: { skill: SkillKey; 
         </span>
       ))}
       <StatBreakdown stat={d} label={SKILL_META[skill].name}>
-        <span className="num font-semibold text-text">{fmtMod(d.value)}</span>
+        <span className={clsx("num font-semibold", d.override ? "text-amber" : "text-text")}>{fmtMod(d.value)}</span>
       </StatBreakdown>
+      <DmAdjust view={view} target={`skill.${skill}`} stat={d} color={color} label={SKILL_META[skill].name} />
     </span>
   );
 }
@@ -207,6 +255,7 @@ export function AttributeRow({ attr, view }: { attr: AttributeKey; view: Charact
                 {fmtMod(derived.specialSkills[special].value)}
               </span>
             </StatBreakdown>
+            <DmAdjust view={view} target={`special.${special}`} stat={derived.specialSkills[special]} color={color} label={sMeta.name} />
           </span>
         </div>
         {skills.length > 0 && (
@@ -254,12 +303,21 @@ function SkillsTab({ view }: { view: CharacterView }) {
                   <ScoreBox value={own.rank} editable={editable} min={0} max={maxRank} onCommit={(v) => update.mutate({ specialSkills: { [k]: { ...own, rank: v } } })} />
                 </span>
                 <SpecialProf k={k} view={view} color={color} />
-                <span className="ml-auto">
-                  <StatBreakdown stat={d} label={m.name}>
-                    <span className="valbox" style={{ ["--val-color" as string]: color }}>
-                      {fmtMod(d.value)}
-                    </span>
-                  </StatBreakdown>
+                <span className="ml-auto flex items-center gap-1">
+                  {permissions.isDm ? (
+                    <>
+                      <DmAdjust view={view} target={`special.${k}`} stat={d} color={color} label={m.name} exact />
+                      <StatBreakdown stat={d} label={m.name}>
+                        <Icon name="info" size={11} className="text-dim hover:text-cyan" />
+                      </StatBreakdown>
+                    </>
+                  ) : (
+                    <StatBreakdown stat={d} label={m.name}>
+                      <span className="valbox" style={{ ["--val-color" as string]: d.override ? "var(--color-amber)" : color }}>
+                        {fmtMod(d.value)}
+                      </span>
+                    </StatBreakdown>
+                  )}
                 </span>
                 <button type="button" className="text-dim hover:text-cyan" onClick={() => doRoll(`special.${k}`, m.name, "skill")} aria-label="Roll">
                   <Icon name="dices" size={14} />
@@ -272,9 +330,9 @@ function SkillsTab({ view }: { view: CharacterView }) {
       <div className="hud-panel p-2" style={{ ["--panel-accent" as string]: "var(--color-cyan)" }}>
         <div className="hud-title mb-1.5 flex items-center justify-between">
           <span>Standard skills</span>
-          <span className="text-[0.55rem] text-dim">click the tile: none → proficient → expertise</span>
+          <span className="text-[0.55rem] text-dim">{permissions.isDm ? "tile: proficiency · − / + or type: DM adjustment" : "click the tile: none → proficient → expertise"}</span>
         </div>
-        <div className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
+        <div className={clsx("grid gap-x-4 gap-y-0.5", !permissions.isDm && "sm:grid-cols-2")}>
           {SKILLS.map((s) => {
             const m = SKILL_META[s];
             const color = attrColor(m.attribute);
@@ -287,9 +345,18 @@ function SkillsTab({ view }: { view: CharacterView }) {
                 <button type="button" className="flex-1 text-left text-text/85 hover:text-cyan" onClick={() => doRoll(`skill.${s}`, m.name, "skill")}>
                   {m.name} <span className="text-[0.65rem] text-dim">({ATTRIBUTE_META[m.attribute].short})</span>
                 </button>
-                <StatBreakdown stat={d} label={m.name}>
-                  <span className="num font-semibold">{fmtMod(d.value)}</span>
-                </StatBreakdown>
+                {permissions.isDm ? (
+                  <>
+                    <DmAdjust view={view} target={`skill.${s}`} stat={d} color={color} label={m.name} exact />
+                    <StatBreakdown stat={d} label={m.name}>
+                      <Icon name="info" size={11} className="text-dim hover:text-cyan" />
+                    </StatBreakdown>
+                  </>
+                ) : (
+                  <StatBreakdown stat={d} label={m.name}>
+                    <span className={clsx("num font-semibold", d.override && "text-amber")}>{fmtMod(d.value)}</span>
+                  </StatBreakdown>
+                )}
               </div>
             );
           })}

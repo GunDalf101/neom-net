@@ -52,11 +52,8 @@ export function DashboardPage() {
                       </span>
                       <Bar value={ch.hpCurrent} max={ch.hpMax} color="crimson" className="flex-1" height={5} />
                       <span className="num text-blue">AC {ch.ac}</span>
-                      <span className="num text-cyan">
-                        {ch.capacityUsed}/{ch.capacity}
-                      </span>
-                      <span className={clsx("num", ch.cyberpsychosisPercent >= 75 ? "text-amber" : "text-violet")} title="Cyberpsychosis">
-                        Ψ {ch.cyberpsychosisPercent}%
+                      <span className={clsx("num", ch.cyberpsychosisPercent >= 100 ? "text-crimson" : ch.cyberpsychosisPercent >= 75 ? "text-amber" : "text-violet")} title="Cyberpsychosis: cyberware load + DM points / threshold (= cyberware capacity)">
+                        Ψ {ch.cyberpsychosisCurrent}/{ch.cyberpsychosisMax} · {ch.cyberpsychosisPercent}%
                       </span>
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-1">

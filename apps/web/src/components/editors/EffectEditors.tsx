@@ -21,7 +21,7 @@ export const STAT_TARGETS: { value: string; label: string; group: string }[] = [
   { value: "initiative", label: "Initiative", group: "Combat" },
   { value: "speed", label: "Speed", group: "Combat" },
   { value: "maxHp", label: "Max HP", group: "Combat" },
-  { value: "capacity", label: "Cyberware capacity", group: "Combat" },
+  { value: "capacity", label: "Cyberpsychosis threshold (cyberware capacity)", group: "Combat" },
   { value: "profBonus", label: "Proficiency bonus", group: "Combat" },
   ...ATTRIBUTES.map((a) => ({ value: `attr.${a}`, label: `${ATTRIBUTE_META[a].name} score`, group: "Attributes" })),
   ...ATTRIBUTES.map((a) => ({ value: `save.${a}`, label: `${ATTRIBUTE_META[a].short} save`, group: "Saves" })),
@@ -453,9 +453,7 @@ export function RequirementListEditor({ value, onChange }: { value: Requirement[
           ? { kind, skill: "hacking", min: 1 }
           : kind === "level"
             ? { kind, min: 3 }
-            : kind === "skillTreeNode"
-              ? { kind, nodeKey: "", minRank: 1 }
-              : { kind: "augmentationInstalled" };
+            : { kind: "augmentationInstalled" };
     onChange([...value, next]);
   };
   const set = (i: number, r: Requirement) => onChange(value.map((x, j) => (j === i ? r : x)));
@@ -489,12 +487,6 @@ export function RequirementListEditor({ value, onChange }: { value: Requirement[
             </>
           )}
           {r.kind === "level" && <Input type="number" value={r.min} onChange={(e) => set(i, { ...r, min: Number(e.target.value) })} className="!w-16" />}
-          {r.kind === "skillTreeNode" && (
-            <>
-              <Input value={r.nodeKey} placeholder="node key" onChange={(e) => set(i, { ...r, nodeKey: e.target.value })} className="!w-32" />
-              <Input type="number" value={r.minRank} onChange={(e) => set(i, { ...r, minRank: Number(e.target.value) })} className="!w-16" />
-            </>
-          )}
           {r.kind === "augmentationInstalled" && (
             <Select value={r.slot ?? ""} onChange={(e) => set(i, { ...r, slot: (e.target.value || undefined) as typeof r.slot })} className="!w-28">
               <option value="">any slot</option>
@@ -511,7 +503,6 @@ export function RequirementListEditor({ value, onChange }: { value: Requirement[
           <option value="attribute">Attribute minimum</option>
           <option value="specialRank">Cyberpunk skill rank</option>
           <option value="level">Level</option>
-          <option value="skillTreeNode">Skill tree node</option>
           <option value="augmentationInstalled">Augmentation installed</option>
         </Select>
         <Button size="sm" icon="plus" onClick={add}>

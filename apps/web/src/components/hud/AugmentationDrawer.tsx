@@ -24,7 +24,6 @@ export function requirementContext(view: CharacterView) {
     level: view.character.level,
     attributes,
     specialRanks,
-    unlockedNodes: view.unlocks.map((u) => ({ key: u.nodeKey, rank: u.rank })),
     augmentations: view.items.filter((i) => i.installedSlot).map((i) => ({ slot: i.installedSlot as AugmentationSlot, definitionId: i.definitionId })),
   };
 }
@@ -36,7 +35,8 @@ export function AugmentationDrawer({ view, slot, onClose }: { view: CharacterVie
   const candidates = view.items.filter((i) => !i.installedSlot && i.definition.category === "cyberware" && (i.definition.augmentationSlot === slot || !i.definition.augmentationSlot));
   const { derived, permissions } = view;
   const canInstall = permissions.canInstallCyberware;
-  const freeCap = derived.capacity.value - derived.capacityUsed + (installed?.definition.capacityCost ?? 0);
+  // Capacity is the cyberpsychosis threshold: headroom = threshold − (cyberware load + DM points), plus what a swap frees.
+  const freeCap = derived.capacity.value - derived.cyberpsychosis.current + (installed?.definition.capacityCost ?? 0);
   const ctx = requirementContext(view);
 
   return (
@@ -90,7 +90,7 @@ export function AugmentationDrawer({ view, slot, onClose }: { view: CharacterVie
                 <div className="mt-1 text-[0.65rem] text-muted">{i.definition.effects.map(describePassiveEffect).join(" · ")}</div>
                 <div className="mt-1 flex items-center justify-between text-[0.65rem]">
                   <span className={tooBig ? "text-crimson" : "text-muted"}>
-                    Capacity {i.definition.capacityCost} (free {freeCap})
+                    Load {i.definition.capacityCost} (headroom {freeCap})
                   </span>
                   {unmet.length > 0 && <span className="text-crimson">Needs {unmet.join(", ")}</span>}
                 </div>

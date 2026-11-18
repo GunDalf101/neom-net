@@ -1,4 +1,4 @@
-import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemDefinitionInputSchema, SkillTreeInputSchema } from "@neom/shared";
+import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemDefinitionInputSchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
@@ -53,16 +53,6 @@ contentRouter.delete("/:campaignId/conditions/:id", wrap<AuthedRequest>(async (r
   await requireDm(pid(req), req.user.id);
   await conditions.deleteConditionDefinition(pid(req), id(req));
   res.json({ ok: true });
-}));
-
-// Skill trees
-contentRouter.get("/:campaignId/skill-trees", wrap<AuthedRequest>(async (req, res) => {
-  await requireMember(pid(req), req.user.id);
-  res.json(await progression.listSkillTrees(pid(req)));
-}));
-contentRouter.put("/:campaignId/skill-trees", wrap<AuthedRequest>(async (req, res) => {
-  await requireDm(pid(req), req.user.id);
-  res.json(await progression.upsertSkillTree(pid(req), parseBody(SkillTreeInputSchema, req.body)));
 }));
 
 // Abilities

@@ -1,16 +1,18 @@
-import type { SheetChange } from "@neom/shared";
+import { describeTarget, type SheetChange } from "@neom/shared";
 
 const LABELS: Record<string, string> = {
   name: "Name", species: "Species", characterClass: "Class", subclass: "Subclass", faction: "Faction", alignment: "Alignment",
   background: "Background", biography: "Biography", portraitUrl: "Portrait", level: "Level", xp: "XP", hpMaxBase: "Base max HP",
   baseSpeed: "Base speed", hitDieSize: "Hit die", inspiration: "Inspiration", progressionPoints: "Points",
   acBase: "Base AC", acBonus: "AC adjustment", cyberpsychosis: "Cyberpsychosis points", credits: "Kamas", attributes: "Attribute", skills: "Skill", saveProficiencies: "Save", specialSkills: "Cyberpunk skill",
+  adjustments: "DM adjustment", abilityIds: "Granted abilities",
 };
 const PROF = ["none", "proficient", "expertise"];
 
 function fmt(field: string, v: unknown): string {
   if (v === null || v === undefined || v === "") return "—";
   if (field.startsWith("skills.")) return PROF[Number(v)] ?? String(v);
+  if (field.startsWith("adjustments.")) return Number(v) > 0 ? `+${v}` : String(v);
   if (field.startsWith("specialSkills.") && typeof v === "object") {
     const o = v as { rank?: number; proficiency?: number };
     return `rank ${o.rank ?? 0} · ${PROF[o.proficiency ?? 0] ?? o.proficiency}`;
@@ -22,8 +24,10 @@ function fmt(field: string, v: unknown): string {
 }
 
 function label(field: string): string {
-  const [head, key] = field.split(".");
-  if (key) return `${LABELS[head ?? ""] ?? head} · ${key.toUpperCase()}`;
+  const [head = "", ...rest] = field.split(".");
+  const key = rest.join(".");
+  if (head === "adjustments" && key) return `${LABELS[head]} · ${describeTarget(key)}`;
+  if (key) return `${LABELS[head] ?? head} · ${key.toUpperCase()}`;
   return LABELS[field] ?? field;
 }
 

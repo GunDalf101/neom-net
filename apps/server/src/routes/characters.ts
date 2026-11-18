@@ -1,4 +1,4 @@
-import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, SetPortraitSchema, ShareLinkSchema, UnlockNodeSchema, UpdateCharacterSchema } from "@neom/shared";
+import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, SetPortraitSchema, ShareLinkSchema, UpdateCharacterSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -8,7 +8,7 @@ import { parseBody } from "../middleware/validate.js";
 import { requireCharacterAccess, requireCharacterEdit } from "../services/access.js";
 import * as characters from "../services/characters.js";
 import { performItemAction } from "../services/items.js";
-import { unlockNode, useAbility } from "../services/progression.js";
+import { useAbility } from "../services/progression.js";
 import { emitCharacterUpdated } from "../realtime/io.js";
 import { logEvent } from "../services/events.js";
 
@@ -55,10 +55,6 @@ charactersRouter.delete("/:characterId/effects/:effectId", wrap<AuthedRequest>(a
   res.json(await characters.getView(cid(req), req.user.id));
 }));
 
-charactersRouter.post("/:characterId/unlock", wrap<AuthedRequest>(async (req, res) => {
-  const { membership } = await requireCharacterEdit(cid(req), req.user.id);
-  res.json(await unlockNode(cid(req), actor(req, membership.isDm), parseBody(UnlockNodeSchema, req.body).nodeId));
-}));
 charactersRouter.post("/:characterId/abilities/:abilityId/use", wrap<AuthedRequest>(async (req, res) => {
   const { membership } = await requireCharacterEdit(cid(req), req.user.id);
   res.json(await useAbility(cid(req), actor(req, membership.isDm), req.params.abilityId as string));

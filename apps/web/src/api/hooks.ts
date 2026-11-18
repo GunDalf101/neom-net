@@ -43,8 +43,6 @@ import type {
   RuleTraceDto,
   RuleVersionDto,
   SimulateRuleInput,
-  SkillTreeDto,
-  SkillTreeInput,
   UpdateCampaignInput,
   UpdateCharacterInput,
   UserDto,
@@ -77,7 +75,6 @@ export const qk = {
   npcs: (cid: string) => ["npcs", cid] as const,
   missions: (cid: string) => ["missions", cid] as const,
   journal: (cid: string) => ["journal", cid] as const,
-  skillTrees: (cid: string) => ["skillTrees", cid] as const,
   abilities: (cid: string) => ["abilities", cid] as const,
   dashboard: (cid: string) => ["dashboard", cid] as const,
   rollRequests: (cid: string) => ["rollRequests", cid] as const,
@@ -222,7 +219,6 @@ export const useHpAction = (id: string) => characterMutation<HpActionInput>(id, 
 export const useApplyCondition = (id: string) => characterMutation<ApplyConditionInput>(id, (body) => api.post(`/characters/${id}/conditions`, body))();
 export const useRemoveCondition = (id: string) => characterMutation<string>(id, (condId) => api.delete(`/characters/${id}/conditions/${condId}`))();
 export const useItemAction = (id: string) => characterMutation<{ itemId: string; action: ItemActionInput }>(id, ({ itemId, action }) => api.post(`/characters/${id}/items/${itemId}/action`, action))();
-export const useUnlockNode = (id: string) => characterMutation<string>(id, (nodeId) => api.post(`/characters/${id}/unlock`, { nodeId }), "Node unlocked")();
 export const useUseAbility = (id: string) => characterMutation<string>(id, (abilityId) => api.post(`/characters/${id}/abilities/${abilityId}/use`))();
 export const useClearEffect = (id: string) => characterMutation<string>(id, (effectId) => api.delete(`/characters/${id}/effects/${effectId}`))();
 export const useResetCharacter = (id: string) => characterMutation<void>(id, () => api.post(`/characters/${id}/reset`, { confirm: true }), "Character reset")();
@@ -331,7 +327,6 @@ export const useEvents = (cid: string, characterId?: string) =>
 // ---------- Content ----------
 export const useItemDefinitions = (cid: string) => useQuery({ queryKey: qk.items(cid), queryFn: () => api.get<ItemDefinitionDto[]>(`/campaigns/${cid}/items`) });
 export const useConditionDefinitions = (cid: string) => useQuery({ queryKey: qk.conditions(cid), queryFn: () => api.get<ConditionDefinitionDto[]>(`/campaigns/${cid}/conditions`) });
-export const useSkillTrees = (cid: string) => useQuery({ queryKey: qk.skillTrees(cid), queryFn: () => api.get<SkillTreeDto[]>(`/campaigns/${cid}/skill-trees`) });
 export const useAbilities = (cid: string) => useQuery({ queryKey: qk.abilities(cid), queryFn: () => api.get<AbilityDto[]>(`/campaigns/${cid}/abilities`) });
 
 export function useSaveItemDefinition(cid: string) {
@@ -377,18 +372,6 @@ export function useSaveCondition(cid: string) {
 export function useDeleteCondition(cid: string) {
   const qc = useQueryClient();
   return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/conditions/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.conditions(cid) }) }));
-}
-export function useSaveSkillTree(cid: string) {
-  const qc = useQueryClient();
-  return useMutation(
-    withToast({
-      mutationFn: (body: SkillTreeInput) => api.put<SkillTreeDto>(`/campaigns/${cid}/skill-trees`, body),
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: qk.skillTrees(cid) });
-        toast("success", "Skill tree saved");
-      },
-    }),
-  );
 }
 export function useSaveAbility(cid: string) {
   const qc = useQueryClient();
@@ -500,7 +483,7 @@ export function useDmGrant(cid: string) {
   const qc = useQueryClient();
   return useMutation(
     withToast({
-      mutationFn: (body: { characterId: string; resource: "xp" | "progressionPoints" | "credits"; amount: number; note?: string }) => api.post(`/campaigns/${cid}/dm/grant`, body),
+      mutationFn: (body: { characterId: string; resource: "xp" | "progressionPoints" | "credits" | "inspiration"; amount: number; note?: string }) => api.post(`/campaigns/${cid}/dm/grant`, body),
       onSuccess: (_d, v) => {
         qc.invalidateQueries({ queryKey: qk.character(v.characterId) });
         qc.invalidateQueries({ queryKey: qk.dashboard(cid) });

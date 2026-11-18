@@ -2,8 +2,8 @@
 
 ## 1. Principles
 
-1. **The server is authoritative.** Every mechanical change (HP, items, installs, unlocks, overrides, rolls) is validated and committed server-side. The client recalculates derived stats locally only to render; it never persists a computed number.
-2. **One effect system.** Items, cyberware, conditions, skill-tree nodes, abilities, rule outputs and DM temporary effects all emit the same typed `PassiveEffect` / `InstantEffect` objects (`packages/shared/src/rules/effects.ts`). The derived-stat calculator does not know what an "item" is; it only sees effect sources.
+1. **The server is authoritative.** Every mechanical change (HP, items, installs, grants, overrides, rolls) is validated and committed server-side. The client recalculates derived stats locally only to render; it never persists a computed number.
+2. **One effect system.** Items, cyberware, conditions, abilities, rule outputs and DM temporary effects all emit the same typed `PassiveEffect` / `InstantEffect` objects (`packages/shared/src/rules/effects.ts`). The derived-stat calculator does not know what an "item" is; it only sees effect sources.
 3. **Definitions ≠ instances ≠ state ≠ events.** `ItemDefinition` describes; `ItemInstance` is owned and tracks charges/status; `Character` holds current state; `CampaignEvent` is an append-only log. Reversals write compensating events; nothing is deleted from history.
 4. **Explainable numbers.** Every derived statistic carries a `breakdown` of lines (base, attribute, proficiency, rank, modifier, suppressed, override) so both UIs can show where a value came from.
 5. **DM authority.** `DMOverride` rows replace a calculated value without touching base data, record the original, can expire by turns, and are shown as overridden everywhere.
@@ -34,7 +34,7 @@ apps/server/src
   services/dice.ts        server-side modifiers, auto advantage, visibility, roll requests, death saves
   services/overrides.ts   create/revoke with original value capture
   services/encounters.ts  participants, initiative, turn/round advancement (ticks durations, fires turn triggers)
-  services/progression.ts skill trees, unlocks (transactional point spend), abilities
+  services/progression.ts abilities (catalog + activation)
   services/story.ts       NPCs, missions (+ one-time reward grant), journal visibility
   services/dm.ts          dashboard aggregate, grants, messages, roll requests
   services/events.ts      append-only event log + visibility-aware broadcast
@@ -67,9 +67,9 @@ apps/web/src
 | installed cyberware | `status = installed`               | damaged/disabled → inactive but still consumes capacity |
 | condition         | always                               | definition effects (may be empty = narrative only) |
 | active effect     | always                               | rule/ability/DM temporary bundles with optional turn counters |
-| skill-tree unlock | always                               | effects applied once **per rank**        |
+| ability           | granted (DM list or grantAbility)    | passive effects; direct grants emit grantAbility |
 
-`computeDerivedStats` then composes each target in a fixed order: attribute scores → modifiers → proficiency bonus → saves → skills → special skills → AC / initiative / speed / max HP / capacity → roll flags, resistances, senses, traits, granted abilities. Composition rules per target:
+`computeDerivedStats` then composes each target in a fixed order: attribute scores → modifiers → proficiency bonus → saves → skills → special skills → AC / initiative / speed / max HP / capacity (= cyberpsychosis threshold) → roll flags, resistances, senses, traits, granted abilities. Composition rules per target:
 
 1. base lines, optionally replaced by the highest `setBase` modifier (originals kept as *suppressed*);
 2. additive modifiers, de-duplicated by `stackGroup` (highest wins, losers shown as suppressed);
@@ -82,13 +82,13 @@ Homebrew combat formulas (illustrative, not RAW): `AC = 10 + DEX mod + modifiers
 
 Accounts & access: `User`, `Campaign` (settings JSON validated by `CampaignSettingsSchema`), `CampaignMembership` (DM | PLAYER), `LiveSession`.
 
-Definitions: `ItemDefinition`, `ConditionDefinition` (`campaignId = null` ⇒ builtin, campaign keys shadow builtins), `RuleDefinition` + `RuleVersion`, `SkillTreeDefinition` + `SkillTreeNode`, `AbilityDefinition`, `NpcDefinition`, `Mission`.
+Definitions: `ItemDefinition`, `ConditionDefinition` (`campaignId = null` ⇒ builtin, campaign keys shadow builtins), `RuleDefinition` + `RuleVersion`, `AbilityDefinition`, `NpcDefinition`, `Mission`.
 
-Instances & state: `Character` (sheet JSON columns `attributes`, `saveProficiencies`, `skills`, `specialSkills` are always read/written together and validated by zod; `version` is an optimistic-concurrency token), `ItemInstance`, `CharacterCondition`, `ActiveEffect`, `DMOverride`, `CharacterUnlock`, `RuleUsage`, `Encounter` + `EncounterParticipant`, `MissionAssignment`, `RollRequest`, `PendingAction`.
+Instances & state: `Character` (sheet JSON columns `attributes`, `saveProficiencies`, `skills`, `specialSkills` are always read/written together and validated by zod; `version` is an optimistic-concurrency token), `ItemInstance`, `CharacterCondition`, `ActiveEffect`, `DMOverride`, `RuleUsage`, `Encounter` + `EncounterParticipant`, `MissionAssignment`, `RollRequest`, `PendingAction`.
 
 Events: `CampaignEvent` (append-only, `reversesEventId` for compensations), `DiceRoll` (immutable), `RuleTrace`, `Message`, `JournalEntry`.
 
-Compound operations (grant, install/replace, unlock, override, mission completion, tree save) run in Prisma interactive transactions. Rule side-effects run after the originating transaction commits, each as its own transaction, so a failed rule never rolls back the player's action; the trace records what happened.
+Compound operations (grant, install/replace, override, mission completion) run in Prisma interactive transactions. Rule side-effects run after the originating transaction commits, each as its own transaction, so a failed rule never rolls back the player's action; the trace records what happened.
 
 ## 5. Rules engine
 
@@ -124,12 +124,12 @@ Socket.IO authenticates from the same httpOnly cookie as HTTP. A client emits `c
 
 - `auth`: `POST register | login | logout`, `GET me`
 - `campaigns`: `GET /`, `POST /`, `POST /join`, `GET|PATCH /:id`, `POST /:id/invite/regenerate`, `GET /:id/characters`, `GET /:id/events`, `GET|POST /:id/rolls`, `GET /:id/overrides`, `GET /:id/session`, `POST /:id/session/start|end`
-- content: `GET|POST /:id/items`, `PUT|DELETE /:id/items/:itemId`, `POST /:id/items/grant`, same shape for `conditions`, `abilities`; `GET|PUT /:id/skill-trees`
+- content: `GET|POST /:id/items`, `PUT|DELETE /:id/items/:itemId`, `POST /:id/items/grant`, same shape for `conditions`, `abilities`
 - rules: `GET|POST /:id/rules`, `PUT|DELETE /:id/rules/:ruleId`, `POST …/publish | duplicate`, `GET …/versions`, `POST …/versions/:v/restore`, `POST /:id/rules/simulate`, `POST /:id/rules/trigger`, `GET /:id/traces`, `GET /:id/pending`, `POST /:id/pending/:pid/resolve`
 - dm: `GET /:id/dashboard`, `POST /:id/overrides`, `DELETE /:id/overrides/:oid`, `POST /:id/dm/grant`, `GET|POST /:id/messages`, `GET|POST /:id/roll-requests`, `DELETE /:id/roll-requests/:rid`
 - encounters: `GET|POST /:id/encounters`, `GET|DELETE /:id/encounters/:eid`, `POST …/participants`, `POST …/action`
 - story: `npcs`, `missions` (+ `/:mid/objectives/:oid`, `/:mid/complete`), `journal` CRUD
-- characters: `POST /`, `GET|PATCH|DELETE /:cid`, `POST /:cid/hp`, `POST /:cid/conditions`, `DELETE /:cid/conditions/:x`, `POST /:cid/items/:iid/action`, `DELETE /:cid/effects/:eid`, `POST /:cid/unlock`, `POST /:cid/abilities/:aid/use`, `GET /:cid/export`, `POST /:cid/import`, `POST /:cid/reset`, `PUT /:cid/portrait`, `POST|DELETE /:cid/share`
+- characters: `POST /`, `GET|PATCH|DELETE /:cid`, `POST /:cid/hp`, `POST /:cid/conditions`, `DELETE /:cid/conditions/:x`, `POST /:cid/items/:iid/action`, `DELETE /:cid/effects/:eid`, `POST /:cid/abilities/:aid/use`, `GET /:cid/export`, `POST /:cid/import`, `POST /:cid/reset`, `PUT /:cid/portrait`, `POST|DELETE /:cid/share`
 - shared: `GET /shared/:token` (any signed-in user holding the link)
 
 All bodies are validated with the shared zod schemas; errors return `{ error, code, details }` with 400 / 401 / 403 / 404 / 409 / 422.

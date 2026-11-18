@@ -199,7 +199,7 @@ function CombatTab({ view }: { view: CharacterView }) {
         </Row>
         <Row icon="brain-circuit" color="var(--color-violet)" label="Cyberpsychosis" sub={`${derived.cyberpsychosis.current} / ${derived.cyberpsychosis.max} · ${derived.cyberpsychosis.fromCyberware} from cyberware${derived.cyberpsychosis.points ? ` + ${derived.cyberpsychosis.points} pts` : ""}`} className="!items-start">
           <div className="flex w-36 flex-col items-end gap-1">
-            <StatBreakdown stat={derived.cyberpsychosisMax} label="Cyberpsychosis threshold" format={(n) => String(n)}>
+            <StatBreakdown stat={derived.capacity} label="Cyberpsychosis threshold (cyberware capacity)" format={(n) => String(n)}>
               <span className={clsx("num text-[1.35rem] font-bold leading-none", derived.cyberpsychosis.percent >= 100 ? "text-crimson" : derived.cyberpsychosis.percent >= 75 ? "text-amber" : "text-violet")}>
                 {derived.cyberpsychosis.percent}%
               </span>
@@ -214,20 +214,33 @@ function CombatTab({ view }: { view: CharacterView }) {
           </div>
         </Row>
         <Row icon="sparkle" color="var(--color-amber)" label="Inspiration" sub={`₭ ${c.credits.toLocaleString()} kamas · ${c.progressionPoints} pts`}>
-          <button type="button" disabled={!canEdit} onClick={() => update.mutate({ inspiration: !c.inspiration })} className="flex items-center" title="Inspiration">
-            <span className={clsx("sq-check h-5 w-5", c.inspiration && "on")} style={{ ["--check-color" as string]: "var(--color-amber)" }} />
-          </button>
-          {canEdit && (
-            <span className="ml-auto flex gap-1">
-              <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "short" })}>
-                Short rest
+          <span className="flex shrink-0 items-center gap-1" data-testid="inspiration-counter" title={`${c.inspiration} inspiration banked`}>
+            {canEdit && (
+              <button type="button" className="adj-btn" disabled={c.inspiration <= 0} onClick={() => update.mutate({ inspiration: c.inspiration - 1 })} aria-label="Spend one inspiration">
+                <Icon name="minus" size={10} />
               </button>
-              <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "long" })}>
-                Long rest
-              </button>
+            )}
+            <span className="flex items-center gap-1">
+              <span className={clsx("sq-check h-4 w-4", c.inspiration > 0 && "on")} style={{ ["--check-color" as string]: "var(--color-amber)" }} />
+              <span className={clsx("num min-w-[1.1rem] text-center text-[1.1rem] font-bold leading-none", c.inspiration > 0 ? "text-amber" : "text-dim")}>{c.inspiration}</span>
             </span>
-          )}
+            {canEdit && (
+              <button type="button" className="adj-btn" disabled={c.inspiration >= 99} onClick={() => update.mutate({ inspiration: c.inspiration + 1 })} aria-label="Bank one inspiration">
+                <Icon name="plus" size={10} />
+              </button>
+            )}
+          </span>
         </Row>
+        {canEdit && (
+          <div className="flex justify-end gap-1 border-b border-line/50 py-1.5">
+            <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "short" })}>
+              Short rest
+            </button>
+            <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "long" })}>
+              Long rest
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Death saves */}

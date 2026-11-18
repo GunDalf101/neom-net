@@ -82,9 +82,6 @@ export function SettingsPage() {
             <Field label="Special skill max rank" hint="Cap for Augmentation, Reflex, Adaptability, Hacking, Sanity, Aura ranks">
               <Input {...num("specialMaxRank", 1, 20)} />
             </Field>
-            <Field label="Base cyberware capacity" hint="Before items, nodes and rules add to it">
-              <Input {...num("baseCapacity", 0, 100)} />
-            </Field>
             <Field label="Base speed (m)">
               <Input {...num("baseSpeed", 0, 100)} />
             </Field>

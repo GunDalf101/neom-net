@@ -79,7 +79,7 @@ live HUD; everyone else sees a read-only copy they can download or import.
 | Rules engine: graphs, modes, cooldowns, timed effects, pending approvals | DM Rules editor · dashboard "Awaiting your ruling" | G6, G7, G8 |
 | DM overrides | DM Override tab · HUD Status tab | G1, G2 |
 | Encounters, initiative, turns | DM Encounters · dashboard tile | G4, G8 |
-| Progression: skill trees, abilities, missions, journal | HUD Skills · Missions · Journal · DM Missions & lore | G5, G7 |
+| Progression: abilities, missions, journal | HUD Abilities panel · Missions · Journal · DM Missions & lore | G5, G7 |
 | Export / import / reset | HUD System menu | G3, G6 |
 | Ownership transfer ("send sheet") | HUD System menu (DM) · DM live controls | G4, G7, G10 |
 | Share link (create, copy/share, rotate, revoke) and shared read-only sheet | HUD System menu (owner, DM) · `/s/:token` | G3, G5, G7, G11 |

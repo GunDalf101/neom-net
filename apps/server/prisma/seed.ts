@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import type { ItemDefinitionInput, PassiveEffect, RuleGraph, SkillTreeNodeInput } from "@neom/shared";
+import type { ItemDefinitionInput, PassiveEffect, RuleGraph } from "@neom/shared";
 import { ensureBuiltinConditions } from "../src/services/conditions.js";
 
 const defaultPrisma = new PrismaClient();
@@ -453,24 +453,6 @@ const items: ItemSeed[] = [
   },
 ];
 
-function tree(branch: SkillTreeNodeInput["key"] extends string ? string : never, nodes: Array<Partial<SkillTreeNodeInput> & { key: string; name: string }>): SkillTreeNodeInput[] {
-  void branch;
-  return nodes.map((n, i) => ({
-    key: n.key,
-    name: n.name,
-    description: n.description ?? "",
-    icon: n.icon ?? "zap",
-    maxRank: n.maxRank ?? 1,
-    cost: n.cost ?? 1,
-    parentKeys: n.parentKeys ?? [],
-    requirements: n.requirements ?? [],
-    effects: n.effects ?? [],
-    ruleIds: n.ruleIds ?? [],
-    position: n.position ?? { x: (n.tier ?? 0) * 220, y: i * 110 },
-    tier: n.tier ?? 0,
-  }));
-}
-
 const mod = (target: string, value: number, label?: string): PassiveEffect => ({ kind: "modifier", target, value, op: "add", label });
 
 /** True when the demo campaign already exists (used by SEED_ON_BOOT to seed only once). */
@@ -609,96 +591,6 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
     },
   });
 
-  // ---- Skill trees ----
-  const trees: Array<{ branch: string; name: string; description: string; nodes: SkillTreeNodeInput[] }> = [
-    {
-      branch: "augmentation",
-      name: "Augmentation",
-      description: "Make the chrome part of you.",
-      nodes: tree("augmentation", [
-        { key: "chromeTolerance", name: "Chrome Tolerance", description: "+1 cyberware capacity per rank.", icon: "battery-charging", maxRank: 2, effects: [mod("capacity", 1, "Chrome Tolerance")], tier: 0 },
-        { key: "hydraulicStrength", name: "Hydraulic Strength", description: "+1 STR.", icon: "dumbbell", parentKeys: ["chromeTolerance"], effects: [mod("attr.str", 1, "Hydraulic Strength")], tier: 1, cost: 2 },
-        { key: "ironFrame", name: "Iron Frame", description: "+2 max HP per rank.", icon: "heart-pulse", parentKeys: ["chromeTolerance"], maxRank: 3, effects: [mod("maxHp", 2, "Iron Frame")], tier: 1 },
-      ]),
-    },
-    {
-      branch: "reflex",
-      name: "Reflex",
-      description: "Faster than thought.",
-      nodes: tree("reflex", [
-        { key: "quickDraw", name: "Quick Draw", description: "+1 initiative per rank.", icon: "timer", maxRank: 2, effects: [mod("initiative", 1, "Quick Draw")], tier: 0 },
-        { key: "evasiveFootwork", name: "Evasive Footwork", description: "Proficiency in Acrobatics.", icon: "move", parentKeys: ["quickDraw"], effects: [{ kind: "proficiency", target: "skill.acrobatics", level: "proficient" }], tier: 1 },
-        { key: "bulletTime", name: "Bullet Time", description: "Advantage on DEX saves.", icon: "gauge", parentKeys: ["evasiveFootwork"], effects: [{ kind: "advantage", on: "save.dex", mode: "advantage", note: "Bullet Time" }], tier: 2, cost: 3, requirements: [{ kind: "specialRank", skill: "reflex", min: 2 }] },
-      ]),
-    },
-    {
-      branch: "adaptability",
-      name: "Adaptability",
-      description: "What doesn't kill you gets logged.",
-      nodes: tree("adaptability", [
-        { key: "toughened", name: "Toughened", description: "+1 max HP per rank.", icon: "shield-plus", maxRank: 3, effects: [mod("maxHp", 1, "Toughened")], tier: 0 },
-        { key: "toxinFilter", name: "Toxin Filter", description: "Resistance to poison damage.", icon: "flask-conical", parentKeys: ["toughened"], effects: [{ kind: "resistance", damageType: "poison", level: "resistance" }], tier: 1 },
-        { key: "empHardening", name: "EMP Hardening", description: "Resistance to EMP damage.", icon: "radio", parentKeys: ["toughened"], effects: [{ kind: "resistance", damageType: "emp", level: "resistance" }], tier: 1, cost: 2 },
-      ]),
-    },
-    {
-      branch: "hacking",
-      name: "Hacking",
-      description: "Every lock is a conversation.",
-      nodes: tree("hacking", [
-        { key: "iceBreaker", name: "Ice Breaker", description: "+1 Hacking per rank.", icon: "unlock", maxRank: 2, effects: [mod("special.hacking", 1, "Ice Breaker")], tier: 0 },
-        { key: "ghostProtocol", name: "Ghost Protocol", description: "Proficiency in Stealth.", icon: "ghost", parentKeys: ["iceBreaker"], effects: [{ kind: "proficiency", target: "skill.stealth", level: "proficient" }], tier: 1 },
-        { key: "overclock", name: "Overclock", description: "Unlocks the Overclock ability.", icon: "zap", parentKeys: ["iceBreaker"], effects: [{ kind: "grantAbility", abilityId: overclock.id }], tier: 1, cost: 2 },
-      ]),
-    },
-    {
-      branch: "sanity",
-      name: "Sanity",
-      description: "Hold the line inside your own head.",
-      nodes: tree("sanity", [
-        { key: "centered", name: "Centered", description: "+1 WIS saves per rank.", icon: "brain-circuit", maxRank: 2, effects: [mod("save.wis", 1, "Centered")], tier: 0 },
-        { key: "clearSignal", name: "Clear Signal", description: "Proficiency in Insight.", icon: "radar", parentKeys: ["centered"], effects: [{ kind: "proficiency", target: "skill.insight", level: "proficient" }], tier: 1 },
-        { key: "unshakable", name: "Unshakable", description: "Resistance to psychic damage.", icon: "anchor", parentKeys: ["clearSignal"], effects: [{ kind: "resistance", damageType: "psychic", level: "resistance" }], tier: 2, cost: 3 },
-      ]),
-    },
-    {
-      branch: "aura",
-      name: "Aura",
-      description: "People remember you. Make sure it's on your terms.",
-      nodes: tree("aura", [
-        { key: "presence", name: "Presence", description: "+1 Aura per rank.", icon: "sparkles", maxRank: 2, effects: [mod("special.aura", 1, "Presence")], tier: 0 },
-        { key: "silverTongue", name: "Silver Tongue", description: "Proficiency in Persuasion.", icon: "message-circle", parentKeys: ["presence"], effects: [{ kind: "proficiency", target: "skill.persuasion", level: "proficient" }], tier: 1 },
-        { key: "menace", name: "Menace", description: "Expertise in Intimidation.", icon: "skull", parentKeys: ["presence"], effects: [{ kind: "proficiency", target: "skill.intimidation", level: "expertise" }], tier: 1, cost: 2 },
-      ]),
-    },
-  ];
-  for (const t of trees) {
-    await prisma.skillTreeDefinition.create({
-      data: {
-        campaignId: cid,
-        branch: t.branch,
-        name: t.name,
-        description: t.description,
-        nodes: {
-          create: t.nodes.map((n) => ({
-            key: n.key,
-            name: n.name,
-            description: n.description,
-            icon: n.icon,
-            maxRank: n.maxRank,
-            cost: n.cost,
-            parentKeys: n.parentKeys,
-            requirements: n.requirements as unknown as Prisma.InputJsonValue,
-            effects: n.effects as unknown as Prisma.InputJsonValue,
-            ruleIds: n.ruleIds,
-            position: n.position,
-            tier: n.tier,
-          })),
-        },
-      },
-    });
-  }
-
   // ---- Antonio ----
   const antonio = await prisma.character.create({
     data: {
@@ -734,6 +626,8 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
       hitDieSize: 8,
       credits: 1500,
       progressionPoints: 3,
+      // The DM handed Antonio Overclock directly (abilities no longer come from skill trees).
+      abilityIds: [overclock.id],
     },
   });
   const give = async (name: string, extra: Partial<Prisma.ItemInstanceUncheckedCreateInput> = {}) => {

@@ -5,7 +5,6 @@ export interface RequirementContext {
   level: number;
   attributes: Record<AttributeKey, number>;
   specialRanks: Record<SpecialSkillKey, number>;
-  unlockedNodes: { key: string; rank: number }[];
   augmentations: { slot: AugmentationSlot; definitionId: string }[];
 }
 
@@ -23,9 +22,6 @@ export function unmetRequirements(requirements: Requirement[], ctx: RequirementC
         break;
       case "level":
         ok = ctx.level >= r.min;
-        break;
-      case "skillTreeNode":
-        ok = ctx.unlockedNodes.some((n) => n.key === r.nodeKey && n.rank >= r.minRank);
         break;
       case "augmentationInstalled":
         ok = ctx.augmentations.some((a) => (!r.slot || a.slot === r.slot) && (!r.definitionId || a.definitionId === r.definitionId));

@@ -2,6 +2,7 @@ import { DAMAGE_TYPES, type DamageType } from "@neom/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  useAbilities,
   useApplyCondition,
   useCharacter,
   useConditionDefinitions,
@@ -60,13 +61,12 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
         </>
       }
     >
-      <div className="mb-2 grid grid-cols-4 gap-2 text-xs sm:grid-cols-7">
+      <div className="mb-2 grid grid-cols-3 gap-2 text-xs sm:grid-cols-6">
         <Stat label="HP" value={`${c.hpCurrent}/${derived.maxHp.value}${c.hpTemp ? ` +${c.hpTemp}` : ""}`} color="crimson" />
         <Stat label="AC" value={String(derived.ac.value)} color="blue" overridden={Boolean(derived.ac.override)} />
         <Stat label="Init" value={fmtMod(derived.initiative.value)} color="crimson" />
         <Stat label="Speed" value={`${derived.speed.value} m`} color="crimson" />
-        <Stat label="Cap" value={`${derived.capacityUsed}/${derived.capacity.value}`} color="cyan" />
-        <Stat label="Psych" value={`${derived.cyberpsychosis.percent}%`} color={derived.cyberpsychosis.percent >= 75 ? "amber" : "violet"} />
+        <Stat label="Psych" value={`${derived.cyberpsychosis.current}/${derived.capacity.value} · ${derived.cyberpsychosis.percent}%`} color={derived.cyberpsychosis.percent >= 100 ? "crimson" : derived.cyberpsychosis.percent >= 75 ? "amber" : "violet"} />
         <Stat label="Level" value={`${c.level} · ${c.xp} xp`} color="muted" />
       </div>
       <Bar value={c.hpCurrent} max={derived.maxHp.value} color="crimson" className="mb-3" />
@@ -81,7 +81,7 @@ export function LiveControls({ campaignId, characterId }: { campaignId: string; 
       </div>
       {tab === "hp" && <HpTab characterId={c.id} acBase={c.acBase} acBonus={c.acBonus} ac={derived.ac.value} psychPoints={c.cyberpsychosis} psych={derived.cyberpsychosis} />}
       {tab === "status" && <StatusTab campaignId={campaignId} view={v} />}
-      {tab === "grant" && <GrantTab campaignId={campaignId} characterId={c.id} />}
+      {tab === "grant" && <GrantTab campaignId={campaignId} view={v} />}
       {tab === "override" && <OverrideTab campaignId={campaignId} view={v} />}
       {tab === "cyber" && <CyberTab view={v} />}
       {tab === "comms" && <CommsTab campaignId={campaignId} characterId={c.id} />}
@@ -100,7 +100,7 @@ function Stat({ label, value, color, overridden }: { label: string; value: strin
   );
 }
 
-function HpTab({ characterId, acBase, acBonus, ac, psychPoints, psych }: { characterId: string; acBase: number; acBonus: number; ac: number; psychPoints: number; psych: { current: number; max: number; percent: number; fromCyberware: number } }) {
+function HpTab({ characterId, acBase, acBonus, ac, psychPoints, psych }: { characterId: string; acBase: number; acBonus: number; ac: number; psychPoints: number; psych: { current: number; max: number; percent: number; fromCyberware: number; points: number } }) {
   const hp = useHpAction(characterId);
   const update = useUpdateCharacter(characterId);
   const [amount, setAmount] = useState(6);
@@ -152,7 +152,7 @@ function HpTab({ characterId, acBase, acBonus, ac, psychPoints, psych }: { chara
       <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
         <span className="text-muted">Cyberpsychosis</span>
         <span className="num font-bold text-violet">{psych.percent}%</span>
-        <span className="text-dim">{psych.current} / {psych.max} · {psych.fromCyberware} from cyberware + points</span>
+        <span className="text-dim">{psych.current} / {psych.max} (threshold = cyberware capacity) · {psych.fromCyberware} cyberware + {psych.points} points</span>
         <Input type="number" min={0} max={999} key={`p${psychPoints}`} defaultValue={psychPoints} className="num !w-16" title="Cyberpsychosis points (trauma, botched installs)" onBlur={(e) => Number(e.target.value) !== psychPoints && update.mutate({ cyberpsychosis: Number(e.target.value) })} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line/60 pt-2">
@@ -207,15 +207,20 @@ function StatusTab({ campaignId, view }: { campaignId: string; view: NonNullable
   );
 }
 
-function GrantTab({ campaignId, characterId }: { campaignId: string; characterId: string }) {
+function GrantTab({ campaignId, view }: { campaignId: string; view: NonNullable<ReturnType<typeof useCharacter>["data"]> }) {
+  const characterId = view.character.id;
   const grant = useDmGrant(campaignId);
   const items = useItemDefinitions(campaignId);
   const giveItem = useGrantItem(campaignId);
-  const [resource, setResource] = useState<"xp" | "progressionPoints" | "credits">("xp");
+  const abilities = useAbilities(campaignId);
+  const update = useUpdateCharacter(characterId);
+  const [resource, setResource] = useState<"xp" | "progressionPoints" | "credits" | "inspiration">("xp");
   const [amount, setAmount] = useState(100);
   const [note, setNote] = useState("");
   const [defId, setDefId] = useState("");
   const [qty, setQty] = useState(1);
+  const [abilityId, setAbilityId] = useState("");
+  const held = new Set(view.character.abilityIds);
   return (
     <div className="space-y-3 text-xs">
       <div className="flex flex-wrap items-end gap-2">
@@ -224,6 +229,7 @@ function GrantTab({ campaignId, characterId }: { campaignId: string; characterId
             <option value="xp">Experience</option>
             <option value="progressionPoints">Progression points</option>
             <option value="credits">Kamas</option>
+            <option value="inspiration">Inspiration</option>
           </Select>
         </Field>
         <Field label="Amount (negative removes)">
@@ -253,6 +259,31 @@ function GrantTab({ campaignId, characterId }: { campaignId: string; characterId
         <Button variant="solid" icon="package-plus" disabled={!defId || giveItem.isPending} onClick={() => giveItem.mutate({ characterId, definitionId: defId, quantity: qty })}>
           Give item
         </Button>
+      </div>
+      <div className="flex flex-wrap items-end gap-2 border-t border-line pt-2">
+        <Field label="Ability" hint="Granted directly; its passive effects apply at once">
+          <Select value={abilityId} onChange={(e) => setAbilityId(e.target.value)} className="!w-64">
+            <option value="">— pick —</option>
+            {abilities.data?.map((a) => (
+              <option key={a.id} value={a.id} disabled={held.has(a.id)}>
+                {a.name}
+                {held.has(a.id) ? " (held)" : ""}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Button variant="solid" color="amber" icon="zap" disabled={!abilityId || update.isPending} onClick={() => { update.mutate({ abilityIds: [...view.character.abilityIds, abilityId] }); setAbilityId(""); }}>
+          Grant ability
+        </Button>
+        {view.character.abilityIds.length > 0 && (
+          <span className="flex flex-wrap gap-1 pb-2">
+            {view.character.abilityIds.map((id) => (
+              <button key={id} type="button" className="hud-btn !py-0.5 !text-[0.55rem]" style={{ ["--btn-color" as string]: "var(--color-amber)" }} title="Click to revoke" onClick={() => update.mutate({ abilityIds: view.character.abilityIds.filter((x) => x !== id) })}>
+                {abilities.data?.find((a) => a.id === id)?.name ?? id} ✕
+              </button>
+            ))}
+          </span>
+        )}
       </div>
     </div>
   );

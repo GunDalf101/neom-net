@@ -116,7 +116,6 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
         items: qk.items(campaignId),
         conditions: qk.conditions(campaignId),
         rules: qk.rules(campaignId),
-        skillTrees: qk.skillTrees(campaignId),
         abilities: qk.abilities(campaignId),
         npcs: qk.npcs(campaignId),
         missions: qk.missions(campaignId),

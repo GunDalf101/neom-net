@@ -383,10 +383,11 @@ check(subRes.ok === true && subRes.devices >= 1, `Subscribed (${subRes.devices} 
 const unsubRes = await player.call("POST", "/api/push/unsubscribe", { endpoint: fakeEndpoint });
 check(unsubRes.devices === subRes.devices - 1, "Unsubscribed");
 
-console.log("    Cyberpsychosis bar (house rule)");
+console.log("    Cyberpsychosis bar (house rule): the threshold is the cyberware capacity");
 const psy = view.derived.cyberpsychosis;
 const expectedMax = view.derived.profBonus.value * view.character.level * 5 + (10 + view.derived.specialSkills.sanity.value) + (10 + view.derived.specialSkills.augmentation.value);
-check(view.derived.cyberpsychosisMax.value === expectedMax && psy.max === expectedMax, `Threshold = prof × level × 5 + passive Sanity + passive Augmentation = ${psy.max}`);
+check(view.derived.capacity.value === expectedMax && psy.max === expectedMax, `Capacity = threshold = prof × level × 5 + passive Sanity + passive Augmentation = ${psy.max}`);
+check(view.derived.cyberpsychosisMax === undefined, "No separate cyberpsychosisMax statistic any more");
 check(psy.fromCyberware === view.derived.capacityUsed && psy.current === psy.points + psy.fromCyberware, `Current ${psy.current} = ${psy.points} pts + ${psy.fromCyberware} cyberware`);
 check(psy.percent === Math.round((psy.current / psy.max) * 100), `Shown as ${psy.percent}%`);
 let psyDenied = false;
@@ -400,6 +401,54 @@ view = await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 5 }
 check(view.derived.cyberpsychosis.points === 5 && view.derived.cyberpsychosis.current === psy.current + 5, `DM adds 5 points → ${view.derived.cyberpsychosis.percent}%`);
 view = await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 0 });
 check(view.derived.cyberpsychosis.points === 0, "Points reset");
+
+console.log("    Inspiration stacks");
+await dm.call("PATCH", `/api/characters/${charId}`, { inspiration: 0 });
+view = await dm.call("PATCH", `/api/characters/${charId}`, { inspiration: 2 });
+check(view.character.inspiration === 2, "Inspiration set to 2");
+await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "inspiration", amount: 1, note: "e2e" });
+view = await dm.call("GET", `/api/characters/${charId}`);
+check(view.character.inspiration === 3, "DM grant adds one more (3)");
+check((await status(() => dm.call("PATCH", `/api/characters/${charId}`, { inspiration: true }))) === 400, "A boolean is no longer accepted (400)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { inspiration: 0 });
+check(view.character.inspiration === 0, "Inspiration cleared");
+
+console.log("    DM adjusts exact skills from the sheet");
+const athleticsBefore = view.derived.skills.athletics.value;
+check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { adjustments: { "skill.athletics": 2 } }))) === 403, "Players cannot set DM adjustments (403)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { adjustments: { "skill.athletics": 2, "special.hacking": -1 } });
+check(view.derived.skills.athletics.value === athleticsBefore + 2 && view.character.adjustments["skill.athletics"] === 2, `Athletics ${athleticsBefore} → ${view.derived.skills.athletics.value}`);
+check(view.derived.skills.athletics.breakdown.some((l) => l.label === "DM adjustment" && l.value === 2), "Breakdown shows the DM adjustment line");
+check(view.derived.specialSkills.hacking.breakdown.some((l) => l.label === "DM adjustment" && l.value === -1), "Negative adjustment subtracts from Hacking");
+check((await status(() => dm.call("PATCH", `/api/characters/${charId}`, { adjustments: { "nope.thing": 1 } }))) === 400, "Unknown stat target is rejected (400)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { adjustments: { "skill.athletics": 0, "special.hacking": 0 } });
+check(view.derived.skills.athletics.value === athleticsBefore && !("skill.athletics" in view.character.adjustments), "Zero clears the adjustment");
+
+console.log("    Abilities alter stats and skills; the DM grants them directly");
+for (const a of await dm.call("GET", `/api/campaigns/${cid}/abilities`)) if (a.name.includes("(E2E)")) await dm.call("DELETE", `/api/campaigns/${cid}/abilities/${a.id}`);
+const strBefore = view.derived.attributes.str.value;
+const stealthBefore = view.derived.skills.stealth.value;
+const bulk = await dm.call("POST", `/api/campaigns/${cid}/abilities`, {
+  name: "Hydraulic Frame (E2E)",
+  description: "Created by the smoke test.",
+  actionType: "passive",
+  passiveEffects: [
+    { kind: "modifier", target: "attr.str", value: 2, op: "add", label: "Hydraulic Frame" },
+    { kind: "modifier", target: "skill.stealth", value: -1, op: "add", label: "Hydraulic Frame" },
+  ],
+});
+check(bulk.passiveEffects.length === 2, `Ability "${bulk.name}" carries passive effects`);
+check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { abilityIds: [bulk.id] }))) === 403, "Players cannot grant themselves abilities (403)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { abilityIds: [bulk.id] });
+check(view.abilities.some((a) => a.id === bulk.id) && view.derived.grantedAbilityIds.includes(bulk.id), "Ability granted directly by the DM");
+check(view.derived.attributes.str.value === strBefore + 2 && view.derived.skills.stealth.value === stealthBefore - 1, `STR ${strBefore} → ${view.derived.attributes.str.value}, Stealth ${stealthBefore} → ${view.derived.skills.stealth.value}`);
+check(view.derived.attributes.str.breakdown.some((l) => l.label === "Hydraulic Frame"), "Breakdown names the ability");
+check((await status(() => dm.call("PATCH", `/api/characters/${charId}`, { abilityIds: ["not-an-ability"] }))) === 400, "Unknown ability id is rejected (400)");
+view = await dm.call("PATCH", `/api/characters/${charId}`, { abilityIds: [] });
+check(view.derived.attributes.str.value === strBefore && !view.abilities.some((a) => a.id === bulk.id), "Revoking removes the effects");
+await dm.call("DELETE", `/api/campaigns/${cid}/abilities/${bulk.id}`);
+check((await status(() => dm.call("GET", `/api/campaigns/${cid}/skill-trees`))) === 404, "Skill trees are gone (404)");
+check((await status(() => dm.call("POST", `/api/characters/${charId}/unlock`, { nodeId: "x" }))) === 404, "Node unlocks are gone (404)");
 
 console.log("    Hit die follows the class");
 const barb = await dm.call("POST", "/api/characters", { campaignId: cid, name: "Krak (E2E)", characterClass: "Barbarian // Street Brawler", attributes: { str: 16, dex: 12, con: 14, int: 8, wis: 10, cha: 8 } });
@@ -529,24 +578,28 @@ check(view.derived.rollFlags.some((f) => f.on === "skill.investigation"), "Inves
 const perceptionLine = view.derived.skills.perception.breakdown.find((l) => l.label === "Spectral Optics");
 check(perceptionLine && perceptionLine.value === 2, "Breakdown explains the +2 from Spectral Optics");
 
-console.log("    Capacity is enforced");
+console.log("    Capacity is enforced against the cyberpsychosis threshold (cyberware + DM points)");
 const heavy = await dm.call("POST", `/api/campaigns/${cid}/items`, {
   name: "Overweight Reactor (E2E)",
   category: "cyberware",
   augmentationSlot: "torso",
-  capacityCost: 9,
+  capacityCost: 2,
   effects: [],
 });
 await dm.call("POST", `/api/campaigns/${cid}/items/grant`, { characterId: charId, definitionId: heavy.id });
+// Push the load to one below the threshold with DM points: a 2-point implant must then be refused.
+view = await player.call("GET", `/api/characters/${charId}`);
+await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: view.derived.capacity.value - view.derived.capacityUsed - 1 });
 view = await player.call("GET", `/api/characters/${charId}`);
 const heavyInst = view.items.find((i) => i.definitionId === heavy.id);
 let blocked = false;
 try {
   await player.call("POST", `/api/characters/${charId}/items/${heavyInst.id}/action`, { action: "install" });
 } catch (e) {
-  blocked = e.status === 422;
+  blocked = e.status === 422 && /threshold/i.test(e.body?.error ?? "");
 }
-check(blocked, "Installing beyond capacity is rejected with 422");
+check(blocked, `Installing past the threshold is rejected with 422 (${view.derived.cyberpsychosis.current}+2 > ${view.derived.capacity.value})`);
+await dm.call("PATCH", `/api/characters/${charId}`, { cyberpsychosis: 0 });
 
 console.log("10. DM starts a live session and encounter");
 await dm.call("POST", `/api/campaigns/${cid}/session/start`);

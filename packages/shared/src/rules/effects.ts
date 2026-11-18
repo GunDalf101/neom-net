@@ -16,6 +16,8 @@ import {
  *   skill.<skillKey>                    standard skill bonus
  *   special.<specialKey>                cyberpunk skill bonus
  *   ac | initiative | speed | maxHp | capacity | profBonus
+ *
+ * `capacity` is the cyberware capacity, which is also the cyberpsychosis threshold.
  */
 export const STAT_TARGET_RE = new RegExp(
   `^(attr\\.(${ATTRIBUTES.join("|")})|save\\.(${ATTRIBUTES.join("|")})|skill\\.(${SKILLS.join("|")})|special\\.(${SPECIAL_SKILLS.join("|")})|ac|initiative|speed|maxHp|capacity|profBonus)$`,
@@ -184,13 +186,12 @@ export interface TemporaryEffect {
 export const PassiveEffectListSchema = z.array(PassiveEffectSchema).max(30);
 export const InstantEffectListSchema = z.array(InstantEffectSchema).max(30);
 
-// ---------- Requirements (for items, augmentations, skill nodes) ----------
+// ---------- Requirements (for items and augmentations) ----------
 
 export const RequirementSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("attribute"), attribute: z.enum(ATTRIBUTES), min: z.number().int().min(1).max(30) }),
   z.object({ kind: z.literal("specialRank"), skill: z.enum(SPECIAL_SKILLS), min: z.number().int().min(0).max(20) }),
   z.object({ kind: z.literal("level"), min: z.number().int().min(1).max(20) }),
-  z.object({ kind: z.literal("skillTreeNode"), nodeKey: z.string().min(1).max(60), minRank: z.number().int().min(1).default(1) }),
   z.object({ kind: z.literal("augmentationInstalled"), slot: z.enum(AUGMENTATION_SLOTS).optional(), definitionId: z.string().optional() }),
 ]);
 export type Requirement = z.infer<typeof RequirementSchema>;
@@ -204,8 +205,6 @@ export function describeRequirement(r: Requirement): string {
       return `${r.skill} rank ${r.min}+`;
     case "level":
       return `Level ${r.min}+`;
-    case "skillTreeNode":
-      return `Node ${r.nodeKey}${r.minRank > 1 ? ` rank ${r.minRank}` : ""}`;
     case "augmentationInstalled":
       return r.slot ? `Augmentation in ${r.slot}` : "An installed augmentation";
   }
@@ -243,7 +242,7 @@ export function describeTarget(target: string): string {
         initiative: "Initiative",
         speed: "Speed",
         maxHp: "Max HP",
-        capacity: "Cyberware Capacity",
+        capacity: "Cyberpsychosis threshold",
         profBonus: "Proficiency Bonus",
         attack: "Attack rolls",
         deathSave: "Death saves",

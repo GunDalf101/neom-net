@@ -99,7 +99,39 @@ describe("derived stats", () => {
     expect(d.saves.str.value).toBe(2);
     expect(d.specialSkills.hacking.value).toBe(3 + 2 + 2);
     expect(d.specialSkills.reflex.value).toBe(4 + 1 + 2);
-    expect(d.capacity.value).toBe(10);
+    // Capacity is the cyberpsychosis threshold: prof × level × 5 + passive Sanity + passive Augmentation.
+    expect(d.capacity.value).toBe(2 * 1 * 5 + (10 + d.specialSkills.sanity.value) + (10 + d.specialSkills.augmentation.value));
+    expect(d.cyberpsychosis.max).toBe(d.capacity.value);
+  });
+
+  it("treats cyberware capacity and the cyberpsychosis threshold as one number", () => {
+    const d = computeDerivedStats(
+      baseSnapshot({
+        cyberpsychosisPoints: 4,
+        sources: [
+          { id: "a", kind: "augmentation", name: "Plating", active: true, effects: [{ kind: "modifier", target: "capacity", value: 3, op: "add", label: "Chrome Tolerance" }], capacityCost: 2, occupiesCapacity: true },
+        ],
+      }),
+    );
+    const base = computeDerivedStats(baseSnapshot()).capacity.value;
+    expect(d.capacity.value).toBe(base + 3);
+    expect(d.capacityUsed).toBe(2);
+    expect(d.cyberpsychosis).toMatchObject({ points: 4, fromCyberware: 2, current: 6, max: base + 3 });
+    expect(d.cyberpsychosis.percent).toBe(Math.round((6 / (base + 3)) * 100));
+  });
+
+  it("applies flat DM adjustments per target with their own breakdown line", () => {
+    const plain = computeDerivedStats(baseSnapshot());
+    const d = computeDerivedStats(baseSnapshot({ adjustments: { "skill.athletics": 3, "special.hacking": -1, "attr.cha": 2, ac: 0 } }));
+    expect(d.skills.athletics.value).toBe(plain.skills.athletics.value + 3);
+    expect(d.skills.athletics.breakdown.find((l) => l.label === "DM adjustment")?.value).toBe(3);
+    expect(d.specialSkills.hacking.value).toBe(plain.specialSkills.hacking.value - 1);
+    expect(d.attributes.cha.value).toBe(plain.attributes.cha.value + 2);
+    // Zero entries add nothing and no line.
+    expect(d.ac.breakdown.some((l) => l.label === "DM adjustment")).toBe(false);
+    // Overrides still win over adjustments.
+    const o = computeDerivedStats(baseSnapshot({ adjustments: { "skill.athletics": 3 }, overrides: [{ id: "o", target: "skill.athletics", value: 11 }] }));
+    expect(o.skills.athletics.value).toBe(11);
   });
 
   it("applies modifiers from active sources only and reports a breakdown", () => {
@@ -161,7 +193,7 @@ describe("derived stats", () => {
   it("grants proficiency through effects", () => {
     const d = computeDerivedStats(
       baseSnapshot({
-        sources: [{ id: "a", kind: "skillNode", name: "Ghost", active: true, effects: [{ kind: "proficiency", target: "skill.perception", level: "expertise" }] }],
+        sources: [{ id: "a", kind: "ability", name: "Ghost", active: true, effects: [{ kind: "proficiency", target: "skill.perception", level: "expertise" }] }],
       }),
     );
     expect(d.skills.perception.proficiency).toBe(2);

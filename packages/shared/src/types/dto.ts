@@ -86,12 +86,17 @@ export interface CharacterCore {
   acBonus: number;
   hitDieSize: number;
   hitDiceUsed: number;
-  inspiration: boolean;
+  /** Stackable: how many inspirations are banked. */
+  inspiration: number;
   deathSaveSuccess: number;
   deathSaveFailure: number;
   credits: number;
   cyberpsychosis: number;
   progressionPoints: number;
+  /** Flat DM adjustments per stat target (see CharacterSnapshot.adjustments). */
+  adjustments: Record<string, number>;
+  /** Abilities the DM granted directly (items and conditions can grant more). */
+  abilityIds: string[];
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -196,13 +201,6 @@ export interface OverrideDto {
   revokedAt: string | null;
 }
 
-export interface CharacterUnlockDto {
-  nodeId: string;
-  nodeKey: string;
-  treeId: string;
-  rank: number;
-}
-
 export interface CharacterView {
   character: CharacterCore;
   ownerUsername: string;
@@ -211,7 +209,6 @@ export interface CharacterView {
   conditions: CharacterConditionDto[];
   activeEffects: ActiveEffectDto[];
   overrides: OverrideDto[];
-  unlocks: CharacterUnlockDto[];
   abilities: AbilityDto[];
   /** Active share-link token (`/s/<token>`); only sent to the owner and the DM. */
   shareToken: string | null;
@@ -263,8 +260,8 @@ export interface CharacterSummaryDto extends Omit<CharacterGlimpseDto, "visibili
   hpMax: number;
   hpTemp: number;
   ac: number;
-  capacityUsed: number;
-  capacity: number;
+  cyberpsychosisCurrent: number;
+  cyberpsychosisMax: number;
   overrideCount: number;
 }
 
@@ -452,32 +449,6 @@ export interface JournalEntryDto {
   updatedAt: string;
 }
 
-export interface SkillTreeNodeDto {
-  id: string;
-  treeId: string;
-  key: string;
-  name: string;
-  description: string;
-  icon: string;
-  maxRank: number;
-  cost: number;
-  parentKeys: string[];
-  requirements: Requirement[];
-  effects: PassiveEffect[];
-  ruleIds: string[];
-  position: { x: number; y: number };
-  tier: number;
-}
-
-export interface SkillTreeDto {
-  id: string;
-  campaignId: string;
-  branch: SpecialSkillKey;
-  name: string;
-  description: string;
-  nodes: SkillTreeNodeDto[];
-}
-
 export interface AbilityDto {
   id: string;
   campaignId: string;
@@ -561,7 +532,6 @@ export interface SharedSheetDto {
     character: CharacterCore & {
       items: { definitionName: string; definitionId: string; quantity: number; status: string; installedSlot: string | null; equippedSlot: string | null; charges: number | null; customName: string | null }[];
       conditions: { key: string; level: number | null; note: string | null }[];
-      unlocks: { nodeKey: string; rank: number }[];
     };
   };
 }

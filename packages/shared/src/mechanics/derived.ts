@@ -2,7 +2,6 @@ import {
   ATTRIBUTES,
   ATTRIBUTE_META,
   DAMAGE_TYPES,
-  DEFAULT_CYBERWARE_CAPACITY,
   DEFAULT_SPECIAL_MAX_RANK,
   DEFAULT_SPEED_METERS,
   SKILLS,
@@ -23,7 +22,6 @@ export type EffectSourceKind =
   | "item"
   | "augmentation"
   | "condition"
-  | "skillNode"
   | "temporary"
   | "ability"
   | "campaign";
@@ -51,7 +49,6 @@ export interface CampaignRuleSettings {
   specialMaxRank: number;
   specialExpertiseEnabled: boolean;
   nat20AutoSuccess: boolean;
-  baseCapacity: number;
   baseSpeed: number;
   /** Optional campaign override for the proficiency bonus table (index = level-1). */
   proficiencyTable?: number[];
@@ -81,7 +78,6 @@ export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
   specialMaxRank: DEFAULT_SPECIAL_MAX_RANK,
   specialExpertiseEnabled: true,
   nat20AutoSuccess: false,
-  baseCapacity: DEFAULT_CYBERWARE_CAPACITY,
   baseSpeed: DEFAULT_SPEED_METERS,
   playersReadOnly: true,
   playersManageInventory: true,
@@ -101,13 +97,17 @@ export interface CharacterSnapshot {
   specialSkills: Record<SpecialSkillKey, { rank: number; proficiency: ProficiencyMultiplier }>;
   hpMaxBase: number;
   baseSpeed?: number;
-  baseCapacity?: number;
   /** Unarmored base AC (default 10); the DM raises it for natural armor or house rules. */
   acBase?: number;
   /** Flat DM adjustment to AC, applied after every other source. */
   acBonus?: number;
   /** Cyberpsychosis points assigned by the DM; installed cyberware load is added automatically. */
   cyberpsychosisPoints?: number;
+  /**
+   * Flat DM adjustments per stat target (`skill.athletics`, `special.hacking`, `attr.str`, `ac`…). Each shows as a
+   * "DM adjustment" line in the breakdown, after every other modifier and before overrides. Zero entries are dropped.
+   */
+  adjustments?: Record<string, number>;
   sources: EffectSource[];
   overrides: StatOverride[];
   settings: CampaignRuleSettings;
@@ -164,11 +164,14 @@ export interface DerivedStats {
   initiative: StatValue;
   speed: StatValue;
   maxHp: StatValue;
+  /**
+   * Cyberware capacity and cyberpsychosis threshold are one number: proficiency × level × 5 + passive Sanity (10 + mod)
+   * + passive Augmentation (10 + mod), plus whatever targets `capacity` (gear, conditions, DM adjustment, override).
+   */
   capacity: StatValue;
+  /** Capacity consumed by installed cyberware (damaged or disabled systems still count). */
   capacityUsed: number;
-  /** Cyberpsychosis threshold: proficiency × level × 5 + passive Sanity (10 + mod) + passive Augmentation (10 + mod). */
-  cyberpsychosisMax: StatValue;
-  /** Current load = DM-assigned points + installed cyberware capacity cost, shown as a percentage of the threshold. */
+  /** Current load = DM-assigned points + installed cyberware, as a share of the threshold. Installs may not exceed it. */
   cyberpsychosis: { points: number; fromCyberware: number; current: number; max: number; percent: number };
   rollFlags: RollFlag[];
   resistances: ResistanceEntry[];
@@ -209,6 +212,7 @@ function composeStat(
   baseLines: BreakdownLine[],
   sources: EffectSource[],
   overrides: StatOverride[],
+  adjustment = 0,
 ): StatValue {
   const mods = activeModifiers(sources, target);
   const breakdown: BreakdownLine[] = [];
@@ -268,6 +272,8 @@ function composeStat(
     }
   }
 
+  if (adjustment) breakdown.push({ label: "DM adjustment", value: adjustment, kind: "modifier" });
+
   let value = breakdown.filter((l) => l.kind !== "suppressed").reduce((s, l) => s + l.value, 0);
 
   const mins = mods.filter((m) => m.effect.op === "min");
@@ -320,29 +326,23 @@ function multiplierFor(level: "proficient" | "expertise" | undefined): Proficien
 
 export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
   const { sources, overrides, settings } = snap;
+  const adjustments = snap.adjustments ?? {};
+  const compose = (target: string, baseLines: BreakdownLine[]) => composeStat(target, baseLines, sources, overrides, adjustments[target] ?? 0);
 
   // Attributes
   const attributes = {} as Record<AttributeKey, StatValue>;
   const modifiers = {} as Record<AttributeKey, number>;
   for (const a of ATTRIBUTES) {
-    attributes[a] = composeStat(
-      `attr.${a}`,
-      [{ label: `Base ${ATTRIBUTE_META[a].short}`, value: snap.attributes[a], kind: "base" }],
-      sources,
-      overrides,
-    );
+    attributes[a] = compose(`attr.${a}`,
+      [{ label: `Base ${ATTRIBUTE_META[a].short}`, value: snap.attributes[a], kind: "base" }]);
     modifiers[a] = abilityModifier(attributes[a].value);
   }
 
   // Proficiency bonus
   const tableValue = settings.proficiencyTable?.[Math.max(0, Math.min(19, snap.level - 1))];
   const baseProf = tableValue ?? proficiencyBonus(snap.level);
-  const profBonus = composeStat(
-    "profBonus",
-    [{ label: `Level ${snap.level} proficiency`, value: baseProf, kind: "base" }],
-    sources,
-    overrides,
-  );
+  const profBonus = compose("profBonus",
+    [{ label: `Level ${snap.level} proficiency`, value: baseProf, kind: "base" }]);
   const pb = profBonus.value;
 
   const granted = grantedProficiencies(sources);
@@ -357,7 +357,7 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
       { label: `${ATTRIBUTE_META[a].short} modifier`, value: modifiers[a], kind: "attribute" },
     ];
     if (proficient) lines.push({ label: "Proficiency", value: pb, kind: "proficiency" });
-    saves[a] = { ...composeStat(`save.${a}`, lines, sources, overrides), proficient };
+    saves[a] = { ...compose(`save.${a}`, lines), proficient };
   }
 
   // Skills
@@ -372,7 +372,7 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     if (mult > 0) {
       lines.push({ label: mult === 2 ? "Expertise (×2)" : "Proficiency", value: mult * pb, kind: "proficiency" });
     }
-    skills[s] = { ...composeStat(`skill.${s}`, lines, sources, overrides), proficiency: mult };
+    skills[s] = { ...compose(`skill.${s}`, lines), proficiency: mult };
   }
 
   // Special skills
@@ -390,7 +390,7 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     if (mult > 0) {
       lines.push({ label: mult === 2 ? "Expertise (×2)" : "Proficiency", value: mult * pb, kind: "proficiency" });
     }
-    specialSkills[k] = { ...composeStat(`special.${k}`, lines, sources, overrides), rank, proficiency: mult };
+    specialSkills[k] = { ...compose(`special.${k}`, lines), rank, proficiency: mult };
   }
 
   // Combat stats (homebrew additive model, see docs/ARCHITECTURE.md)
@@ -399,48 +399,23 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     { label: "DEX modifier", value: modifiers.dex, kind: "attribute" },
   ];
   if (snap.acBonus) acLines.push({ label: "DM adjustment", value: snap.acBonus, kind: "modifier" });
-  const ac = composeStat("ac", acLines, sources, overrides);
-  const initiative = composeStat(
-    "initiative",
-    [{ label: "DEX modifier", value: modifiers.dex, kind: "attribute" }],
-    sources,
-    overrides,
-  );
-  const speed = composeStat(
-    "speed",
-    [{ label: "Base speed", value: snap.baseSpeed ?? settings.baseSpeed, kind: "base" }],
-    sources,
-    overrides,
-  );
-  const maxHp = composeStat(
-    "maxHp",
-    [{ label: "Base max HP", value: snap.hpMaxBase, kind: "base" }],
-    sources,
-    overrides,
-  );
-  const capacity = composeStat(
-    "capacity",
-    [{ label: "Base capacity", value: snap.baseCapacity ?? settings.baseCapacity, kind: "base" }],
-    sources,
-    overrides,
-  );
-  const capacityUsed = sources
-    .filter((s) => s.occupiesCapacity)
-    .reduce((sum, s) => sum + (s.capacityCost ?? 0), 0);
-
-  // Cyberpsychosis (house rule): threshold grows with experience and the passive scores of Sanity and Augmentation.
-  const cyberpsychosisMax = composeStat(
-    "cyberpsychosisMax",
-    [
-      { label: `Proficiency ${pb} × level ${snap.level} × 5`, value: pb * snap.level * 5, kind: "base" },
-      { label: `Passive Sanity (10 ${specialSkills.sanity.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.sanity.value)})`, value: 10 + specialSkills.sanity.value, kind: "modifier" },
-      { label: `Passive Augmentation (10 ${specialSkills.augmentation.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.augmentation.value)})`, value: 10 + specialSkills.augmentation.value, kind: "modifier" },
-    ],
-    sources,
-    overrides,
-  );
+  const ac = compose("ac", acLines);
+  const initiative = compose("initiative",
+    [{ label: "DEX modifier", value: modifiers.dex, kind: "attribute" }]);
+  const speed = compose("speed",
+    [{ label: "Base speed", value: snap.baseSpeed ?? settings.baseSpeed, kind: "base" }]);
+  const maxHp = compose("maxHp",
+    [{ label: "Base max HP", value: snap.hpMaxBase, kind: "base" }]);
+  // Cyberware capacity *is* the cyberpsychosis threshold (house rule): it grows with experience and the passive
+  // scores of Sanity and Augmentation; anything targeting `capacity` (gear, conditions, DM adjustment) moves it.
+  const capacity = compose("capacity", [
+    { label: `Proficiency ${pb} × level ${snap.level} × 5`, value: pb * snap.level * 5, kind: "base" },
+    { label: `Passive Sanity (10 ${specialSkills.sanity.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.sanity.value)})`, value: 10 + specialSkills.sanity.value, kind: "modifier" },
+    { label: `Passive Augmentation (10 ${specialSkills.augmentation.value < 0 ? "−" : "+"} ${Math.abs(specialSkills.augmentation.value)})`, value: 10 + specialSkills.augmentation.value, kind: "modifier" },
+  ]);
+  const capacityUsed = sources.filter((s) => s.occupiesCapacity).reduce((sum, s) => sum + (s.capacityCost ?? 0), 0);
   const psychPoints = Math.max(0, snap.cyberpsychosisPoints ?? 0);
-  const psychMax = Math.max(1, cyberpsychosisMax.value);
+  const psychMax = Math.max(1, capacity.value);
   const psychCurrent = psychPoints + capacityUsed;
   const cyberpsychosis = { points: psychPoints, fromCyberware: capacityUsed, current: psychCurrent, max: psychMax, percent: Math.round((psychCurrent / psychMax) * 100) };
 
@@ -488,7 +463,6 @@ export function computeDerivedStats(snap: CharacterSnapshot): DerivedStats {
     maxHp,
     capacity,
     capacityUsed,
-    cyberpsychosisMax,
     cyberpsychosis,
     rollFlags,
     resistances,

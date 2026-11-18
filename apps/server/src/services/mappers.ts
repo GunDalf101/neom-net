@@ -26,8 +26,6 @@ import type {
   RuleGraph,
   RuleTraceDto,
   RuleVersionDto,
-  SkillTreeDto,
-  SkillTreeNodeDto,
 } from "@neom/shared";
 import { validateRuleGraph } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
@@ -71,6 +69,8 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     credits: c.credits,
     cyberpsychosis: c.cyberpsychosis,
     progressionPoints: c.progressionPoints,
+    adjustments: obj<Record<string, number>>(c.adjustments, {}),
+    abilityIds: arr<string>(c.abilityIds),
     version: c.version,
     createdAt: iso(c.createdAt),
     updatedAt: iso(c.updatedAt),
@@ -364,36 +364,6 @@ export function toJournalDto(j: Prisma.JournalEntryGetPayload<{ include: { autho
     isLore: j.isLore,
     createdAt: iso(j.createdAt),
     updatedAt: iso(j.updatedAt),
-  };
-}
-
-export function toSkillTreeNodeDto(n: Prisma.SkillTreeNodeGetPayload<Record<string, never>>): SkillTreeNodeDto {
-  return {
-    id: n.id,
-    treeId: n.treeId,
-    key: n.key,
-    name: n.name,
-    description: n.description,
-    icon: n.icon,
-    maxRank: n.maxRank,
-    cost: n.cost,
-    parentKeys: arr<string>(n.parentKeys),
-    requirements: arr<Requirement>(n.requirements),
-    effects: arr<PassiveEffect>(n.effects),
-    ruleIds: arr<string>(n.ruleIds),
-    position: obj<{ x: number; y: number }>(n.position, { x: 0, y: 0 }),
-    tier: n.tier,
-  };
-}
-
-export function toSkillTreeDto(t: Prisma.SkillTreeDefinitionGetPayload<{ include: { nodes: true } }>): SkillTreeDto {
-  return {
-    id: t.id,
-    campaignId: t.campaignId,
-    branch: t.branch as SkillTreeDto["branch"],
-    name: t.name,
-    description: t.description,
-    nodes: t.nodes.sort((a, b) => a.tier - b.tier || a.key.localeCompare(b.key)).map(toSkillTreeNodeDto),
   };
 }
 

@@ -237,6 +237,11 @@ function usageSuffix(scope: string, keys: ScopeKeys): string {
   }
 }
 
+/** Ability ids the character currently holds (direct grants + grantAbility effects on active sources). */
+function derivedAbilityIds(full: FullCharacter): Set<string> {
+  return new Set(derive(full).grantedAbilityIds);
+}
+
 /** Rules that apply to this character right now: campaign-wide + attached to active sources. */
 async function candidateRules(full: FullCharacter): Promise<{ candidates: RuleCandidate[]; modes: Map<string, AutomationMode | null> }> {
   const attachedIds = new Set<string>();
@@ -246,7 +251,8 @@ async function candidateRules(full: FullCharacter): Promise<{ candidates: RuleCa
     for (const id of (item.definition.ruleIds as string[]) ?? []) attachedIds.add(id);
   }
   for (const c of full.conditions) for (const id of (c.definition.ruleIds as string[]) ?? []) attachedIds.add(id);
-  for (const u of full.unlocks) for (const id of (u.node.ruleIds as string[]) ?? []) attachedIds.add(id);
+  const held = derivedAbilityIds(full);
+  for (const a of full.abilityDefs) if (held.has(a.id)) for (const id of (a.ruleIds as string[]) ?? []) attachedIds.add(id);
 
   const rows = await prisma.ruleDefinition.findMany({
     where: {
@@ -469,8 +475,8 @@ export async function applyInstantEffect(characterId: string, effect: InstantEff
           summary = `${effect.amount} credits`;
           break;
         case "inspiration":
-          data.inspiration = false;
-          summary = "inspiration";
+          data.inspiration = Math.max(0, full.inspiration - effect.amount);
+          summary = `${effect.amount} inspiration`;
           break;
         case "charges":
           return; // charges are consumed by the item use path
@@ -485,9 +491,9 @@ export async function applyInstantEffect(characterId: string, effect: InstantEff
       if (effect.resource === "xp") data.xp = { increment: effect.amount };
       if (effect.resource === "credits") data.credits = { increment: effect.amount };
       if (effect.resource === "progressionPoints") data.progressionPoints = { increment: effect.amount };
-      if (effect.resource === "inspiration") data.inspiration = true;
+      if (effect.resource === "inspiration") data.inspiration = { increment: effect.amount };
       await prisma.character.update({ where: { id: characterId }, data });
-      await logEvent({ campaignId, type: "resource.granted", characterId, actorUserId: ctx.actorUserId, summary: `${full.name} gained ${effect.resource === "inspiration" ? "inspiration" : `${effect.amount} ${effect.resource}`} (${ctx.sourceLabel})` });
+      await logEvent({ campaignId, type: "resource.granted", characterId, actorUserId: ctx.actorUserId, summary: `${full.name} gained ${effect.amount} ${effect.resource} (${ctx.sourceLabel})` });
       emitCharacterUpdated(campaignId, characterId);
       return;
     }

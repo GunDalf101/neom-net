@@ -135,7 +135,6 @@ function requirementContext(full: FullCharacter) {
       level: full.level,
       attributes,
       specialRanks,
-      unlockedNodes: full.unlocks.map((u) => ({ key: u.node.key, rank: u.rank })),
       augmentations: full.items.filter((i) => i.installedSlot).map((i) => ({ slot: i.installedSlot as AugmentationSlot, definitionId: i.definitionId })),
     },
   };
@@ -209,10 +208,11 @@ export async function performItemAction(characterId: string, actor: Actor, itemI
       if (unmet.length && !isDm) throw ruleViolation(`Requirements not met: ${unmet.join(", ")}`, { unmet });
       const occupant = full.items.find((i) => i.installedSlot === slot);
       if (occupant && !action.replace) throw ruleViolation(`${slot} already holds ${occupant.customName ?? occupant.definition.name}. Choose replace to swap it.`, { occupantId: occupant.id });
+      // Capacity is the cyberpsychosis threshold: cyberware load + DM-assigned points may not exceed it.
       const freed = occupant ? occupant.definition.capacityCost : 0;
-      const projected = derived.capacityUsed - freed + def.capacityCost;
+      const projected = derived.cyberpsychosis.current - freed + def.capacityCost;
       if (projected > derived.capacity.value) {
-        throw ruleViolation(`Insufficient cyberware capacity: ${projected}/${derived.capacity.value} after install`, { used: derived.capacityUsed, cost: def.capacityCost, capacity: derived.capacity.value });
+        throw ruleViolation(`Cyberpsychosis threshold exceeded: ${projected}/${derived.capacity.value} after install`, { used: derived.cyberpsychosis.current, cost: def.capacityCost, capacity: derived.capacity.value });
       }
       await prisma.$transaction(async (tx) => {
         if (occupant) await tx.itemInstance.update({ where: { id: occupant.id }, data: { installedSlot: null, status: "stored" } });

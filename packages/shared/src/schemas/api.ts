@@ -54,7 +54,6 @@ export const CampaignSettingsSchema = z.object({
   specialMaxRank: z.number().int().min(1).max(20),
   specialExpertiseEnabled: z.boolean(),
   nat20AutoSuccess: z.boolean(),
-  baseCapacity: z.number().int().min(0).max(100),
   baseSpeed: z.number().int().min(0).max(100),
   proficiencyTable: z.array(z.number().int().min(0).max(20)).length(20).optional(),
   playersReadOnly: z.boolean(),
@@ -141,7 +140,12 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   acBonus: z.number().int().min(-20).max(20).optional(),
   /** DM only: cyberpsychosis points (cyberware load is added automatically). */
   cyberpsychosis: z.number().int().min(0).max(999).optional(),
-  inspiration: z.boolean().optional(),
+  /** Inspiration stacks: a counter, not a flag. */
+  inspiration: z.number().int().min(0).max(99).optional(),
+  /** DM only: flat adjustments per stat target, merged key by key; 0 removes the entry. */
+  adjustments: z.record(StatTargetSchema, z.number().int().min(-50).max(50)).optional(),
+  /** DM only: abilities granted directly to the character (replaces the whole list). */
+  abilityIds: z.array(z.string().min(1)).max(50).optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
   progressionPoints: z.number().int().min(0).max(10_000).optional(),
   /** Optimistic concurrency: reject if the server version differs. */
@@ -294,7 +298,7 @@ export const OverrideInputSchema = z.object({
 
 export const DmGrantSchema = z.object({
   characterId: z.string().min(1),
-  resource: z.enum(["xp", "progressionPoints", "credits"]),
+  resource: z.enum(["xp", "progressionPoints", "credits", "inspiration"]),
   amount: z.number().int().min(-1_000_000).max(1_000_000),
   note: z.string().max(200).optional(),
 });
@@ -434,28 +438,7 @@ export const JournalInputSchema = z.object({
   isLore: z.boolean().default(false),
 });
 
-// ---------- Skill trees & abilities ----------
-export const SkillTreeNodeInputSchema = z.object({
-  key: z.string().min(1).max(40).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  name: z.string().min(1).max(80),
-  description: z.string().max(1000).default(""),
-  icon: z.string().max(40).default("zap"),
-  maxRank: z.number().int().min(1).max(10).default(1),
-  cost: z.number().int().min(0).max(50).default(1),
-  parentKeys: z.array(z.string()).max(5).default([]),
-  requirements: RequirementListSchema.default([]),
-  effects: PassiveEffectListSchema.default([]),
-  ruleIds: z.array(z.string()).max(10).default([]),
-  position: z.object({ x: z.number(), y: z.number() }).default({ x: 0, y: 0 }),
-  tier: z.number().int().min(0).max(10).default(0),
-});
-export const SkillTreeInputSchema = z.object({
-  branch: z.enum(SPECIAL_SKILLS),
-  name: z.string().min(1).max(80),
-  description: z.string().max(1000).default(""),
-  nodes: z.array(SkillTreeNodeInputSchema).max(60),
-});
-
+// ---------- Abilities ----------
 export const AbilityInputSchema = z.object({
   name: z.string().min(1).max(80),
   description: z.string().max(2000).default(""),
@@ -470,8 +453,6 @@ export const AbilityInputSchema = z.object({
   passiveEffects: PassiveEffectListSchema.default([]),
   ruleIds: z.array(z.string()).max(10).default([]),
 });
-
-export const UnlockNodeSchema = z.object({ nodeId: z.string().min(1) });
 
 /** DM hands a sheet to another campaign member (ownership transfer). */
 export const AssignCharacterSchema = z.object({ userId: z.string().min(1) });
@@ -505,8 +486,6 @@ export type MissionInput = z.infer<typeof MissionInputSchema>;
 export type JournalInput = z.infer<typeof JournalInputSchema>;
 export type FactionInput = z.infer<typeof FactionInputSchema>;
 export type ReputationChangeInput = z.infer<typeof ReputationChangeSchema>;
-export type SkillTreeInput = z.infer<typeof SkillTreeInputSchema>;
-export type SkillTreeNodeInput = z.infer<typeof SkillTreeNodeInputSchema>;
 export type AbilityInput = z.infer<typeof AbilityInputSchema>;
 export type ApplyConditionInput = z.infer<typeof ApplyConditionSchema>;
 export type CampaignSettingsInput = z.infer<typeof CampaignSettingsSchema>;

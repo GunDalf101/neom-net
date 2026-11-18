@@ -55,14 +55,19 @@ const BUILTIN_DESCRIPTIONS: Record<string, string> = {
   unconscious: "Incapacitated, drops what it holds, falls prone; fails STR/DEX saves.",
   exhaustion: "Cumulative levels of fatigue. Track the level on the condition.",
   hacked: "Neural systems compromised. Disadvantage on Hacking checks until purged.",
-  cyberwareMalfunction: "Installed systems glitch. Capacity reduced by 1 until repaired.",
+  cyberwareMalfunction: "Installed systems glitch. Cyberpsychosis threshold reduced by 1 until repaired.",
   mentalStrain: "Psyche under pressure. Disadvantage on Sanity checks.",
 };
 
 export async function ensureBuiltinConditions(db: Db = prisma): Promise<void> {
   for (const c of BUILTIN_CONDITIONS) {
     const existing = await db.conditionDefinition.findFirst({ where: { campaignId: null, key: c.key } });
-    if (existing) continue;
+    if (existing) {
+      // Builtin text and effects are code-owned: keep stored rows in step with this file.
+      const description = BUILTIN_DESCRIPTIONS[c.key] ?? "";
+      if (existing.description !== description) await db.conditionDefinition.update({ where: { id: existing.id }, data: { description } });
+      continue;
+    }
     await db.conditionDefinition.create({
       data: {
         campaignId: null,
