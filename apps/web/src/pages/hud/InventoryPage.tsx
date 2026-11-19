@@ -22,7 +22,7 @@ const CATS: { id: string; label: string; icon: string; match: (i: ItemInstanceDt
   { id: "quest", label: "Quest item", icon: "key-round", match: (i) => i.definition.category === "quest" },
 ];
 
-const RARITY_ORDER = ["artifact", "legendary", "veryRare", "rare", "uncommon", "common"];
+const RARITY_ORDER = ["artifact", "legendary", "epic", "veryRare", "rare", "uncommon", "common"];
 
 export function InventoryPage() {
   const { view, isDm } = useHud();

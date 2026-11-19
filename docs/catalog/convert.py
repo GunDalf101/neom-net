@@ -7,7 +7,7 @@ def rows(sheet, src):
 def num(s):
     s = str(s).strip().replace(",", "")
     return int(float(s)) if re.fullmatch(r"-?\d+(\.\d+)?", s) else None
-tier = {"Common": "common", "Uncommon": "uncommon", "Rare": "rare", "Very Rare": "veryRare", "Legendary": "legendary"}
+tier = {"Common": "common", "Uncommon": "uncommon", "Rare": "rare", "Very Rare": "veryRare", "Epic": "epic", "Legendary": "legendary"}
 SLOT = {"Brain": "brain", "Eyes": "eyes", "Ears": "ears", "Mouth": "mouth", "Hands": "hands", "Arms": "arms", "Torso": "torso", "Back": "back", "Legs": "legs", "Feet": "feet"}
 SKILLS = {"athletics":"athletics","acrobatics":"acrobatics","sleight of hand":"sleightOfHand","stealth":"stealth","arcana":"arcana","history":"history","investigation":"investigation","nature":"nature","religion":"religion","animal handling":"animalHandling","insight":"insight","medicine":"medicine","perception":"perception","survival":"survival","deception":"deception","intimidation":"intimidation","performance":"performance","persuasion":"persuasion"}
 SPECIAL = {"hacking":"hacking","reflex":"reflex","adaptability":"adaptability","augmentation":"augmentation","sanity":"sanity","aura":"aura"}
@@ -80,8 +80,9 @@ for sheet, shimmer in (("Normal Augments", False), ("Shimmer Fused", True)):
     for r in rows(sheet, A):
         name = r["Augment"]; text = r["D&D Effect / Description"]
         # House rule: a Shimmer fusion costs twice the strain of a normal augment of the same tier (5 / 10 / 20 → 10 / 20 / 40).
-        base_strain = {"common": 5, "uncommon": 10, "rare": 20, "veryRare": 40, "legendary": 80}[tier[r["Tier"]]]
-        strain = base_strain * 2 if shimmer else num(r["Permanent Cyberpsychosis Strain"])
+        # DM's strain table by tier; the normal-augment column of the sheet already follows it.
+        base_strain = {"common": 5, "uncommon": 10, "rare": 20, "veryRare": 35, "epic": 50, "legendary": 75}[tier[r["Tier"]]]
+        strain = base_strain * 2 if shimmer else base_strain
         aug = {"name": name, "slot": SLOT[r["Body Slot"]], "rarity": tier[r["Tier"]], "price": num(r["Price (Kamas)"]), "weight": 0.5,
                "description": text, "capacityCost": strain, "icon": "cpu" if not shimmer else "sparkles",
                "tags": ["augment", "shimmer" if shimmer else "standard", r["Primary Stat"]],

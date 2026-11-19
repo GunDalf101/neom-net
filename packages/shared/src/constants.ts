@@ -148,7 +148,7 @@ export const ITEM_CATEGORIES = [
 ] as const;
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
-export const RARITIES = ["common", "uncommon", "rare", "veryRare", "legendary", "artifact"] as const;
+export const RARITIES = ["common", "uncommon", "rare", "veryRare", "epic", "legendary", "artifact"] as const;
 export type Rarity = (typeof RARITIES)[number];
 
 export const RARITY_META: Record<Rarity, { name: string }> = {
@@ -156,6 +156,7 @@ export const RARITY_META: Record<Rarity, { name: string }> = {
   uncommon: { name: "Uncommon" },
   rare: { name: "Rare" },
   veryRare: { name: "Very Rare" },
+  epic: { name: "Epic" },
   legendary: { name: "Legendary" },
   artifact: { name: "Artifact" },
 };
@@ -305,7 +306,13 @@ export const PLAN_KIND_META: Record<PlanKind, { label: string; icon: string; col
 };
 
 /** Monthly upkeep per installed cyberware, by rarity (GM economy handbook). */
-export const CYBERWARE_MAINTENANCE: Record<Rarity, number> = { common: 25, uncommon: 100, rare: 250, veryRare: 500, legendary: 1000, artifact: 2000 };
+export const CYBERWARE_MAINTENANCE: Record<Rarity, number> = { common: 25, uncommon: 100, rare: 250, veryRare: 500, epic: 750, legendary: 1000, artifact: 2000 };
+
+/** Permanent cyberpsychosis strain of a normal augment by tier (DM's table). A Shimmer fusion costs double. */
+export const AUGMENT_STRAIN: Record<Rarity, number> = { common: 5, uncommon: 10, rare: 20, veryRare: 35, epic: 50, legendary: 75, artifact: 100 };
+export function augmentStrain(rarity: Rarity, shimmer = false): number {
+  return AUGMENT_STRAIN[rarity] * (shimmer ? 2 : 1);
+}
 
 // ---------- Encyclopedia ----------
 export const ENCYCLOPEDIA_KINDS = ["npc", "location", "item", "lore"] as const;

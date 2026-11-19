@@ -8,6 +8,7 @@ import {
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
   RARITIES,
+  augmentStrain,
   describePassiveEffect,
   type AbilityDto,
   type AbilityInput,
@@ -221,8 +222,15 @@ function ItemsWorkshop() {
                       ))}
                     </Select>
                   </Field>
-                  <Field label="Capacity cost">
-                    <Input type="number" min={0} value={form.capacityCost} onChange={(e) => set("capacityCost", Number(e.target.value))} />
+                  <Field label="Cyberpsychosis strain" hint={`Standard for ${rarityName(form.rarity)}: ${augmentStrain(form.rarity)} (Shimmer ${augmentStrain(form.rarity, true)})`}>
+                    <div className="flex items-center gap-1">
+                      <Input type="number" min={0} value={form.capacityCost} onChange={(e) => set("capacityCost", Number(e.target.value))} />
+                      {form.capacityCost !== augmentStrain(form.rarity, Boolean(form.meta.shimmer)) && (
+                        <Button size="xs" variant="ghost" onClick={() => set("capacityCost", augmentStrain(form.rarity, Boolean(form.meta.shimmer)))} title="Use the standard strain for this tier">
+                          {augmentStrain(form.rarity, Boolean(form.meta.shimmer))}
+                        </Button>
+                      )}
+                    </div>
                   </Field>
                 </>
               ) : (

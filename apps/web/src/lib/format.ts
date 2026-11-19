@@ -40,6 +40,7 @@ export const RARITY_COLOR: Record<Rarity, string> = {
   uncommon: "lime",
   rare: "cyan",
   veryRare: "violet",
+  epic: "magenta",
   legendary: "amber",
   artifact: "crimson",
 };
