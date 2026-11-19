@@ -144,7 +144,7 @@ function requirementContext(full: FullCharacter) {
 }
 
 /** Actions a player may take on their own gear while the campaign is otherwise DM-controlled. */
-const PLAYER_INVENTORY_ACTIONS = new Set<ItemAction["action"]>(["equip", "unequip", "use", "drop", "rename", "move"]);
+const PLAYER_INVENTORY_ACTIONS = new Set<ItemAction["action"]>(["equip", "unequip", "use", "drop", "sell", "rename", "move"]);
 
 async function resolve(characterId: string, actor: Actor, action?: ItemAction["action"]) {
   const full = await loadFull(characterId);
@@ -278,6 +278,21 @@ export async function performItemAction(characterId: string, actor: Actor, itemI
       else await prisma.itemInstance.update({ where: { id: item.id }, data: { quantity: { decrement: qty } } });
       await prisma.character.update({ where: { id: characterId }, data: { version: { increment: 1 } } });
       await logEvent({ ...base, type: "item.dropped", summary: `${full.name} dropped ${qty > 1 ? `${qty}× ` : ""}${name}`, payload: { itemId, quantity: qty } });
+      break;
+    }
+    case "sell": {
+      const qty = action.quantity ?? 1;
+      if (qty > item.quantity) throw ruleViolation(`Only ${item.quantity} available`);
+      if (item.installedSlot) throw ruleViolation("Uninstall before selling");
+      if (def.price <= 0) throw ruleViolation(`${name} has no resale value`);
+      const unit = Math.round((def.price * settings.sellRatePercent) / 100);
+      const total = unit * qty;
+      await prisma.$transaction(async (tx) => {
+        if (qty === item.quantity) await tx.itemInstance.delete({ where: { id: item.id } });
+        else await tx.itemInstance.update({ where: { id: item.id }, data: { quantity: { decrement: qty } } });
+        await tx.character.update({ where: { id: characterId }, data: { credits: { increment: total }, version: { increment: 1 } } });
+      });
+      await logEvent({ ...base, type: "shop.sale", summary: `${full.name} sold ${qty > 1 ? `${qty}× ` : ""}${name} for ${total.toLocaleString()} ₭ (${settings.sellRatePercent}% of ${def.price.toLocaleString()})`, payload: { itemId, definitionId: def.id, quantity: qty, unitPrice: unit, total, sellRatePercent: settings.sellRatePercent } });
       break;
     }
     case "setQuantity": {

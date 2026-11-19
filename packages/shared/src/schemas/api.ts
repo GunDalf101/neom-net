@@ -68,6 +68,7 @@ export const CampaignSettingsSchema = z.object({
   playersLevelUp: z.boolean(),
   defaultAutomationMode: z.enum(AUTOMATION_MODES),
   tempHpStacks: z.boolean(),
+  sellRatePercent: z.number().int().min(0).max(100),
 });
 export const CreateCampaignSchema = z.object({
   name: z.string().min(2).max(80),
@@ -274,6 +275,8 @@ export const ItemActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("uninstall") }),
   z.object({ action: z.literal("use"), quantity: z.number().int().min(1).max(99).default(1) }),
   z.object({ action: z.literal("drop"), quantity: z.number().int().min(1).max(999).optional() }),
+  /** Sell to the shop at the campaign's sell rate (default half the listed price). */
+  z.object({ action: z.literal("sell"), quantity: z.number().int().min(1).max(999).optional() }),
   z.object({ action: z.literal("setQuantity"), quantity: z.number().int().min(0).max(9999) }),
   z.object({ action: z.literal("setStatus"), status: z.enum(["installed", "damaged", "disabled"]) }),
   z.object({ action: z.literal("setCharges"), charges: z.number().int().min(0).max(999) }),
@@ -328,7 +331,7 @@ export const OverrideInputSchema = z.object({
 
 export const DmGrantSchema = z.object({
   characterId: z.string().min(1),
-  resource: z.enum(["xp", "progressionPoints", "credits", "inspiration"]),
+  resource: z.enum(["xp", "progressionPoints", "credits", "savings", "inspiration"]),
   amount: z.number().int().min(-1_000_000).max(1_000_000),
   note: z.string().max(200).optional(),
 });

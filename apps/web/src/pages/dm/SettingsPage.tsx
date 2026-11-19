@@ -85,6 +85,9 @@ export function SettingsPage() {
             <Field label="Base speed (m)">
               <Input {...num("baseSpeed", 0, 100)} />
             </Field>
+            <Field label="Shop buys back at (%)" hint="What a character gets for selling an item, as a share of its listed price">
+              <Input {...num("sellRatePercent", 0, 100)} />
+            </Field>
             <Field label="Default automation mode" hint="For rules without their own mode">
               <Select value={s.defaultAutomationMode} onChange={(e) => apply("defaultAutomationMode", e.target.value as CampaignSettingsInput["defaultAutomationMode"])}>
                 {AUTOMATION_MODES.map((m) => (

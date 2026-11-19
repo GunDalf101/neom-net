@@ -430,6 +430,22 @@ check(view.plans.length === 0 && view.conditions.some((c) => c.key === "cyberwar
 await dm.call("DELETE", `/api/characters/${charId}/conditions/cyberwareMalfunction`);
 // Restore kamas and drop the purchases.
 await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: creditsAtShop, note: "e2e restore" });
+{
+  view = await player.call("GET", `/api/characters/${charId}`);
+  const owned = view.items.find((x) => x.definitionId === yipi.id);
+  const cashBefore = view.character.credits;
+  view = await player.call("POST", `/api/characters/${charId}/items/${owned.id}/action`, { action: "sell", quantity: 1 });
+  check(view.character.credits === cashBefore + 750 && !view.items.some((x) => x.id === owned.id), `Selling the Yipi-9 pays half its price: +750 ₭ (${cashBefore} → ${view.character.credits})`);
+  const boots = view.items.find((x) => x.installedSlot);
+  check((await status(() => player.call("POST", `/api/characters/${charId}/items/${boots.id}/action`, { action: "sell" }))) === 422, "Installed cyberware cannot be sold (422)");
+  await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { sellRatePercent: 25 } });
+  const stackNow = view.items.find((x) => x.definitionId === ammo9.id);
+  const cash2 = view.character.credits;
+  view = await player.call("POST", `/api/characters/${charId}/items/${stackNow.id}/action`, { action: "sell", quantity: stackNow.quantity });
+  check(view.character.credits === cash2 + Math.round(ammo9.price * 0.25) * stackNow.quantity && !view.items.some((x) => x.definitionId === ammo9.id), `DM sell rate 25%: ${stackNow.quantity} magazines → +${view.character.credits - cash2} ₭`);
+  await dm.call("PATCH", `/api/campaigns/${cid}`, { settings: { sellRatePercent: 50 } });
+  await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: -(view.character.credits - cashBefore), note: "e2e undo sales" });
+}
 for (const i of view.items.filter((x) => [yipi.id, ammo9.id, shop_cheap.id].includes(x.definitionId))) await dm.call("POST", `/api/characters/${charId}/items/${i.id}/action`, { action: "drop" });
 view = await player.call("GET", `/api/characters/${charId}`);
 check(!view.conditions.some((c) => c.key === "cyberwareMalfunction") && !view.items.some((x) => x.definitionId === yipi.id), "Shop run cleaned up (no malfunction, purchases dropped)");
@@ -806,6 +822,18 @@ check(again.character.version === view.character.version && again.items.some((i)
 console.log("    Cleanup: end encounter, heal, uninstall E2E items");
 await dm.call("POST", `/api/campaigns/${cid}/encounters/${enc.id}/action`, { action: "end" });
 await dm.call("POST", `/api/characters/${charId}/hp`, { action: "rest", kind: "long" });
+{
+  const pre = (await player.call("GET", `/api/characters/${charId}`)).character;
+  if (pre.credits <= 0) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: 300, note: "e2e savings" });
+  const before = (await player.call("GET", `/api/characters/${charId}`)).character;
+  await dm.call("POST", `/api/campaigns/${cid}/session/end`);
+  const after = (await player.call("GET", `/api/characters/${charId}`)).character;
+  check(after.credits === 0 && after.savings === before.savings + before.credits, `Session end banks the balance: ${before.credits} ₭ → savings ${after.savings} ₭`);
+  check((await dm.call("GET", `/api/campaigns/${cid}/events?limit=20`)).some((e) => e.type === "savings.deposit" && e.characterId === charId), "savings.deposit logged");
+  // Put it back so the demo keeps its cash on hand.
+  await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "savings", amount: -before.credits, note: "e2e restore" });
+  await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: before.credits, note: "e2e restore" });
+}
 await dm.call("POST", `/api/characters/${charId}/items/${instance.id}/action`, { action: "uninstall" });
 await dm.call("DELETE", `/api/campaigns/${cid}/items/${aug.id}`);
 await dm.call("DELETE", `/api/campaigns/${cid}/items/${heavy.id}`);

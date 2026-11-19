@@ -73,6 +73,8 @@ export interface CampaignRuleSettings {
   defaultAutomationMode: "automatic" | "assisted" | "manual";
   /** Death saves + temp HP follow 5e by default. */
   tempHpStacks: boolean;
+  /** What the shop pays when a character sells an item, as a percentage of its listed price. */
+  sellRatePercent: number;
 }
 
 export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
@@ -88,6 +90,7 @@ export const DEFAULT_CAMPAIGN_SETTINGS: CampaignRuleSettings = {
   playersLevelUp: false,
   defaultAutomationMode: "automatic",
   tempHpStacks: false,
+  sellRatePercent: 50,
 };
 
 export interface CharacterSnapshot {

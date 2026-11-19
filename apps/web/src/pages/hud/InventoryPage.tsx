@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOT_META, describePassiveEffect, describeRequirement, unmetRequirements, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useDmGrant, useItemAction, useUpdateCharacter } from "@/api/hooks";
+import { useCampaign, useDmGrant, useItemAction, useUpdateCharacter } from "@/api/hooks";
 import { requirementContext } from "@/components/hud/AugmentationDrawer";
 import { IdentityCard } from "@/components/hud/IdentityCard";
 import { CompactAttributes } from "@/components/hud/SheetPanel";
@@ -152,8 +152,15 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
         <span className="tile" style={{ ["--tile-color" as string]: "var(--color-amber)" }}>
           <Icon name="coins" size={20} />
         </span>
-        <span className="font-display text-[0.9rem] font-bold uppercase tracking-[0.1em] text-amber">Kamas</span>
+        <span className="font-display text-[0.9rem] font-bold uppercase tracking-[0.1em] text-amber">Balance</span>
         <span className="num ml-auto text-[1.6rem] font-black text-amber">{c.credits.toLocaleString()}</span>
+      </div>
+      <div className="mt-1.5 flex items-center gap-3 border border-cyan/40 bg-bg-0/60 px-3 py-1.5" title="Whatever balance is left when a session ends is banked here. The DM moves money in or out." data-testid="savings-panel">
+        <span className="tile" style={{ ["--tile-color" as string]: "var(--color-cyan)", width: 28, height: 28 }}>
+          <Icon name="piggy-bank" size={14} />
+        </span>
+        <span className="font-display text-[0.75rem] font-bold uppercase tracking-[0.1em] text-cyan">Savings</span>
+        <span className="num ml-auto text-[1.15rem] font-black text-cyan">{c.savings.toLocaleString()}</span>
       </div>
       {permissions.isDm && (
         <div className="mt-2 space-y-1.5 border-t border-amber/30 pt-2 text-xs">
@@ -174,6 +181,16 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
               Apply
             </button>
             <Input placeholder="note (optional)" value={note} onChange={(e) => setNote(e.target.value)} className="!py-1 text-xs" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted">Savings</span>
+            <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-cyan)" }} disabled={!delta || grant.isPending || c.credits < delta} title="Move from balance to savings" onClick={() => { grant.mutate({ characterId: c.id, resource: "credits", amount: -delta, note: note || "to savings" }); grant.mutate({ characterId: c.id, resource: "savings", amount: delta, note: note || "from balance" }); }}>
+              <Icon name="arrow-down-to-line" size={12} /> Deposit
+            </button>
+            <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-cyan)" }} disabled={!delta || grant.isPending || c.savings < delta} title="Move from savings to balance" onClick={() => { grant.mutate({ characterId: c.id, resource: "savings", amount: -delta, note: note || "to balance" }); grant.mutate({ characterId: c.id, resource: "credits", amount: delta, note: note || "from savings" }); }}>
+              <Icon name="arrow-up-from-line" size={12} /> Withdraw
+            </button>
+            <span className="text-[0.6rem] text-dim">uses the amount above</span>
           </div>
           <div className="flex items-center gap-1.5 border-t border-amber/20 pt-1.5">
             <span className="text-muted">Monthly salary</span>
@@ -275,6 +292,8 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
   const subtype = d.category === "cyberware" && d.augmentationSlot ? `${AUGMENTATION_SLOT_META[d.augmentationSlot].name} slot` : d.category === "weapon" ? String(d.meta.weaponClass ?? `${d.damageType ?? "melee"} weapon`) : d.category === "attachment" ? String(d.meta.attachmentType ?? "attachment") : d.equipmentSlot ?? d.category;
   const mods = effects.filter((e) => e.kind === "modifier").map(describePassiveEffect).join(", ");
   const props = effects.filter((e) => e.kind !== "modifier").map(describePassiveEffect).join(", ");
+  const sellRate = useCampaign(view.character.campaignId).data?.settings.sellRatePercent ?? 50;
+  const resale = Math.round((d.price * sellRate) / 100);
 
   return (
     <section className="rarity-card p-3" style={{ ["--rc" as string]: rc }}>
@@ -339,6 +358,14 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
         <dd className="num text-text">{d.weight} kg</dd>
         <dt className="text-muted">Value</dt>
         <dd className="num text-text">{d.price.toLocaleString()} ₭</dd>
+        {d.price > 0 && (
+          <>
+            <dt className="text-muted">Sells for</dt>
+            <dd className="num text-text">
+              {resale.toLocaleString()} ₭ <span className="text-dim">({sellRate}%)</span>
+            </dd>
+          </>
+        )}
         {item.quantity > 1 && (
           <>
             <dt className="text-muted">Quantity</dt>
@@ -384,6 +411,12 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
             <ConfirmButton label="Remove" confirmLabel="Drop it?" color="crimson" variant="outline" className="!py-2.5 !text-[0.75rem]" onConfirm={() => run({ action: "drop" })} />
           ) : (
             <span className="hud-btn hud-btn-ghost !py-2.5 !text-[0.75rem] opacity-40">Remove</span>
+          )}
+          {!item.installedSlot && d.price > 0 && (
+            <ConfirmButton label={`Sell for ${resale.toLocaleString()} ₭`} confirmLabel="Sell one?" color="amber" variant="outline" className="!py-2.5 !text-[0.75rem]" data-testid="sell-one" onConfirm={() => run({ action: "sell", quantity: 1 })} />
+          )}
+          {!item.installedSlot && d.price > 0 && item.quantity > 1 && (
+            <ConfirmButton label={`Sell all ×${item.quantity} for ${(resale * item.quantity).toLocaleString()} ₭`} confirmLabel="Sell them all?" color="amber" variant="outline" className="!py-2.5 !text-[0.75rem]" onConfirm={() => run({ action: "sell", quantity: item.quantity })} />
           )}
         </div>
       )}
