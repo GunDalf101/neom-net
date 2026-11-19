@@ -830,6 +830,14 @@ await dm.call("POST", `/api/characters/${charId}/hp`, { action: "rest", kind: "l
   const after = (await player.call("GET", `/api/characters/${charId}`)).character;
   check(after.credits === 0 && after.savings === before.savings + before.credits, `Session end banks the balance: ${before.credits} ₭ → savings ${after.savings} ₭`);
   check((await dm.call("GET", `/api/campaigns/${cid}/events?limit=20`)).some((e) => e.type === "savings.deposit" && e.characterId === charId), "savings.deposit logged");
+  const back = await player.call("POST", `/api/characters/${charId}/savings`, { direction: "withdraw", amount: 100 });
+  check(back.character.credits === 100 && back.character.savings === after.savings - 100, "The owner withdraws from savings (100 ₭ back in the balance)");
+  const dep = await player.call("POST", `/api/characters/${charId}/savings`, { direction: "deposit", amount: 40 });
+  check(dep.character.credits === 60 && dep.character.savings === after.savings - 60, "…and deposits again (40 ₭)");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/savings`, { direction: "withdraw", amount: 10_000_000 }))) === 422, "Cannot withdraw more than is saved (422)");
+  check((await status(() => claimer.call("POST", `/api/characters/${charId}/savings`, { direction: "withdraw", amount: 1 }))) === 403, "Another player cannot touch your savings (403)");
+  await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: -60, note: "e2e restore" });
+  await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "savings", amount: 60, note: "e2e restore" });
   // Put it back so the demo keeps its cash on hand.
   await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "savings", amount: -before.credits, note: "e2e restore" });
   await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: before.credits, note: "e2e restore" });

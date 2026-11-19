@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
+import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useTransferSavings, useUnsubscribePlan } from "@/api/hooks";
 import { Link } from "react-router-dom";
 import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
@@ -248,8 +248,8 @@ function ShopCard({ item: it, view, campaignId, isDm, open, onToggle }: { item: 
             </span>
             <span className="ml-auto flex items-center gap-2">
               {it.stackable && <Input type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} className="num !w-16 !py-1" aria-label="Quantity" />}
-              <Button size="sm" variant="solid" color="amber" icon="shopping-cart" disabled={broke || soldOut || buy.isPending} title={broke ? `Not enough kamas (${total.toLocaleString()} needed)` : soldOut ? "Sold out" : undefined} onClick={() => buy.mutate({ characterId: view.character.id, definitionId: it.id, quantity: it.stackable ? qty : 1 })} data-testid="shop-buy">
-                {broke ? "Not enough kamas" : `Buy for ${total.toLocaleString()} ₭`}
+              <Button size="sm" variant="solid" color="amber" icon="shopping-cart" disabled={broke || soldOut || buy.isPending} title={broke ? `Not enough balance (${total.toLocaleString()} needed)${view.character.savings >= total ? " — withdraw from savings in the Plans tab" : ""}` : soldOut ? "Sold out" : undefined} onClick={() => buy.mutate({ characterId: view.character.id, definitionId: it.id, quantity: it.stackable ? qty : 1 })} data-testid="shop-buy">
+                {broke ? (view.character.savings >= total ? "Withdraw from savings first" : "Not enough kamas") : `Buy for ${total.toLocaleString()} ₭`}
               </Button>
             </span>
           </div>
@@ -333,6 +333,9 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const session = useSession(campaignId);
   const subscribe = useSubscribePlan(campaignId);
   const unsubscribe = useUnsubscribePlan(campaignId);
+  const transfer = useTransferSavings(view.character.id);
+  const [move, setMove] = useState("");
+  const canMove = view.permissions.isOwner || isDm;
   // Downtime only: players cannot touch plans while the DM's session is live.
   const locked = !isDm && Boolean(session.data);
   const held = new Map(view.plans.map((p) => [p.plan.kind, p]));
@@ -390,9 +393,20 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
           <div className="border border-cyan/40 bg-bg-0/60 px-2 py-1.5">
             <div className="text-[0.55rem] uppercase tracking-wider text-muted">Savings</div>
             <div className="num text-[1.05rem] font-bold text-cyan">{view.character.savings.toLocaleString()} ₭</div>
-            <div className="text-[0.55rem] text-dim">banked at session end</div>
+            <div className="text-[0.55rem] text-dim">yours, banked at session end</div>
           </div>
         </div>
+        {canMove && (
+          <div className="mb-2 flex items-center gap-1" data-testid="savings-transfer">
+            <Input value={move} inputMode="numeric" placeholder="amount" aria-label="Amount to move" className="num !w-20 !py-1 text-xs" onChange={(e) => setMove(e.target.value.replace(/[^0-9]/g, ""))} />
+            <Button size="xs" color="cyan" icon="arrow-down-to-line" disabled={!Number(move) || Number(move) > view.character.credits || transfer.isPending} title="Balance → savings" onClick={() => { transfer.mutate({ direction: "deposit", amount: Number(move) }); setMove(""); }}>
+              Deposit
+            </Button>
+            <Button size="xs" color="amber" icon="arrow-up-from-line" disabled={!Number(move) || Number(move) > view.character.savings || transfer.isPending} title="Savings → balance" onClick={() => { transfer.mutate({ direction: "withdraw", amount: Number(move) }); setMove(""); }}>
+              Withdraw
+            </Button>
+          </div>
+        )}
         <div className="hud-title mb-2 text-amber">Monthly outlook</div>
         <div className="mb-2 border-b border-line/60 pb-2" data-testid="payday">
           <div className="flex justify-between gap-2">

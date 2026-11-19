@@ -500,6 +500,9 @@ export const AbilityInputSchema = z.object({
   ruleIds: z.array(z.string()).max(10).default([]),
 });
 
+/** Owner or DM moves kamas between the balance and the savings account. */
+export const SavingsTransferSchema = z.object({ direction: z.enum(["deposit", "withdraw"]), amount: z.number().int().min(1).max(100_000_000) });
+
 /** DM hands a sheet to another campaign member (ownership transfer). */
 export const AssignCharacterSchema = z.object({ userId: z.string().min(1) });
 /** Portrait only: allowed for owners in DM-controlled mode when `playersManagePortrait` is on. */
@@ -525,6 +528,7 @@ export type RollRequestInput = z.infer<typeof RollRequestSchema>;
 export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
 export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
+export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;
 export type PlanDefinitionInput = z.infer<typeof PlanDefinitionInputSchema>;
 export type PlanSubscribeInput = z.infer<typeof PlanSubscribeSchema>;
 export type RuleDefinitionInput = z.infer<typeof RuleDefinitionInputSchema>;

@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOT_META, describePassiveEffect, describeRequirement, unmetRequirements, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useCampaign, useDmGrant, useItemAction, useUpdateCharacter } from "@/api/hooks";
+import { useCampaign, useDmGrant, useItemAction, useTransferSavings, useUpdateCharacter } from "@/api/hooks";
 import { requirementContext } from "@/components/hud/AugmentationDrawer";
 import { IdentityCard } from "@/components/hud/IdentityCard";
 import { CompactAttributes } from "@/components/hud/SheetPanel";
@@ -135,6 +135,8 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
   const { character: c, permissions } = view;
   const grant = useDmGrant(c.campaignId);
   const update = useUpdateCharacter(c.id);
+  const transfer = useTransferSavings(c.id);
+  const [move, setMove] = useState("");
   const [delta, setDelta] = useState(100);
   const [setTo, setSetTo] = useState("");
   const [note, setNote] = useState("");
@@ -162,6 +164,17 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
         <span className="font-display text-[0.75rem] font-bold uppercase tracking-[0.1em] text-cyan">Savings</span>
         <span className="num ml-auto text-[1.15rem] font-black text-cyan">{c.savings.toLocaleString()}</span>
       </div>
+      {(permissions.isOwner || permissions.isDm) && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs" data-testid="savings-transfer">
+          <input className="valbox !text-[0.9rem] w-20" placeholder="amount" value={move} inputMode="numeric" aria-label="Amount to move" onChange={(e) => setMove(e.target.value.replace(/[^0-9]/g, ""))} />
+          <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-cyan)" }} disabled={!Number(move) || Number(move) > c.credits || transfer.isPending} title="Balance → savings" onClick={() => { transfer.mutate({ direction: "deposit", amount: Number(move) }); setMove(""); }}>
+            <Icon name="arrow-down-to-line" size={12} /> Deposit
+          </button>
+          <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-amber)" }} disabled={!Number(move) || Number(move) > c.savings || transfer.isPending} title="Savings → balance" onClick={() => { transfer.mutate({ direction: "withdraw", amount: Number(move) }); setMove(""); }}>
+            <Icon name="arrow-up-from-line" size={12} /> Withdraw
+          </button>
+        </div>
+      )}
       {permissions.isDm && (
         <div className="mt-2 space-y-1.5 border-t border-amber/30 pt-2 text-xs">
           <div className="flex items-center gap-1.5">
@@ -181,16 +194,6 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
               Apply
             </button>
             <Input placeholder="note (optional)" value={note} onChange={(e) => setNote(e.target.value)} className="!py-1 text-xs" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted">Savings</span>
-            <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-cyan)" }} disabled={!delta || grant.isPending || c.credits < delta} title="Move from balance to savings" onClick={() => { grant.mutate({ characterId: c.id, resource: "credits", amount: -delta, note: note || "to savings" }); grant.mutate({ characterId: c.id, resource: "savings", amount: delta, note: note || "from balance" }); }}>
-              <Icon name="arrow-down-to-line" size={12} /> Deposit
-            </button>
-            <button type="button" className="hud-btn !px-2.5 !py-1.5" style={{ ["--btn-color" as string]: "var(--color-cyan)" }} disabled={!delta || grant.isPending || c.savings < delta} title="Move from savings to balance" onClick={() => { grant.mutate({ characterId: c.id, resource: "savings", amount: -delta, note: note || "to balance" }); grant.mutate({ characterId: c.id, resource: "credits", amount: delta, note: note || "from savings" }); }}>
-              <Icon name="arrow-up-from-line" size={12} /> Withdraw
-            </button>
-            <span className="text-[0.6rem] text-dim">uses the amount above</span>
           </div>
           <div className="flex items-center gap-1.5 border-t border-amber/20 pt-1.5">
             <span className="text-muted">Monthly salary</span>

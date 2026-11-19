@@ -886,6 +886,31 @@ export async function resetCharacter(characterId: string, userId: string): Promi
   return buildView(full, { userId, isDm: membership.isDm });
 }
 
+// ---------- Savings ----------
+
+/** Owner or DM moves kamas between the balance and the savings account. Savings are the player's money. */
+export async function transferSavings(characterId: string, userId: string, input: { direction: "deposit" | "withdraw"; amount: number }): Promise<CharacterView> {
+  const { character, membership, isOwner } = await requireCharacterAccess(characterId, userId);
+  if (!isOwner && !membership.isDm) throw forbidden("You can only move your own character's money");
+  const from = input.direction === "deposit" ? "credits" : "savings";
+  const to = input.direction === "deposit" ? "savings" : "credits";
+  if (character[from] < input.amount) throw ruleViolation(`Only ${character[from].toLocaleString()} ₭ in ${from === "credits" ? "the balance" : "savings"}`);
+  const moved = await prisma.character.updateMany({ where: { id: characterId, [from]: { gte: input.amount } }, data: { [from]: { decrement: input.amount }, [to]: { increment: input.amount }, version: { increment: 1 } } });
+  if (moved.count === 0) throw ruleViolation("Not enough kamas");
+  await logEvent({
+    campaignId: character.campaignId,
+    type: input.direction === "deposit" ? "savings.deposit" : "savings.withdraw",
+    actorUserId: userId,
+    characterId,
+    summary: `${character.name} ${input.direction === "deposit" ? "banked" : "withdrew"} ${input.amount.toLocaleString()} ₭ ${input.direction === "deposit" ? "into" : "from"} savings`,
+    payload: { amount: input.amount, direction: input.direction },
+    visibility: "owner",
+    ownerUserId: character.ownerUserId,
+  });
+  emitCharacterUpdated(character.campaignId, characterId);
+  return buildView(await loadFull(characterId), { userId, isDm: membership.isDm });
+}
+
 // ---------- Ownership ----------
 
 /** DM hands a sheet to another member: ownership moves, the recipient is notified (socket + push). */
