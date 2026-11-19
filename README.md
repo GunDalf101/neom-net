@@ -52,7 +52,7 @@ Registration in the UI needs an email and a passphrase of at least 4 characters;
 | `npm run dev`         | server (`tsx watch`) + web (`vite`) in parallel                     |
 | `npm run typecheck`   | `tsc --noEmit` for every workspace                                  |
 | `npm test`            | unit tests (shared: formulas, dice, derived stats, graph validation, engine) |
-| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (196 checks) |
+| `SEED_PASSWORD=… npm run test:e2e` | drives the full acceptance workflow against a running server (217 checks) |
 | `npm run build`       | typecheck server + production build of the web app to `apps/web/dist` |
 | `npm run db:studio`   | Prisma Studio                                                        |
 | `npm run db:reset`    | drop, migrate and reseed the database (destructive)                  |
@@ -148,6 +148,13 @@ WEB_URL=http://localhost:4100 SEED_PASSWORD=pw npm run test:ui
 - Hand-off by link: the DM creates a one-time link from the live controls ("Hand-off link") or the HUD gear menu. The first player to open it signs in or registers, joins the campaign if needed, becomes the owner of the sheet, and the link stops working. The read-only share link (`/s/<token>`) remains for viewing or importing a copy.
 - Encyclopedia (HUD **Encyclopedia** tab, replaces Journal in the nav; notes stay under the gear menu → Notes): the DM writes NPCs, locations, items and lore, optionally linked to an NPC sheet or item definition for its portrait or icon, and publishes or hides each entry. Players browse by kind and tap a title to read it. The DM also edits it from Missions & lore → Encyclopedia.
 - Change log (DM only in the HUD; players do not get the Log tab): every mutation is an append-only campaign event. Sheet edits record each field before and after; the HUD **Log** tab and the DM event history show them with a diff table.
+
+## The shop and the economy
+
+- **Catalog**: the DM's NEOM//NET spreadsheets (weapons & attachments v4, augments & Shimmer fusions v5) and the Neo City GM Economy Handbook are converted into `apps/server/src/catalog/neom-catalog.json` (sources under `docs/catalog/`): 20 weapons, 60 attachments, 12 ammunition types, 45 augments, 15 Shimmer fusions, 32 plans, district taxes, cyberware upkeep. The demo seed loads it; for a live campaign the DM clicks **Import NEOM catalog** (HUD Shop header or Workshop → Shop & plans). Import is idempotent by name: re-running refreshes stats and prices without duplicating or touching granted instances.
+- **Items**: weapons carry the custom damage rule (die = magazine), range, fire mode, attachment slots and compatibility tags in `ItemDefinition.meta`; attachments and ammunition are new categories (`attachment`, `ammo`); augments are cyberware whose permanent cyberpsychosis strain is the capacity cost, with the mechanical parts of each rule (skill, save, AC, speed, max HP, senses, resistances) as real effects and the full rule as a trait. Shimmer fusions sit on their own shelf with their HP penalty and downside. Any workshop item can be put **For sale** with optional **stock**.
+- **Buying** (HUD **Shop** tab): shelves by kind, title-only cards that expand to the rules and a Buy button. Prices carry the district tax of where the character lives (Dogtown 15%, WCA 25%, NFC 35%, from the housing plan; Dogtown without one). Owners and the DM can buy; kamas are checked server-side, stock decrements atomically, and every purchase is logged.
+- **Plans** (Shop → Plans): housing, food, transport, connectivity and antivirus from the handbook, one per kind per character; vehicles are paid once then insured and fuelled monthly; connectivity grants Hacking while held. The **Monthly outlook** shows plans plus cyberware upkeep (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). The DM **turns the month** in Workshop → Shop & plans: each character pays; plans they cannot afford lapse (dearest first) and unpaid upkeep applies Cyberware Malfunction. Mission payouts and gang-treasury tables land in the encyclopedia as DM-only lore.
 
 ## The hologram figure
 

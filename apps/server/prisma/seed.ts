@@ -11,6 +11,7 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { ItemDefinitionInput, PassiveEffect, RuleGraph } from "@neom/shared";
 import { ensureBuiltinConditions } from "../src/services/conditions.js";
+import { importCatalog } from "../src/catalog/catalog.js";
 
 const defaultPrisma = new PrismaClient();
 
@@ -62,8 +63,8 @@ const adrenalineGraph: RuleGraph = {
   ],
 };
 
-type ItemSeed = Omit<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags"> &
-  Partial<Pick<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags">>;
+type ItemSeed = Omit<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock"> &
+  Partial<Pick<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock">>;
 
 const items: ItemSeed[] = [
   // ---- Cyberware ----
@@ -521,10 +522,17 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
         ruleIds: it.ruleIds ?? [],
         tags: it.tags ?? [],
         visibleToPlayers: it.visibleToPlayers,
+        meta: (it.meta ?? {}) as Prisma.InputJsonValue,
+        forSale: it.forSale ?? false,
+        stock: it.stock ?? null,
       },
     });
     defs.set(it.name, row.id);
   }
+
+  // ---- NEOM catalog (weapons, attachments, ammo, augments, Shimmer fusions, plans) ----
+  const imported = await importCatalog(cid);
+  console.log(`catalog: ${imported.items.created} items, ${imported.plans.created} plans`);
 
   // ---- Custom condition ----
   await prisma.conditionDefinition.create({

@@ -1,0 +1,5004 @@
+{
+ "version": 1,
+ "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook",
+ "weapons": [
+  {
+   "name": "Yipi-9",
+   "rarity": "common",
+   "price": 1500,
+   "weight": 1,
+   "description": "Reliable entry-level sidearm. Damage die matches magazine capacity.",
+   "damage": "1d6",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "Pistol"
+   ],
+   "meta": {
+    "weaponClass": "Pistol",
+    "weaponCategory": "Pistol / Gun",
+    "ammoType": "9mm",
+    "rangeFt": 40,
+    "fireMode": "Semi-auto",
+    "magazine": 6,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Grip",
+     "Magazine",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Pistol",
+     "Compact"
+    ]
+   }
+  },
+  {
+   "name": "K-12",
+   "rarity": "common",
+   "price": 1200,
+   "weight": 1,
+   "description": "Service pistol. Damage die matches magazine capacity.",
+   "damage": "1d8",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "Pistol"
+   ],
+   "meta": {
+    "weaponClass": "Pistol",
+    "weaponCategory": "Pistol / Gun",
+    "ammoType": "9mm",
+    "rangeFt": 35,
+    "fireMode": "Semi-auto",
+    "magazine": 8,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Grip",
+     "Magazine",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Pistol",
+     "Compact"
+    ]
+   }
+  },
+  {
+   "name": "Hurricane",
+   "rarity": "common",
+   "price": 2500,
+   "weight": 3,
+   "description": "High rate of fire, manageable recoil. Damage die matches magazine capacity.",
+   "damage": "2d12",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "SMG"
+   ],
+   "meta": {
+    "weaponClass": "SMG",
+    "weaponCategory": "SMG",
+    "ammoType": "9mm",
+    "rangeFt": 50,
+    "fireMode": "Burst/Auto",
+    "magazine": 24,
+    "attachmentSlots": 2,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "SMG",
+     "Compact"
+    ]
+   }
+  },
+  {
+   "name": "Longshot",
+   "rarity": "common",
+   "price": 3000,
+   "weight": 5,
+   "description": "Basic precision platform. Damage die matches magazine capacity.",
+   "damage": "1d10",
+   "icon": "crosshair",
+   "tags": [
+    "Rifle",
+    "Sniper",
+    "Sniper Rifle"
+   ],
+   "meta": {
+    "weaponClass": "Sniper Rifle",
+    "weaponCategory": "Rifle",
+    "ammoType": "7.62mm",
+    "rangeFt": 250,
+    "fireMode": "Bolt-action",
+    "magazine": 1,
+    "attachmentSlots": 2,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Barrel",
+     "Stock",
+     "Magazine",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Sniper",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Boomerang",
+   "rarity": "common",
+   "price": 1800,
+   "weight": 4,
+   "description": "Compact close-range weapon. Damage die matches magazine capacity.",
+   "damage": "1d10",
+   "icon": "crosshair",
+   "tags": [
+    "Heavy",
+    "Shotgun"
+   ],
+   "meta": {
+    "weaponClass": "Shotgun",
+    "weaponCategory": "Shotgun",
+    "ammoType": "Shotgun Shell",
+    "rangeFt": 25,
+    "fireMode": "Pump",
+    "magazine": 6,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Stock",
+     "Magazine",
+     "Shield"
+    ],
+    "compatTags": [
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Neon MP7",
+   "rarity": "uncommon",
+   "price": 3200,
+   "weight": 3,
+   "description": "Compact high-tech SMG. Damage die matches magazine capacity.",
+   "damage": "4d6",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "SMG"
+   ],
+   "meta": {
+    "weaponClass": "SMG",
+    "weaponCategory": "SMG",
+    "ammoType": "9mm",
+    "rangeFt": 60,
+    "fireMode": "Burst/Auto",
+    "magazine": 30,
+    "attachmentSlots": 3,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "SMG",
+     "Compact"
+    ]
+   }
+  },
+  {
+   "name": "M4K-III",
+   "rarity": "uncommon",
+   "price": 4800,
+   "weight": 4,
+   "description": "Modular all-rounder. Damage die matches magazine capacity.",
+   "damage": "5d6",
+   "icon": "crosshair",
+   "tags": [
+    "Assault",
+    "Assault Rifle",
+    "Rifle"
+   ],
+   "meta": {
+    "weaponClass": "Assault Rifle",
+    "weaponCategory": "Rifle",
+    "ammoType": "5.56mm",
+    "rangeFt": 120,
+    "fireMode": "Semi/Burst/Auto",
+    "magazine": 30,
+    "attachmentSlots": 3,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Barrel",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Rifle",
+     "Assault"
+    ]
+   }
+  },
+  {
+   "name": "Viper SR",
+   "rarity": "uncommon",
+   "price": 5200,
+   "weight": 5,
+   "description": "Light semi-auto marksman rifle. Damage die matches magazine capacity.",
+   "damage": "1d12",
+   "icon": "crosshair",
+   "tags": [
+    "Rifle",
+    "Sniper",
+    "Sniper Rifle"
+   ],
+   "meta": {
+    "weaponClass": "Sniper Rifle",
+    "weaponCategory": "Rifle",
+    "ammoType": "7.62mm",
+    "rangeFt": 300,
+    "fireMode": "Semi-auto",
+    "magazine": 10,
+    "attachmentSlots": 3,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Barrel",
+     "Stock",
+     "Magazine",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Sniper",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Ironclad",
+   "rarity": "uncommon",
+   "price": 3600,
+   "weight": 4,
+   "description": "Reinforced pump-action shotgun. Damage die matches magazine capacity.",
+   "damage": "1d12",
+   "icon": "crosshair",
+   "tags": [
+    "Heavy",
+    "Shotgun"
+   ],
+   "meta": {
+    "weaponClass": "Shotgun",
+    "weaponCategory": "Shotgun",
+    "ammoType": "Shotgun Shell",
+    "rangeFt": 30,
+    "fireMode": "Pump",
+    "magazine": 8,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Stock",
+     "Magazine",
+     "Shield"
+    ],
+    "compatTags": [
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Thibi",
+   "rarity": "uncommon",
+   "price": 2800,
+   "weight": 1,
+   "description": "Smart-assisted targeting; compatible with smart ammo. Damage die matches magazine capacity.",
+   "damage": "1d12",
+   "icon": "crosshair",
+   "tags": [
+    "Pistol",
+    "Smart",
+    "Smart Pistol"
+   ],
+   "meta": {
+    "weaponClass": "Smart Pistol",
+    "weaponCategory": "Pistol / Gun",
+    "ammoType": "9mm",
+    "rangeFt": 45,
+    "fireMode": "Semi-auto",
+    "magazine": 12,
+    "attachmentSlots": 2,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Optic",
+     "Smartlink",
+     "Grip",
+     "Magazine",
+     "Muzzle"
+    ],
+    "compatTags": [
+     "Pistol",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Razor-77",
+   "rarity": "rare",
+   "price": 5500,
+   "weight": 1,
+   "description": "Precision sidearm. Damage die matches magazine capacity.",
+   "damage": "2d8",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "Pistol"
+   ],
+   "meta": {
+    "weaponClass": "Pistol",
+    "weaponCategory": "Pistol / Gun",
+    "ammoType": "9mm",
+    "rangeFt": 55,
+    "fireMode": "Semi-auto",
+    "magazine": 18,
+    "attachmentSlots": 3,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Grip",
+     "Magazine",
+     "Smartlink",
+     "Barrel"
+    ],
+    "compatTags": [
+     "Pistol",
+     "Compact"
+    ]
+   }
+  },
+  {
+   "name": "Arasaka SMG",
+   "rarity": "rare",
+   "price": 6000,
+   "weight": 3,
+   "description": "Corporate smart-ready SMG. Damage die matches magazine capacity.",
+   "damage": "5d6",
+   "icon": "crosshair",
+   "tags": [
+    "Rifle",
+    "SMG",
+    "Smart"
+   ],
+   "meta": {
+    "weaponClass": "SMG",
+    "weaponCategory": "SMG",
+    "ammoType": "5.56mm",
+    "rangeFt": 75,
+    "fireMode": "Burst/Auto",
+    "magazine": 30,
+    "attachmentSlots": 4,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Raven-AR",
+   "rarity": "rare",
+   "price": 7800,
+   "weight": 4,
+   "description": "Balanced tactical rifle. Damage die matches magazine capacity.",
+   "damage": "5d6",
+   "icon": "crosshair",
+   "tags": [
+    "Assault",
+    "Assault Rifle",
+    "Rifle"
+   ],
+   "meta": {
+    "weaponClass": "Assault Rifle",
+    "weaponCategory": "Rifle",
+    "ammoType": "5.56mm",
+    "rangeFt": 140,
+    "fireMode": "Semi/Burst/Auto",
+    "magazine": 30,
+    "attachmentSlots": 4,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Barrel",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Rifle",
+     "Assault"
+    ]
+   }
+  },
+  {
+   "name": "Ashura",
+   "rarity": "rare",
+   "price": 8500,
+   "weight": 5,
+   "description": "Heavy precision rifle. Damage die matches magazine capacity.",
+   "damage": "2d12",
+   "icon": "crosshair",
+   "tags": [
+    "Rifle",
+    "Sniper",
+    "Sniper Rifle"
+   ],
+   "meta": {
+    "weaponClass": "Sniper Rifle",
+    "weaponCategory": "Rifle",
+    "ammoType": "7.62mm",
+    "rangeFt": 350,
+    "fireMode": "Bolt-action",
+    "magazine": 5,
+    "attachmentSlots": 4,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Barrel",
+     "Stock",
+     "Magazine",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "Sniper",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Riot-12",
+   "rarity": "rare",
+   "price": 6800,
+   "weight": 4,
+   "description": "Semi-auto crowd-control platform. Damage die matches magazine capacity.",
+   "damage": "2d12",
+   "icon": "crosshair",
+   "tags": [
+    "Heavy",
+    "Shotgun"
+   ],
+   "meta": {
+    "weaponClass": "Shotgun",
+    "weaponCategory": "Shotgun",
+    "ammoType": "Shotgun Shell",
+    "rangeFt": 35,
+    "fireMode": "Semi-auto",
+    "magazine": 8,
+    "attachmentSlots": 2,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Stock",
+     "Magazine",
+     "Shield"
+    ],
+    "compatTags": [
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "SMG-X",
+   "rarity": "rare",
+   "price": 7200,
+   "weight": 3,
+   "description": "Low-profile advanced SMG. Damage die matches magazine capacity.",
+   "damage": "6d4",
+   "icon": "crosshair",
+   "tags": [
+    "Compact",
+    "SMG",
+    "Smart"
+   ],
+   "meta": {
+    "weaponClass": "SMG",
+    "weaponCategory": "SMG",
+    "ammoType": "9mm",
+    "rangeFt": 80,
+    "fireMode": "Burst/Auto",
+    "magazine": 25,
+    "attachmentSlots": 4,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Optic",
+     "Muzzle",
+     "Underbarrel",
+     "Grip",
+     "Magazine",
+     "Stock",
+     "Smartlink"
+    ],
+    "compatTags": [
+     "SMG",
+     "Compact",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Tactical Knife",
+   "rarity": "common",
+   "price": 700,
+   "weight": 1,
+   "description": "Standard combat knife. Melee / no magazine: fixed listed damage.",
+   "damage": "1d4 slashing",
+   "icon": "sword",
+   "tags": [
+    "Blade",
+    "Melee"
+   ],
+   "meta": {
+    "weaponClass": "Melee",
+    "weaponCategory": "Melee",
+    "ammoType": "None",
+    "rangeFt": 5,
+    "fireMode": "Melee",
+    "magazine": 0,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Grip",
+     "Blade",
+     "Utility Mount"
+    ],
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Shock Baton",
+   "rarity": "common",
+   "price": 1100,
+   "weight": 1,
+   "description": "Stun-capable baton. Melee / no magazine: fixed listed damage.",
+   "damage": "1d6 bludgeoning + 1d4 lightning",
+   "icon": "sword",
+   "tags": [
+    "Energy",
+    "Melee"
+   ],
+   "meta": {
+    "weaponClass": "Melee",
+    "weaponCategory": "Melee",
+    "ammoType": "Energy Cell",
+    "rangeFt": 5,
+    "fireMode": "Melee",
+    "magazine": 0,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "common",
+    "slotTypes": [
+     "Grip",
+     "Power Core",
+     "Utility Mount"
+    ],
+    "compatTags": [
+     "Melee",
+     "Energy"
+    ]
+   }
+  },
+  {
+   "name": "Thermal Dagger",
+   "rarity": "uncommon",
+   "price": 2400,
+   "weight": 1,
+   "description": "Heated mono-edge dagger. Melee / no magazine: fixed listed damage.",
+   "damage": "1d8 piercing + 1d4 fire",
+   "icon": "sword",
+   "tags": [
+    "Blade",
+    "Energy",
+    "Melee"
+   ],
+   "meta": {
+    "weaponClass": "Melee",
+    "weaponCategory": "Melee",
+    "ammoType": "Energy Cell",
+    "rangeFt": 5,
+    "fireMode": "Melee",
+    "magazine": 0,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "uncommon",
+    "slotTypes": [
+     "Grip",
+     "Blade",
+     "Power Core",
+     "Utility Mount"
+    ],
+    "compatTags": [
+     "Melee",
+     "Energy",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Kinetic Blade",
+   "rarity": "rare",
+   "price": 6500,
+   "weight": 1,
+   "description": "Vibration-assisted blade. Melee / no magazine: fixed listed damage.",
+   "damage": "1d12 slashing",
+   "icon": "sword",
+   "tags": [
+    "Blade",
+    "Energy",
+    "Melee"
+   ],
+   "meta": {
+    "weaponClass": "Melee",
+    "weaponCategory": "Melee",
+    "ammoType": "Energy Cell",
+    "rangeFt": 5,
+    "fireMode": "Melee",
+    "magazine": 0,
+    "attachmentSlots": 1,
+    "maxAttachmentTier": "rare",
+    "slotTypes": [
+     "Grip",
+     "Blade",
+     "Power Core",
+     "Utility Mount"
+    ],
+    "compatTags": [
+     "Melee",
+     "Energy",
+     "Blade"
+    ]
+   }
+  }
+ ],
+ "attachments": [
+  {
+   "name": "Red Dot Sight",
+   "rarity": "common",
+   "price": 300,
+   "weight": 0.5,
+   "description": "Common optic: +1 to hit within 30 ft.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Smart"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Holographic Sight",
+   "rarity": "uncommon",
+   "price": 650,
+   "weight": 0.5,
+   "description": "Uncommon optic: +2 to hit within 60 ft.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Smart"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "4x Scope",
+   "rarity": "rare",
+   "price": 1200,
+   "weight": 0.5,
+   "description": "Rare optic: +3 to hit beyond 60 ft; disadvantage within 15 ft.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Rifle",
+    "Sniper",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Rifle",
+     "Sniper",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Suppressor",
+   "rarity": "rare",
+   "price": 1400,
+   "weight": 0.5,
+   "description": "Rare muzzle: reduces firing noise; may reduce range by 10%.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Muzzle",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Muzzle",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Compensator",
+   "rarity": "uncommon",
+   "price": 700,
+   "weight": 0.5,
+   "description": "Uncommon muzzle: +2 to burst control checks.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Muzzle",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Muzzle",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Flash Hider",
+   "rarity": "common",
+   "price": 350,
+   "weight": 0.5,
+   "description": "Common muzzle: reduces muzzle flash; no direct damage bonus.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Muzzle",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Muzzle",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Vertical Grip",
+   "rarity": "common",
+   "price": 400,
+   "weight": 0.5,
+   "description": "Common grip: +1 to recoil/control checks.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Angled Grip",
+   "rarity": "uncommon",
+   "price": 750,
+   "weight": 0.5,
+   "description": "Uncommon grip: +2 to recoil/control checks.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Balance Grip",
+   "rarity": "rare",
+   "price": 1300,
+   "weight": 0.5,
+   "description": "Rare grip: +3 to recoil/control checks.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Melee"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Melee"
+    ]
+   }
+  },
+  {
+   "name": "Extended Magazine",
+   "rarity": "uncommon",
+   "price": 800,
+   "weight": 0.5,
+   "description": "Uncommon magazine: capacity +50% (round up).",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Magazine",
+    "Pistol",
+    "SMG",
+    "Rifle"
+   ],
+   "meta": {
+    "attachmentType": "Magazine",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Drum Magazine",
+   "rarity": "rare",
+   "price": 1600,
+   "weight": 0.5,
+   "description": "Rare magazine: capacity doubles; reload takes an extra minor action.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Magazine",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Magazine",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Foldable Stock",
+   "rarity": "common",
+   "price": 500,
+   "weight": 0.5,
+   "description": "Compact carry; no accuracy penalty when braced.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Recoil Stock",
+   "rarity": "uncommon",
+   "price": 900,
+   "weight": 0.5,
+   "description": "Reduce recoil; +1 to burst control.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Marksman Stock",
+   "rarity": "rare",
+   "price": 1700,
+   "weight": 0.5,
+   "description": "Steadier aim; +1 to hit when stationary.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Underbarrel Flashlight",
+   "rarity": "common",
+   "price": 250,
+   "weight": 0.5,
+   "description": "Illuminates a 30-ft cone.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Foregrip Launcher",
+   "rarity": "rare",
+   "price": 2800,
+   "weight": 0.5,
+   "description": "Launches compatible micro-grenades; separate ammunition.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Tactical Laser",
+   "rarity": "uncommon",
+   "price": 850,
+   "weight": 0.5,
+   "description": "Laser aiming; +1 to hit within 30 ft.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Bipod",
+   "rarity": "uncommon",
+   "price": 650,
+   "weight": 0.5,
+   "description": "Deploy while stationary; +1 to hit beyond 60 ft.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "Rifle",
+    "Sniper",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "Rifle",
+     "Sniper",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Mono-Barrel",
+   "rarity": "rare",
+   "price": 1900,
+   "weight": 0.5,
+   "description": "Improves penetration; +1 damage.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Barrel",
+    "Pistol",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Barrel",
+    "compatTags": [
+     "Pistol",
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Power Cell Adapter",
+   "rarity": "uncommon",
+   "price": 950,
+   "weight": 0.5,
+   "description": "Allows compatible weapon to use standardized energy cells.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Power Core",
+    "Energy",
+    "Melee",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Power Core",
+    "compatTags": [
+     "Energy",
+     "Melee",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "High-Capacity Power Core",
+   "rarity": "rare",
+   "price": 2200,
+   "weight": 0.5,
+   "description": "Energy capacity x2.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Power Core",
+    "Energy",
+    "Melee",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Power Core",
+    "compatTags": [
+     "Energy",
+     "Melee",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Mono-Edge Blade",
+   "rarity": "rare",
+   "price": 2400,
+   "weight": 0.5,
+   "description": "+1 damage; can cut light restraints.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Blade",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Blade",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Utility Rail",
+   "rarity": "common",
+   "price": 300,
+   "weight": 0.5,
+   "description": "Adds one small utility attachment point.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Utility Mount",
+    "Melee",
+    "Energy",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Utility Mount",
+    "compatTags": [
+     "Melee",
+     "Energy",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Shock Module",
+   "rarity": "uncommon",
+   "price": 1100,
+   "weight": 0.5,
+   "description": "Adds 1d4 lightning damage once per turn; uses energy",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Utility Mount",
+    "Melee",
+    "Energy"
+   ],
+   "meta": {
+    "attachmentType": "Utility Mount",
+    "compatTags": [
+     "Melee",
+     "Energy"
+    ]
+   }
+  },
+  {
+   "name": "Non-Lethal Module",
+   "rarity": "rare",
+   "price": 1600,
+   "weight": 0.5,
+   "description": "Convert damage to non-lethal; target may be stunned on failed save.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Utility Mount",
+    "Pistol",
+    "SMG",
+    "Shotgun",
+    "Melee"
+   ],
+   "meta": {
+    "attachmentType": "Utility Mount",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Shotgun",
+     "Melee"
+    ]
+   }
+  },
+  {
+   "name": "Smart Link (Common)",
+   "rarity": "common",
+   "price": 700,
+   "weight": 0.5,
+   "description": "+1 attack roll with compatible smart-linked weapons.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Smartlink",
+    "Smart",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Smartlink",
+    "compatTags": [
+     "Smart",
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Smart Link (Uncommon)",
+   "rarity": "uncommon",
+   "price": 1500,
+   "weight": 0.5,
+   "description": "+2 attack roll with compatible smart-linked weapons.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Smartlink",
+    "Smart",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Smartlink",
+    "compatTags": [
+     "Smart",
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Smart Link (Rare)",
+   "rarity": "rare",
+   "price": 3000,
+   "weight": 0.5,
+   "description": "+3 attack roll with compatible smart-linked weapons.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Smartlink",
+    "Smart",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Smartlink",
+    "compatTags": [
+     "Smart",
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Low-Light Optics",
+   "rarity": "common",
+   "price": 450,
+   "weight": 0.5,
+   "description": "You gain advantage on Wisdom (Perception) checks that rely on sight in dim light within 60 feet. This sight grants no benefit in darkness.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Smart"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Thermal Optics",
+   "rarity": "uncommon",
+   "price": 1100,
+   "weight": 0.5,
+   "description": "As an action, switch to thermal vision for 10 minutes. You can see warm creatures through light obscurement, but not through total cover. Once used, recharge after a short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Sniper",
+    "Smart"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Sniper",
+     "Smart"
+    ]
+   }
+  },
+  {
+   "name": "Smart Rangefinder",
+   "rarity": "rare",
+   "price": 2400,
+   "weight": 0.5,
+   "description": "When you take the Aim action against a target you can see, your next ranged attack against it before the end of your next turn gains +3 to the attack roll. Once per short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Optic",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Sniper",
+    "Smart",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Optic",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Sniper",
+     "Smart",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Muzzle Brake",
+   "rarity": "common",
+   "price": 500,
+   "weight": 0.5,
+   "description": "Once on each of your turns when you make a ranged weapon attack, you can reduce the weapon's recoil. You gain +1 on the next attack roll you make with this weapon before the end of your turn.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Muzzle",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Muzzle",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Concussive Muzzle",
+   "rarity": "rare",
+   "price": 2100,
+   "weight": 0.5,
+   "description": "Once per short rest, when you hit a Large or smaller creature within 30 feet, it must succeed on a Strength saving throw (DC 8 + your proficiency bonus + your Dexterity modifier) or be pushed 10 feet.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Muzzle",
+    "Shotgun",
+    "Heavy",
+    "Rifle"
+   ],
+   "meta": {
+    "attachmentType": "Muzzle",
+    "compatTags": [
+     "Shotgun",
+     "Heavy",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Ergonomic Grip",
+   "rarity": "common",
+   "price": 350,
+   "weight": 0.5,
+   "description": "You gain a +1 bonus to Dexterity checks made to keep hold of or quickly draw this weapon. This bonus does not apply to attack rolls.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Melee"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Melee"
+    ]
+   }
+  },
+  {
+   "name": "Stabilized Grip",
+   "rarity": "uncommon",
+   "price": 1000,
+   "weight": 0.5,
+   "description": "You gain a +2 bonus on ability checks made to resist being disarmed while wielding this weapon. Once per turn, you can ignore disadvantage caused by light recoil.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Precision Grip",
+   "rarity": "rare",
+   "price": 2300,
+   "weight": 0.5,
+   "description": "When you take the Aim action and do not move before firing, your next attack with this weapon gains +3 to the attack roll.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Quick-Draw Holster Mount",
+   "rarity": "common",
+   "price": 400,
+   "weight": 0.5,
+   "description": "You can draw or stow this weapon once on each of your turns without using your object interaction. It does not grant an additional attack.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Utility Mount",
+    "Pistol",
+    "SMG"
+   ],
+   "meta": {
+    "attachmentType": "Utility Mount",
+    "compatTags": [
+     "Pistol",
+     "SMG"
+    ]
+   }
+  },
+  {
+   "name": "Breach Plate / Weapon Shield",
+   "rarity": "rare",
+   "price": 4200,
+   "weight": 0.5,
+   "description": "While wielding this weapon, you gain a +1 bonus to AC. You gain this benefit only while the weapon is in your hands and you are not incapacitated. This bonus does not stack with another copy of this attachment.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Shield",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Shield",
+    "compatTags": [
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Reinforced Receiver",
+   "rarity": "uncommon",
+   "price": 1400,
+   "weight": 0.5,
+   "description": "The weapon has advantage on saving throws against effects that would jam, disable, or damage it. This does not increase its damage.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Receiver",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Receiver",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Overclocked Receiver",
+   "rarity": "rare",
+   "price": 3200,
+   "weight": 0.5,
+   "description": "Once per short rest, after you hit with this weapon, you can deal an additional 1d6 damage of the weapon's damage type. You cannot use this feature on a critical hit.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Receiver",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Receiver",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Quick-Change Barrel",
+   "rarity": "common",
+   "price": 650,
+   "weight": 0.5,
+   "description": "You can change between compatible ammunition types as a bonus action, provided the ammunition is already loaded or carried.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Barrel",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Barrel",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Precision Bore",
+   "rarity": "uncommon",
+   "price": 1600,
+   "weight": 0.5,
+   "description": "The weapon's normal range increases by 25 percent. Its long range is unchanged.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Barrel",
+    "Pistol",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Barrel",
+    "compatTags": [
+     "Pistol",
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Heavy Bore",
+   "rarity": "rare",
+   "price": 3300,
+   "weight": 0.5,
+   "description": "When you hit a creature with this weapon at normal range, you can reroll one weapon damage die and must use the new roll. You can do this once per turn.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Barrel",
+    "Pistol",
+    "Rifle",
+    "Sniper",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Barrel",
+    "compatTags": [
+     "Pistol",
+     "Rifle",
+     "Sniper",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Quick-Release Magwell",
+   "rarity": "common",
+   "price": 500,
+   "weight": 0.5,
+   "description": "You can reload this weapon as a bonus action once per short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Magazine",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Magazine",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Armor-Piercing Feed",
+   "rarity": "uncommon",
+   "price": 1400,
+   "weight": 0.5,
+   "description": "When you hit a creature wearing armor, the attack ignores 1 point of AC granted by nonmagical armor. This does not affect natural armor or cover.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Magazine",
+    "Pistol",
+    "SMG",
+    "Rifle",
+    "Sniper"
+   ],
+   "meta": {
+    "attachmentType": "Magazine",
+    "compatTags": [
+     "Pistol",
+     "SMG",
+     "Rifle",
+     "Sniper"
+    ]
+   }
+  },
+  {
+   "name": "Smart Ammo Feeder",
+   "rarity": "rare",
+   "price": 2900,
+   "weight": 0.5,
+   "description": "Once per turn when you miss with a smart weapon attack, you can reroll the attack. You must use the new roll. This feature recharges after a short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Magazine",
+    "Smart",
+    "Pistol",
+    "SMG",
+    "Rifle"
+   ],
+   "meta": {
+    "attachmentType": "Magazine",
+    "compatTags": [
+     "Smart",
+     "Pistol",
+     "SMG",
+     "Rifle"
+    ]
+   }
+  },
+  {
+   "name": "Compact Folding Stock",
+   "rarity": "common",
+   "price": 550,
+   "weight": 0.5,
+   "description": "You have advantage on Dexterity (Sleight of Hand) checks made to conceal this weapon. While folded, the weapon's normal range is reduced by 10 feet.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "SMG",
+    "Rifle",
+    "Shotgun"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun"
+    ]
+   }
+  },
+  {
+   "name": "Braced Stock",
+   "rarity": "uncommon",
+   "price": 1300,
+   "weight": 0.5,
+   "description": "If you have not moved this turn, you gain +2 on checks and saves made to resist being knocked prone while wielding this weapon.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Precision Stock",
+   "rarity": "rare",
+   "price": 2800,
+   "weight": 0.5,
+   "description": "When you take the Aim action and remain stationary, your next ranged attack with this weapon gains +2 to the attack roll.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Stock",
+    "Rifle",
+    "Sniper",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Stock",
+    "compatTags": [
+     "Rifle",
+     "Sniper",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Underbarrel Shield",
+   "rarity": "rare",
+   "price": 3900,
+   "weight": 0.5,
+   "description": "While wielding this weapon, you gain a +1 bonus to AC. This bonus applies only while the weapon is in your hands and does not stack with the Breach Plate / Weapon Shield.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Smoke Canister Launcher",
+   "rarity": "uncommon",
+   "price": 1800,
+   "weight": 0.5,
+   "description": "As an action, launch a smoke canister to a point within 30 feet. It creates a 10-foot-radius heavily obscured area until the end of your next turn. Once used, it recharges after a short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "SMG",
+    "Rifle",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "SMG",
+     "Rifle",
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Micro-Grenade Launcher",
+   "rarity": "rare",
+   "price": 3500,
+   "weight": 0.5,
+   "description": "As an action, launch a grenade to a point within 60 feet. Creatures in a 5-foot radius make a Dexterity saving throw (DC 8 + proficiency bonus + Dexterity modifier), taking 2d6 fire damage on a failed save or half on a success. One grenade; reload with a grenade.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Underbarrel",
+    "Rifle",
+    "Shotgun",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Underbarrel",
+    "compatTags": [
+     "Rifle",
+     "Shotgun",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Battery Saver",
+   "rarity": "common",
+   "price": 600,
+   "weight": 0.5,
+   "description": "The weapon consumes half as many energy charges, rounded up, when an effect allows a choice of charge expenditure.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Power Core",
+    "Energy",
+    "Melee",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Power Core",
+    "compatTags": [
+     "Energy",
+     "Melee",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Surge Capacitor",
+   "rarity": "uncommon",
+   "price": 1800,
+   "weight": 0.5,
+   "description": "Once per short rest when you hit, deal an additional 1d4 lightning damage.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Power Core",
+    "Energy",
+    "Melee",
+    "Bow"
+   ],
+   "meta": {
+    "attachmentType": "Power Core",
+    "compatTags": [
+     "Energy",
+     "Melee",
+     "Bow"
+    ]
+   }
+  },
+  {
+   "name": "Capacitor Overdrive",
+   "rarity": "rare",
+   "price": 4200,
+   "weight": 0.5,
+   "description": "Once per short rest when you hit, deal an additional 1d8 lightning damage. The weapon cannot use this feature again until you finish a short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Power Core",
+    "Energy",
+    "Melee",
+    "Bow",
+    "Heavy"
+   ],
+   "meta": {
+    "attachmentType": "Power Core",
+    "compatTags": [
+     "Energy",
+     "Melee",
+     "Bow",
+     "Heavy"
+    ]
+   }
+  },
+  {
+   "name": "Guarded Hilt",
+   "rarity": "uncommon",
+   "price": 900,
+   "weight": 0.5,
+   "description": "While wielding this melee weapon, you gain +1 on ability checks made to resist being disarmed. This attachment grants no AC bonus.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Counterweight Pommel",
+   "rarity": "rare",
+   "price": 1900,
+   "weight": 0.5,
+   "description": "Once per turn after you miss with a melee attack using this weapon, you can add +2 to the attack roll, potentially turning the miss into a hit.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Grip",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Grip",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Ceramic Edge",
+   "rarity": "common",
+   "price": 700,
+   "weight": 0.5,
+   "description": "This blade is difficult to detect with basic metal detectors. It grants no attack or damage bonus.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Blade",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Blade",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Monomolecular Edge",
+   "rarity": "uncommon",
+   "price": 1800,
+   "weight": 0.5,
+   "description": "When you roll a 1 on a damage die for this weapon, you can reroll that die. You must use the new roll.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Blade",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Blade",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  },
+  {
+   "name": "Defensive Parry Module",
+   "rarity": "rare",
+   "price": 2600,
+   "weight": 0.5,
+   "description": "When a creature you can see hits you with a melee attack, you can use your reaction to gain +2 AC against that attack, potentially causing it to miss. Once per short rest.",
+   "icon": "puzzle",
+   "tags": [
+    "attachment",
+    "Utility Mount",
+    "Melee",
+    "Blade"
+   ],
+   "meta": {
+    "attachmentType": "Utility Mount",
+    "compatTags": [
+     "Melee",
+     "Blade"
+    ]
+   }
+  }
+ ],
+ "ammo": [
+  {
+   "name": "9mm magazine",
+   "rarity": "common",
+   "price": 50,
+   "weight": 0.3,
+   "description": "Pistols. Standard light handgun and SMG ammunition",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Pistols"
+   ],
+   "meta": {
+    "ammoType": "9mm",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "5.56mm magazine",
+   "rarity": "common",
+   "price": 120,
+   "weight": 0.3,
+   "description": "Assault rifles / selected SMGs. Standard rifle ammunition",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Assault rifles / selected SMGs"
+   ],
+   "meta": {
+    "ammoType": "5.56mm",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "7.62mm magazine",
+   "rarity": "common",
+   "price": 75,
+   "weight": 0.3,
+   "description": "Sniper and marksman rifles. Heavy rifle ammunition",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Sniper and marksman rifles"
+   ],
+   "meta": {
+    "ammoType": "7.62mm",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": ".50 Cal magazine",
+   "rarity": "common",
+   "price": 100,
+   "weight": 0.3,
+   "description": "Heavy pistols. High-impact handgun ammunition",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Heavy pistols"
+   ],
+   "meta": {
+    "ammoType": ".50 Cal",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "Shotgun Shell magazine",
+   "rarity": "common",
+   "price": 240,
+   "weight": 0.3,
+   "description": "Shotguns. Standard buckshot; specialist loads cost extra",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Shotguns"
+   ],
+   "meta": {
+    "ammoType": "Shotgun Shell",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "Energy Cell magazine",
+   "rarity": "common",
+   "price": 1000,
+   "weight": 0.3,
+   "description": "Energy weapons / powered melee. Standard rechargeable energy cell",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Energy weapons / powered melee"
+   ],
+   "meta": {
+    "ammoType": "Energy Cell",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "Rockets magazine",
+   "rarity": "common",
+   "price": 300,
+   "weight": 0.3,
+   "description": "Rockets for RPG. rocket for RPG",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Rockets for RPG"
+   ],
+   "meta": {
+    "ammoType": "Rockets",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "Special magazine",
+   "rarity": "common",
+   "price": 1500,
+   "weight": 0.3,
+   "description": "Weapon-specific. GM-defined exotic or proprietary ammunition",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Weapon-specific"
+   ],
+   "meta": {
+    "ammoType": "Special",
+    "perMagazine": true
+   }
+  },
+  {
+   "name": "Incendiary Ammo",
+   "rarity": "rare",
+   "price": 300,
+   "weight": 0.3,
+   "description": "Weapon-specific. 1d4 fire damage + flat magazine as dmg Priced at ×3 of a 100 K standard magazine; the DM may adjust.",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Weapon-specific"
+   ],
+   "meta": {
+    "ammoType": "Inciendry ammo",
+    "perMagazine": true,
+    "priceMultiplier": 3,
+    "special": true
+   }
+  },
+  {
+   "name": "Cryo Ammo",
+   "rarity": "rare",
+   "price": 300,
+   "weight": 0.3,
+   "description": "Weapon-specific. 1d4 cold dmg + reduce enemy MS half , no reaction Priced at ×3 of a 100 K standard magazine; the DM may adjust.",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Weapon-specific"
+   ],
+   "meta": {
+    "ammoType": "Cryo ammo",
+    "perMagazine": true,
+    "priceMultiplier": 3,
+    "special": true
+   }
+  },
+  {
+   "name": "Electrocute Ammo",
+   "rarity": "rare",
+   "price": 500,
+   "weight": 0.3,
+   "description": "Weapon-specific. 2d6 lightning dmg, enemy cyberware disabled 1 round Priced at ×5 of a 100 K standard magazine; the DM may adjust.",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Weapon-specific"
+   ],
+   "meta": {
+    "ammoType": "electrocute ammo",
+    "perMagazine": true,
+    "priceMultiplier": 5,
+    "special": true
+   }
+  },
+  {
+   "name": "Shimmer Ammo",
+   "rarity": "rare",
+   "price": 1000,
+   "weight": 0.3,
+   "description": "Weapon-specific. 2d10 poison dmg , enemy get poison stack for 1min Priced at ×10 of a 100 K standard magazine; the DM may adjust.",
+   "icon": "circle-dot",
+   "tags": [
+    "ammo",
+    "Weapon-specific"
+   ],
+   "meta": {
+    "ammoType": "Shimmer ammo",
+    "perMagazine": true,
+    "priceMultiplier": 10,
+    "special": true
+   }
+  }
+ ],
+ "augments": [
+  {
+   "name": "Neural Co-Processor",
+   "slot": "brain",
+   "rarity": "common",
+   "price": 1450,
+   "weight": 0.5,
+   "description": "Gain +1 to Hacking checks.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "+1 Hacking",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 1,
+     "op": "add",
+     "label": "Neural Co-Processor"
+    },
+    {
+     "kind": "trait",
+     "name": "Neural Co-Processor",
+     "description": "Gain +1 to Hacking checks."
+    }
+   ]
+  },
+  {
+   "name": "Mnemonic Cache",
+   "slot": "brain",
+   "rarity": "common",
+   "price": 900,
+   "weight": 0.5,
+   "description": "Gain +1 to Investigation checks and advantage on one memory-recall check per long rest.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "+1 Investigation",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.investigation",
+     "value": 1,
+     "op": "add",
+     "label": "Mnemonic Cache"
+    },
+    {
+     "kind": "trait",
+     "name": "Mnemonic Cache",
+     "description": "Gain +1 to Investigation checks and advantage on one memory-recall check per long rest."
+    }
+   ]
+  },
+  {
+   "name": "Reflex Buffer",
+   "slot": "brain",
+   "rarity": "uncommon",
+   "price": 3000,
+   "weight": 0.5,
+   "description": "Gain +2 to initiative rolls.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+2 Initiative",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "initiative",
+     "value": 2,
+     "op": "add",
+     "label": "Reflex Buffer"
+    },
+    {
+     "kind": "trait",
+     "name": "Reflex Buffer",
+     "description": "Gain +2 to initiative rolls."
+    }
+   ]
+  },
+  {
+   "name": "Combat Predictor",
+   "slot": "brain",
+   "rarity": "rare",
+   "price": 5500,
+   "weight": 0.5,
+   "description": "Gain +2 to initiative rolls and +1 AC while not incapacitated.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+2 Initiative, +1 AC",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "initiative",
+     "value": 2,
+     "op": "add",
+     "label": "Combat Predictor"
+    },
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 1,
+     "op": "add",
+     "label": "Combat Predictor"
+    },
+    {
+     "kind": "trait",
+     "name": "Combat Predictor",
+     "description": "Gain +2 to initiative rolls and +1 AC while not incapacitated."
+    }
+   ]
+  },
+  {
+   "name": "Ocular Zoom Suite",
+   "slot": "eyes",
+   "rarity": "common",
+   "price": 1350,
+   "weight": 0.5,
+   "description": "Gain +1 to Perception checks relying on sight.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "+1 Perception",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.perception",
+     "value": 1,
+     "op": "add",
+     "label": "Ocular Zoom Suite"
+    },
+    {
+     "kind": "trait",
+     "name": "Ocular Zoom Suite",
+     "description": "Gain +1 to Perception checks relying on sight."
+    }
+   ]
+  },
+  {
+   "name": "Thermal Optics",
+   "slot": "eyes",
+   "rarity": "uncommon",
+   "price": 3300,
+   "weight": 0.5,
+   "description": "See heat signatures within 60 feet; gain +1 to checks to track warm creatures.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "Thermal vision",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "sense",
+     "name": "Thermal vision",
+     "rangeMeters": 18
+    },
+    {
+     "kind": "trait",
+     "name": "Thermal Optics",
+     "description": "See heat signatures within 60 feet; gain +1 to checks to track warm creatures."
+    }
+   ]
+  },
+  {
+   "name": "Targeting Reticle",
+   "slot": "eyes",
+   "rarity": "rare",
+   "price": 5800,
+   "weight": 0.5,
+   "description": "Gain +2 to ranged weapon attack rolls against targets within normal range.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+2 ranged attacks",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Targeting Reticle",
+     "description": "Gain +2 to ranged weapon attack rolls against targets within normal range."
+    }
+   ]
+  },
+  {
+   "name": "Low-Light Lens",
+   "slot": "eyes",
+   "rarity": "common",
+   "price": 750,
+   "weight": 0.5,
+   "description": "Treat dim light within 60 feet as bright light.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "Low-light vision",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "sense",
+     "name": "Low-light vision",
+     "rangeMeters": 18
+    },
+    {
+     "kind": "trait",
+     "name": "Low-Light Lens",
+     "description": "Treat dim light within 60 feet as bright light."
+    }
+   ]
+  },
+  {
+   "name": "Directional Audio",
+   "slot": "ears",
+   "rarity": "common",
+   "price": 950,
+   "weight": 0.5,
+   "description": "Gain +1 to Perception checks relying on hearing.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "+1 Perception",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.perception",
+     "value": 1,
+     "op": "add",
+     "label": "Directional Audio"
+    },
+    {
+     "kind": "trait",
+     "name": "Directional Audio",
+     "description": "Gain +1 to Perception checks relying on hearing."
+    }
+   ]
+  },
+  {
+   "name": "Threat Scanner",
+   "slot": "ears",
+   "rarity": "uncommon",
+   "price": 3600,
+   "weight": 0.5,
+   "description": "Gain +1 to Perception and +2 to initiative rolls when combat begins with an ambush.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "+2 initiative vs ambush",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.perception",
+     "value": 1,
+     "op": "add",
+     "label": "Threat Scanner"
+    },
+    {
+     "kind": "modifier",
+     "target": "initiative",
+     "value": 2,
+     "op": "add",
+     "label": "Threat Scanner"
+    },
+    {
+     "kind": "trait",
+     "name": "Threat Scanner",
+     "description": "Gain +1 to Perception and +2 to initiative rolls when combat begins with an ambush."
+    }
+   ]
+  },
+  {
+   "name": "Signal Decoder",
+   "slot": "ears",
+   "rarity": "rare",
+   "price": 6100,
+   "weight": 0.5,
+   "description": "Gain +2 to checks to detect, interpret, or trace electronic signals.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "+2 signal analysis",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Signal Decoder",
+     "description": "Gain +2 to checks to detect, interpret, or trace electronic signals."
+    }
+   ]
+  },
+  {
+   "name": "Vocal Modulator",
+   "slot": "mouth",
+   "rarity": "common",
+   "price": 1000,
+   "weight": 0.5,
+   "description": "Gain +1 to Deception checks; reproduce voices you have heard for at least one minute.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CHA"
+   ],
+   "meta": {
+    "primaryStat": "CHA",
+    "bonus": "+1 Deception",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.deception",
+     "value": 1,
+     "op": "add",
+     "label": "Vocal Modulator"
+    },
+    {
+     "kind": "trait",
+     "name": "Vocal Modulator",
+     "description": "Gain +1 to Deception checks; reproduce voices you have heard for at least one minute."
+    }
+   ]
+  },
+  {
+   "name": "Sonic Pulse Larynx",
+   "slot": "mouth",
+   "rarity": "uncommon",
+   "price": 3900,
+   "weight": 0.5,
+   "description": "Once per short rest, use an action to deal 1d6 thunder damage to one creature within 10 feet (CON save halves; DC 8 + PB + CON mod).",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Sonic burst",
+    "permanentStrain": 10,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Sonic Pulse Larynx",
+     "description": "Once per short rest, use an action to deal 1d6 thunder damage to one creature within 10 feet (CON save halves; DC 8 + PB + CON mod)."
+    }
+   ]
+  },
+  {
+   "name": "Social Interface",
+   "slot": "mouth",
+   "rarity": "rare",
+   "price": 6400,
+   "weight": 0.5,
+   "description": "Gain +2 to Persuasion checks when speaking a language the target understands.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CHA"
+   ],
+   "meta": {
+    "primaryStat": "CHA",
+    "bonus": "+2 Persuasion",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.persuasion",
+     "value": 2,
+     "op": "add",
+     "label": "Social Interface"
+    },
+    {
+     "kind": "trait",
+     "name": "Social Interface",
+     "description": "Gain +2 to Persuasion checks when speaking a language the target understands."
+    }
+   ]
+  },
+  {
+   "name": "Precision Fingertips",
+   "slot": "hands",
+   "rarity": "common",
+   "price": 1150,
+   "weight": 0.5,
+   "description": "Gain +1 to Sleight of Hand checks and checks using delicate tools.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+1 Sleight of Hand",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.sleightOfHand",
+     "value": 1,
+     "op": "add",
+     "label": "Precision Fingertips"
+    },
+    {
+     "kind": "trait",
+     "name": "Precision Fingertips",
+     "description": "Gain +1 to Sleight of Hand checks and checks using delicate tools."
+    }
+   ]
+  },
+  {
+   "name": "Smart-Link Tendons",
+   "slot": "hands",
+   "rarity": "uncommon",
+   "price": 4200,
+   "weight": 0.5,
+   "description": "Gain +1 to attack rolls with one weapon you are proficient with, chosen at installation.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+1 weapon attack",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Smart-Link Tendons",
+     "description": "Gain +1 to attack rolls with one weapon you are proficient with, chosen at installation."
+    }
+   ]
+  },
+  {
+   "name": "Micro-Tool Fingers",
+   "slot": "hands",
+   "rarity": "rare",
+   "price": 6700,
+   "weight": 0.5,
+   "description": "Gain +2 to checks using thieves' tools, tinker's tools, or one artisan tool chosen at installation.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "+2 tool checks",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Micro-Tool Fingers",
+     "description": "Gain +2 to checks using thieves' tools, tinker's tools, or one artisan tool chosen at installation."
+    }
+   ]
+  },
+  {
+   "name": "Hydraulic Forearms",
+   "slot": "arms",
+   "rarity": "common",
+   "price": 1250,
+   "weight": 0.5,
+   "description": "Gain +1 to Athletics checks involving lifting, pushing, or grappling.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "+1 Athletics",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.athletics",
+     "value": 1,
+     "op": "add",
+     "label": "Hydraulic Forearms"
+    },
+    {
+     "kind": "trait",
+     "name": "Hydraulic Forearms",
+     "description": "Gain +1 to Athletics checks involving lifting, pushing, or grappling."
+    }
+   ]
+  },
+  {
+   "name": "Grip-Lock Actuators",
+   "slot": "arms",
+   "rarity": "uncommon",
+   "price": 4500,
+   "weight": 0.5,
+   "description": "Gain +2 to grapple checks and advantage on checks to avoid being disarmed.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "+2 grapple",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Grip-Lock Actuators",
+     "description": "Gain +2 to grapple checks and advantage on checks to avoid being disarmed."
+    }
+   ]
+  },
+  {
+   "name": "Titanium Muscle Weave",
+   "slot": "arms",
+   "rarity": "rare",
+   "price": 7000,
+   "weight": 0.5,
+   "description": "Gain +2 to Athletics checks and +1 damage on melee weapon attacks.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "+2 Athletics, +1 melee damage",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.athletics",
+     "value": 2,
+     "op": "add",
+     "label": "Titanium Muscle Weave"
+    },
+    {
+     "kind": "trait",
+     "name": "Titanium Muscle Weave",
+     "description": "Gain +2 to Athletics checks and +1 damage on melee weapon attacks."
+    }
+   ]
+  },
+  {
+   "name": "Subdermal Mesh",
+   "slot": "torso",
+   "rarity": "common",
+   "price": 1400,
+   "weight": 0.5,
+   "description": "Once per short rest, reduce damage from one hit by 1d4 as a reaction.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 AC vs first hit",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Subdermal Mesh",
+     "description": "Once per short rest, reduce damage from one hit by 1d4 as a reaction."
+    }
+   ]
+  },
+  {
+   "name": "Reinforced Rib Cage",
+   "slot": "torso",
+   "rarity": "uncommon",
+   "price": 4800,
+   "weight": 0.5,
+   "description": "Gain +1 AC while not wearing heavy armor.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 AC",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 1,
+     "op": "add",
+     "label": "Reinforced Rib Cage"
+    },
+    {
+     "kind": "trait",
+     "name": "Reinforced Rib Cage",
+     "description": "Gain +1 AC while not wearing heavy armor."
+    }
+   ]
+  },
+  {
+   "name": "Reactive Armor Weave",
+   "slot": "torso",
+   "rarity": "rare",
+   "price": 5650,
+   "weight": 0.5,
+   "description": "Once per short rest, use a reaction to gain resistance to bludgeoning, piercing, or slashing damage from one attack.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Damage dampening",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Reactive Armor Weave",
+     "description": "Once per short rest, use a reaction to gain resistance to bludgeoning, piercing, or slashing damage from one attack."
+    }
+   ]
+  },
+  {
+   "name": "Spinal Stabilizer",
+   "slot": "back",
+   "rarity": "common",
+   "price": 1100,
+   "weight": 0.5,
+   "description": "Gain +1 to checks and saves made to resist being knocked prone.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 saves vs prone",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Spinal Stabilizer",
+     "description": "Gain +1 to checks and saves made to resist being knocked prone."
+    }
+   ]
+  },
+  {
+   "name": "Kinetic Recovery Rig",
+   "slot": "back",
+   "rarity": "uncommon",
+   "price": 5000,
+   "weight": 0.5,
+   "description": "Reduce falling damage by an amount equal to twice your character level.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Reduce fall damage",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Kinetic Recovery Rig",
+     "description": "Reduce falling damage by an amount equal to twice your character level."
+    }
+   ]
+  },
+  {
+   "name": "Compact Thruster Pack",
+   "slot": "back",
+   "rarity": "rare",
+   "price": 6250,
+   "weight": 0.5,
+   "description": "As a bonus action once per short rest, gain a flying speed equal to your walking speed until the end of your turn.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "Burst movement",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Compact Thruster Pack",
+     "description": "As a bonus action once per short rest, gain a flying speed equal to your walking speed until the end of your turn."
+    }
+   ]
+  },
+  {
+   "name": "Spring-Limb Servos",
+   "slot": "legs",
+   "rarity": "common",
+   "price": 1300,
+   "weight": 0.5,
+   "description": "Gain +1 to Acrobatics checks involving jumps, landings, or balance.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+1 Acrobatics",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.acrobatics",
+     "value": 1,
+     "op": "add",
+     "label": "Spring-Limb Servos"
+    },
+    {
+     "kind": "trait",
+     "name": "Spring-Limb Servos",
+     "description": "Gain +1 to Acrobatics checks involving jumps, landings, or balance."
+    }
+   ]
+  },
+  {
+   "name": "Sprint Actuators",
+   "slot": "legs",
+   "rarity": "uncommon",
+   "price": 3450,
+   "weight": 0.5,
+   "description": "Your walking speed increases by 10 feet.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+10 ft speed",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": 3,
+     "op": "add",
+     "label": "Sprint Actuators"
+    },
+    {
+     "kind": "trait",
+     "name": "Sprint Actuators",
+     "description": "Your walking speed increases by 10 feet."
+    }
+   ]
+  },
+  {
+   "name": "Parkour Governor",
+   "slot": "legs",
+   "rarity": "rare",
+   "price": 6850,
+   "weight": 0.5,
+   "description": "Your movement is not reduced by the first 10 feet of difficult terrain you move through on each turn; gain +1 Acrobatics.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "Ignore first 10 ft difficult terrain",
+    "permanentStrain": 20,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.acrobatics",
+     "value": 1,
+     "op": "add",
+     "label": "Parkour Governor"
+    },
+    {
+     "kind": "trait",
+     "name": "Parkour Governor",
+     "description": "Your movement is not reduced by the first 10 feet of difficult terrain you move through on each turn; gain +1 Acrobatics."
+    }
+   ]
+  },
+  {
+   "name": "Magnetic Soles",
+   "slot": "feet",
+   "rarity": "common",
+   "price": 800,
+   "weight": 0.5,
+   "description": "Gain +1 to checks to keep footing on metal surfaces.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "+1 balance",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Magnetic Soles",
+     "description": "Gain +1 to checks to keep footing on metal surfaces."
+    }
+   ]
+  },
+  {
+   "name": "Climbing Talons",
+   "slot": "feet",
+   "rarity": "uncommon",
+   "price": 4050,
+   "weight": 0.5,
+   "description": "You gain a climbing speed of 15 feet on rough or structured surfaces.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "Climb speed 15 ft",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Climbing Talons",
+     "description": "You gain a climbing speed of 15 feet on rough or structured surfaces."
+    }
+   ]
+  },
+  {
+   "name": "Grav-Lock Heels",
+   "slot": "feet",
+   "rarity": "rare",
+   "price": 5950,
+   "weight": 0.5,
+   "description": "As a reaction once per short rest, gain advantage on a check or save to resist forced movement; you cannot be knocked prone until your next turn.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "Anchor stance",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Grav-Lock Heels",
+     "description": "As a reaction once per short rest, gain advantage on a check or save to resist forced movement; you cannot be knocked prone until your next turn."
+    }
+   ]
+  },
+  {
+   "name": "Biofilter Lungs",
+   "slot": "torso",
+   "rarity": "common",
+   "price": 1050,
+   "weight": 0.5,
+   "description": "Gain +1 to saves against inhaled toxins, smoke, and airborne irritants.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 saves vs inhaled hazards",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Biofilter Lungs",
+     "description": "Gain +1 to saves against inhaled toxins, smoke, and airborne irritants."
+    }
+   ]
+  },
+  {
+   "name": "Adrenal Regulator",
+   "slot": "brain",
+   "rarity": "uncommon",
+   "price": 4650,
+   "weight": 0.5,
+   "description": "When initiative is rolled, gain temporary HP equal to your proficiency bonus. Recharges after a long rest.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Temporary HP",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Adrenal Regulator",
+     "description": "When initiative is rolled, gain temporary HP equal to your proficiency bonus. Recharges after a long rest."
+    }
+   ]
+  },
+  {
+   "name": "Pain Editor",
+   "slot": "brain",
+   "rarity": "rare",
+   "price": 6550,
+   "weight": 0.5,
+   "description": "Once per long rest, when you fail a Constitution save, reroll it and use the new result.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Ignore pain penalty",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Pain Editor",
+     "description": "Once per long rest, when you fail a Constitution save, reroll it and use the new result."
+    }
+   ]
+  },
+  {
+   "name": "Dermal Insulation",
+   "slot": "torso",
+   "rarity": "common",
+   "price": 1550,
+   "weight": 0.5,
+   "description": "Gain +1 to saves against extreme heat and cold.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 vs environmental exposure",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Dermal Insulation",
+     "description": "Gain +1 to saves against extreme heat and cold."
+    }
+   ]
+  },
+  {
+   "name": "Micro-Drones",
+   "slot": "back",
+   "rarity": "uncommon",
+   "price": 3150,
+   "weight": 0.5,
+   "description": "As an action, deploy a tiny camera drone for up to 10 minutes; it has 30-foot range from you and streams basic visuals. Recharges after a short rest.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "Scout drone",
+    "permanentStrain": 10,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Micro-Drones",
+     "description": "As an action, deploy a tiny camera drone for up to 10 minutes; it has 30-foot range from you and streams basic visuals. Recharges after a short rest."
+    }
+   ]
+  },
+  {
+   "name": "Pulse Knuckles",
+   "slot": "hands",
+   "rarity": "rare",
+   "price": 5750,
+   "weight": 0.5,
+   "description": "Your unarmed strikes deal +1d4 lightning damage once per turn.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "+1d4 unarmed damage",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Pulse Knuckles",
+     "description": "Your unarmed strikes deal +1d4 lightning damage once per turn."
+    }
+   ]
+  },
+  {
+   "name": "Balance Gyros",
+   "slot": "feet",
+   "rarity": "common",
+   "price": 850,
+   "weight": 0.5,
+   "description": "Gain +1 to Acrobatics checks made to balance or avoid slipping.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+1 Acrobatics",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.acrobatics",
+     "value": 1,
+     "op": "add",
+     "label": "Balance Gyros"
+    },
+    {
+     "kind": "trait",
+     "name": "Balance Gyros",
+     "description": "Gain +1 to Acrobatics checks made to balance or avoid slipping."
+    }
+   ]
+  },
+  {
+   "name": "Subvocal Comms",
+   "slot": "mouth",
+   "rarity": "uncommon",
+   "price": 4350,
+   "weight": 0.5,
+   "description": "Communicate silently with one linked ally within 300 feet; gain +1 to checks coordinating a plan.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CHA"
+   ],
+   "meta": {
+    "primaryStat": "CHA",
+    "bonus": "Silent comms",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Subvocal Comms",
+     "description": "Communicate silently with one linked ally within 300 feet; gain +1 to checks coordinating a plan."
+    }
+   ]
+  },
+  {
+   "name": "Threat-Ping Optics",
+   "slot": "eyes",
+   "rarity": "uncommon",
+   "price": 3750,
+   "weight": 0.5,
+   "description": "As a bonus action once per short rest, mark a visible target for 1 minute; your first attack against it each turn gains +1 to hit.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "Mark target",
+    "permanentStrain": 10,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Threat-Ping Optics",
+     "description": "As a bonus action once per short rest, mark a visible target for 1 minute; your first attack against it each turn gains +1 to hit."
+    }
+   ]
+  },
+  {
+   "name": "Electrostatic Gloves",
+   "slot": "hands",
+   "rarity": "common",
+   "price": 1200,
+   "weight": 0.5,
+   "description": "Gain +1 to checks to operate, repair, or bypass electronic devices.",
+   "capacityCost": 5,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "+1 device checks",
+    "permanentStrain": 5,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Electrostatic Gloves",
+     "description": "Gain +1 to checks to operate, repair, or bypass electronic devices."
+    }
+   ]
+  },
+  {
+   "name": "Shock Absorber Spine",
+   "slot": "back",
+   "rarity": "uncommon",
+   "price": 3000,
+   "weight": 0.5,
+   "description": "Reduce bludgeoning damage from falls and collisions by 1d6.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "Reduce impact",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Shock Absorber Spine",
+     "description": "Reduce bludgeoning damage from falls and collisions by 1d6."
+    }
+   ]
+  },
+  {
+   "name": "Overdrive Calves",
+   "slot": "legs",
+   "rarity": "rare",
+   "price": 6950,
+   "weight": 0.5,
+   "description": "Once per short rest, take the Dash action as a bonus action.",
+   "capacityCost": 20,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "Dash as bonus action",
+    "permanentStrain": 20,
+    "activationStrain": 1,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Overdrive Calves",
+     "description": "Once per short rest, take the Dash action as a bonus action."
+    }
+   ]
+  },
+  {
+   "name": "Grounding Pads",
+   "slot": "feet",
+   "rarity": "uncommon",
+   "price": 3300,
+   "weight": 0.5,
+   "description": "Gain +1 to saves against forced movement and electrical knockback.",
+   "capacityCost": 10,
+   "icon": "cpu",
+   "tags": [
+    "augment",
+    "standard",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "+1 vs forced movement",
+    "permanentStrain": 10,
+    "activationStrain": 0,
+    "shimmer": false
+   },
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Grounding Pads",
+     "description": "Gain +1 to saves against forced movement and electrical knockback."
+    }
+   ]
+  },
+  {
+   "name": "Singularity Mind",
+   "slot": "brain",
+   "rarity": "rare",
+   "price": 7000,
+   "weight": 0.5,
+   "description": "Your Hacking checks gain +5. Once per short rest, take a restricted second action. DOWNSIDE: maximum HP -45; -2 to INT checks while below half HP; psychic damage you deal is reduced by one die size; disadvantage on Wisdom saves; using the extra action deals 1d6 psychic damage to you.",
+   "capacityCost": 60,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "5",
+    "permanentStrain": 60,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 45,
+    "penalty": "INT checks -2 when below half HP; psychic damage you deal is reduced by 1 die size."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -45,
+     "op": "add",
+     "label": "Singularity Mind (Shimmer strain)"
+    },
+    {
+     "kind": "advantage",
+     "on": "save.wis",
+     "mode": "disadvantage",
+     "note": "Singularity Mind"
+    },
+    {
+     "kind": "trait",
+     "name": "Singularity Mind",
+     "description": "Your Hacking checks gain +5. Once per short rest, take a restricted second action. DOWNSIDE: maximum HP -45; -2 to INT checks while below half HP; psychic damage you deal is reduced by one die size; disadvantage on Wisdom saves; using the extra action deals 1d6 psychic damage to you."
+    }
+   ]
+  },
+  {
+   "name": "Apex Ocular Array",
+   "slot": "eyes",
+   "rarity": "rare",
+   "price": 7250,
+   "weight": 0.5,
+   "description": "Gain +5 to ranged attack rolls and see invisible creatures within 10 feet. DOWNSIDE: maximum HP -40; -2 to Dexterity saves; disadvantage on Perception checks in bright light; bright flashes can blind you until the end of your next turn unless you pass a DC 15 Constitution save.",
+   "capacityCost": 60,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "5",
+    "permanentStrain": 60,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 40,
+    "penalty": "DEX saves -2; disadvantage on Perception checks in bright light."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": -2,
+     "op": "add",
+     "label": "Apex Ocular Array"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -40,
+     "op": "add",
+     "label": "Apex Ocular Array (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Apex Ocular Array",
+     "description": "Gain +5 to ranged attack rolls and see invisible creatures within 10 feet. DOWNSIDE: maximum HP -40; -2 to Dexterity saves; disadvantage on Perception checks in bright light; bright flashes can blind you until the end of your next turn unless you pass a DC 15 Constitution save."
+    }
+   ]
+  },
+  {
+   "name": "Sonic Oracle",
+   "slot": "ears",
+   "rarity": "rare",
+   "price": 7500,
+   "weight": 0.5,
+   "description": "Gain +5 to Perception and cannot be surprised while conscious; once per short rest, use a reaction to impose disadvantage on an attack by a creature you can hear. DOWNSIDE: maximum HP -35; thunder damage taken is doubled, but your own thunder damage is halved.",
+   "capacityCost": 55,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "WIS"
+   ],
+   "meta": {
+    "primaryStat": "WIS",
+    "bonus": "5",
+    "permanentStrain": 55,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 35,
+    "penalty": "Thunder damage taken is doubled; your own thunder damage is reduced by half."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.perception",
+     "value": 5,
+     "op": "add",
+     "label": "Sonic Oracle"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -35,
+     "op": "add",
+     "label": "Sonic Oracle (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Sonic Oracle",
+     "description": "Gain +5 to Perception and cannot be surprised while conscious; once per short rest, use a reaction to impose disadvantage on an attack by a creature you can hear. DOWNSIDE: maximum HP -35; thunder damage taken is doubled, but your own thunder damage is halved."
+    }
+   ]
+  },
+  {
+   "name": "Dread Resonator",
+   "slot": "mouth",
+   "rarity": "rare",
+   "price": 7750,
+   "weight": 0.5,
+   "description": "Once per short rest, emit a 30-foot cone; creatures make a Wisdom save or become frightened for 1 minute, repeating the save at end of each turn. DOWNSIDE: maximum HP -40; -2 to Charisma checks; thunder damage you deal is reduced by one die size; you cannot whisper.",
+   "capacityCost": 60,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "CHA"
+   ],
+   "meta": {
+    "primaryStat": "CHA",
+    "bonus": "5",
+    "permanentStrain": 60,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 40,
+    "penalty": "CHA checks -2; thunder damage you deal is reduced by 1 die size."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -40,
+     "op": "add",
+     "label": "Dread Resonator (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Dread Resonator",
+     "description": "Once per short rest, emit a 30-foot cone; creatures make a Wisdom save or become frightened for 1 minute, repeating the save at end of each turn. DOWNSIDE: maximum HP -40; -2 to Charisma checks; thunder damage you deal is reduced by one die size; you cannot whisper."
+    }
+   ]
+  },
+  {
+   "name": "Void Talons",
+   "slot": "hands",
+   "rarity": "rare",
+   "price": 8000,
+   "weight": 0.5,
+   "description": "Your unarmed strikes deal 1d12 slashing damage, gain +5 to attack rolls, count as enhanced weapons, and deal +1d8 necrotic damage once per turn. DOWNSIDE: maximum HP -45; disadvantage on Sleight of Hand; ranged weapon damage is reduced by 2.",
+   "capacityCost": 65,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "5",
+    "permanentStrain": 65,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 45,
+    "penalty": "Disadvantage on Sleight of Hand; ranged weapon damage -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -45,
+     "op": "add",
+     "label": "Void Talons (Shimmer strain)"
+    },
+    {
+     "kind": "advantage",
+     "on": "skill.sleightOfHand",
+     "mode": "disadvantage",
+     "note": "Void Talons"
+    },
+    {
+     "kind": "trait",
+     "name": "Void Talons",
+     "description": "Your unarmed strikes deal 1d12 slashing damage, gain +5 to attack rolls, count as enhanced weapons, and deal +1d8 necrotic damage once per turn. DOWNSIDE: maximum HP -45; disadvantage on Sleight of Hand; ranged weapon damage is reduced by 2."
+    }
+   ]
+  },
+  {
+   "name": "Colossus Arms",
+   "slot": "arms",
+   "rarity": "rare",
+   "price": 8250,
+   "weight": 0.5,
+   "description": "Gain +5 Athletics, count as two sizes larger for lifting, pushing, and grappling, and deal +1d8 melee damage. DOWNSIDE: maximum HP -50; speed -10 feet; -2 to Dexterity saves; -2 to ranged weapon attack rolls.",
+   "capacityCost": 65,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "5",
+    "permanentStrain": 65,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 50,
+    "penalty": "DEX saves -2; ranged weapon attacks -2 to hit."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.athletics",
+     "value": 5,
+     "op": "add",
+     "label": "Colossus Arms"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": -2,
+     "op": "add",
+     "label": "Colossus Arms"
+    },
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": -3,
+     "op": "add",
+     "label": "Colossus Arms"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -50,
+     "op": "add",
+     "label": "Colossus Arms (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Colossus Arms",
+     "description": "Gain +5 Athletics, count as two sizes larger for lifting, pushing, and grappling, and deal +1d8 melee damage. DOWNSIDE: maximum HP -50; speed -10 feet; -2 to Dexterity saves; -2 to ranged weapon attack rolls."
+    }
+   ]
+  },
+  {
+   "name": "Apex Shimmer Bastion",
+   "slot": "torso",
+   "rarity": "rare",
+   "price": 8500,
+   "weight": 0.5,
+   "description": "While not wearing heavy armor, gain +4 AC, resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks, and advantage on Constitution saves. DOWNSIDE: maximum HP -75; speed -10 feet; -2 to Dexterity saves; vulnerability to lightning damage. AC bonus does not stack with other torso plating.",
+   "capacityCost": 75,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "5",
+    "permanentStrain": 75,
+    "activationStrain": 4,
+    "shimmer": true,
+    "maxHpPenalty": 75,
+    "penalty": "Speed -10 feet; vulnerability to lightning; DEX saves -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 4,
+     "op": "add",
+     "label": "Apex Shimmer Bastion"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": -2,
+     "op": "add",
+     "label": "Apex Shimmer Bastion"
+    },
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": -3,
+     "op": "add",
+     "label": "Apex Shimmer Bastion"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -75,
+     "op": "add",
+     "label": "Apex Shimmer Bastion (Shimmer strain)"
+    },
+    {
+     "kind": "resistance",
+     "damageType": "physical",
+     "level": "resistance"
+    },
+    {
+     "kind": "resistance",
+     "damageType": "lightning",
+     "level": "vulnerability"
+    },
+    {
+     "kind": "advantage",
+     "on": "save.con",
+     "mode": "advantage",
+     "note": "Apex Shimmer Bastion"
+    },
+    {
+     "kind": "trait",
+     "name": "Apex Shimmer Bastion",
+     "description": "While not wearing heavy armor, gain +4 AC, resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks, and advantage on Constitution saves. DOWNSIDE: maximum HP -75; speed -10 feet; -2 to Dexterity saves; vulnerability to lightning damage. AC bonus does not stack with other torso plating."
+    }
+   ]
+  },
+  {
+   "name": "Seraphim Rig",
+   "slot": "back",
+   "rarity": "rare",
+   "price": 8750,
+   "weight": 0.5,
+   "description": "Gain a flying speed of 40 feet, can hover, and gain +5 to Dexterity saves. DOWNSIDE: maximum HP -45; ground speed -10 feet; -2 to Strength checks; when hit by lightning damage, your flight shuts down and you are stunned until the end of your next turn.",
+   "capacityCost": 65,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "5",
+    "permanentStrain": 65,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 45,
+    "penalty": "Ground speed -10 feet; lightning hit disables flight and stuns you; STR checks -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": 5,
+     "op": "add",
+     "label": "Seraphim Rig"
+    },
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": -3,
+     "op": "add",
+     "label": "Seraphim Rig"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -45,
+     "op": "add",
+     "label": "Seraphim Rig (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Seraphim Rig",
+     "description": "Gain a flying speed of 40 feet, can hover, and gain +5 to Dexterity saves. DOWNSIDE: maximum HP -45; ground speed -10 feet; -2 to Strength checks; when hit by lightning damage, your flight shuts down and you are stunned until the end of your next turn."
+    }
+   ]
+  },
+  {
+   "name": "Blink Predator Legs",
+   "slot": "legs",
+   "rarity": "rare",
+   "price": 9000,
+   "weight": 0.5,
+   "description": "As a bonus action, teleport up to 30 feet to a space you can see three times per short rest; your next attack that turn has advantage. DOWNSIDE: maximum HP -45; each teleport deals 1d4 force damage to you; after the third use before resting, gain one level of exhaustion.",
+   "capacityCost": 65,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "5",
+    "permanentStrain": 65,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 45,
+    "penalty": "After each teleport, take 1d4 force damage; third use before resting causes exhaustion."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -45,
+     "op": "add",
+     "label": "Blink Predator Legs (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Blink Predator Legs",
+     "description": "As a bonus action, teleport up to 30 feet to a space you can see three times per short rest; your next attack that turn has advantage. DOWNSIDE: maximum HP -45; each teleport deals 1d4 force damage to you; after the third use before resting, gain one level of exhaustion."
+    }
+   ]
+  },
+  {
+   "name": "Titan Anchor Feet",
+   "slot": "feet",
+   "rarity": "rare",
+   "price": 7000,
+   "weight": 0.5,
+   "description": "You cannot be knocked prone while conscious, gain +5 to resist forced movement, and can walk on vertical metal surfaces. DOWNSIDE: maximum HP -40; speed -15 feet; -5 to swimming checks; you cannot benefit from the Dash action.",
+   "capacityCost": 60,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "5",
+    "permanentStrain": 60,
+    "activationStrain": 3,
+    "shimmer": true,
+    "maxHpPenalty": 40,
+    "penalty": "Speed -15 feet; swimming checks -5; cannot benefit from Dash."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": -5,
+     "op": "add",
+     "label": "Titan Anchor Feet"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -40,
+     "op": "add",
+     "label": "Titan Anchor Feet (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Titan Anchor Feet",
+     "description": "You cannot be knocked prone while conscious, gain +5 to resist forced movement, and can walk on vertical metal surfaces. DOWNSIDE: maximum HP -40; speed -15 feet; -5 to swimming checks; you cannot benefit from the Dash action."
+    }
+   ]
+  },
+  {
+   "name": "Overclocked Cortex",
+   "slot": "brain",
+   "rarity": "uncommon",
+   "price": 4500,
+   "weight": 0.5,
+   "description": "Gain +4 to Hacking checks and advantage on initiative rolls. Once per long rest, treat one failed Intelligence check as a 20. DOWNSIDE: maximum HP -25; -2 to Wisdom saves; after each long rest, roll a d20; on 1-4, gain one level of exhaustion.",
+   "capacityCost": 40,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "INT"
+   ],
+   "meta": {
+    "primaryStat": "INT",
+    "bonus": "4",
+    "permanentStrain": 40,
+    "activationStrain": 2,
+    "shimmer": true,
+    "maxHpPenalty": 25,
+    "penalty": "WIS saves -2; on a d20 roll of 1-4 after a long rest, gain exhaustion."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 4,
+     "op": "add",
+     "label": "Overclocked Cortex"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.wis",
+     "value": -2,
+     "op": "add",
+     "label": "Overclocked Cortex"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -25,
+     "op": "add",
+     "label": "Overclocked Cortex (Shimmer strain)"
+    },
+    {
+     "kind": "advantage",
+     "on": "initiative",
+     "mode": "advantage",
+     "note": "Overclocked Cortex"
+    },
+    {
+     "kind": "trait",
+     "name": "Overclocked Cortex",
+     "description": "Gain +4 to Hacking checks and advantage on initiative rolls. Once per long rest, treat one failed Intelligence check as a 20. DOWNSIDE: maximum HP -25; -2 to Wisdom saves; after each long rest, roll a d20; on 1-4, gain one level of exhaustion."
+    }
+   ]
+  },
+  {
+   "name": "Predator Spine",
+   "slot": "back",
+   "rarity": "uncommon",
+   "price": 4900,
+   "weight": 0.5,
+   "description": "Gain +4 to Dexterity saves and ignore difficult terrain. DOWNSIDE: maximum HP -25; -2 to Constitution saves; you cannot gain temporary HP.",
+   "capacityCost": 40,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "4",
+    "permanentStrain": 40,
+    "activationStrain": 2,
+    "shimmer": true,
+    "maxHpPenalty": 25,
+    "penalty": "CON saves -2; cannot gain temporary HP."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": 4,
+     "op": "add",
+     "label": "Predator Spine"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.con",
+     "value": -2,
+     "op": "add",
+     "label": "Predator Spine"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -25,
+     "op": "add",
+     "label": "Predator Spine (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Predator Spine",
+     "description": "Gain +4 to Dexterity saves and ignore difficult terrain. DOWNSIDE: maximum HP -25; -2 to Constitution saves; you cannot gain temporary HP."
+    }
+   ]
+  },
+  {
+   "name": "Raptor Servos",
+   "slot": "legs",
+   "rarity": "uncommon",
+   "price": 5300,
+   "weight": 0.5,
+   "description": "Speed +20 feet, +4 Acrobatics, and opportunity attacks against you have disadvantage after you move at least 10 feet on your turn. DOWNSIDE: maximum HP -30; -2 to Strength checks; if you end your turn without moving at least 10 feet, take 1d6 force damage.",
+   "capacityCost": 45,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "DEX"
+   ],
+   "meta": {
+    "primaryStat": "DEX",
+    "bonus": "4",
+    "permanentStrain": 45,
+    "activationStrain": 2,
+    "shimmer": true,
+    "maxHpPenalty": 30,
+    "penalty": "If you do not move 10 feet on your turn, take 1d6 force damage; STR checks -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.acrobatics",
+     "value": 4,
+     "op": "add",
+     "label": "Raptor Servos"
+    },
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": 6,
+     "op": "add",
+     "label": "Raptor Servos"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -30,
+     "op": "add",
+     "label": "Raptor Servos (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Raptor Servos",
+     "description": "Speed +20 feet, +4 Acrobatics, and opportunity attacks against you have disadvantage after you move at least 10 feet on your turn. DOWNSIDE: maximum HP -30; -2 to Strength checks; if you end your turn without moving at least 10 feet, take 1d6 force damage."
+    }
+   ]
+  },
+  {
+   "name": "Berserker Actuators",
+   "slot": "arms",
+   "rarity": "uncommon",
+   "price": 5700,
+   "weight": 0.5,
+   "description": "Gain +4 Athletics and +1d8 melee damage. When reduced below half HP, gain advantage on melee attacks for 1 minute. DOWNSIDE: maximum HP -35; -2 to Wisdom saves; while the feature is active, you cannot willingly move away from a hostile creature you can see.",
+   "capacityCost": 50,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "STR"
+   ],
+   "meta": {
+    "primaryStat": "STR",
+    "bonus": "4",
+    "permanentStrain": 50,
+    "activationStrain": 2,
+    "shimmer": true,
+    "maxHpPenalty": 35,
+    "penalty": "While berserk, cannot retreat; WIS saves -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "skill.athletics",
+     "value": 4,
+     "op": "add",
+     "label": "Berserker Actuators"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.wis",
+     "value": -2,
+     "op": "add",
+     "label": "Berserker Actuators"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -35,
+     "op": "add",
+     "label": "Berserker Actuators (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Berserker Actuators",
+     "description": "Gain +4 Athletics and +1d8 melee damage. When reduced below half HP, gain advantage on melee attacks for 1 minute. DOWNSIDE: maximum HP -35; -2 to Wisdom saves; while the feature is active, you cannot willingly move away from a hostile creature you can see."
+    }
+   ]
+  },
+  {
+   "name": "Reactive Shimmer Plating",
+   "slot": "torso",
+   "rarity": "uncommon",
+   "price": 6100,
+   "weight": 0.5,
+   "description": "While not wearing heavy armor, gain +3 AC and resistance to one damage type chosen at installation. DOWNSIDE: maximum HP -40; healing received is halved; -2 to Dexterity saves; attacks against you score a critical hit on a roll of 19-20.",
+   "capacityCost": 50,
+   "icon": "sparkles",
+   "tags": [
+    "augment",
+    "shimmer",
+    "CON"
+   ],
+   "meta": {
+    "primaryStat": "CON",
+    "bonus": "4",
+    "permanentStrain": 50,
+    "activationStrain": 2,
+    "shimmer": true,
+    "maxHpPenalty": 40,
+    "penalty": "Healing received is halved; vulnerability to critical hits; DEX saves -2."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 3,
+     "op": "add",
+     "label": "Reactive Shimmer Plating"
+    },
+    {
+     "kind": "modifier",
+     "target": "save.dex",
+     "value": -2,
+     "op": "add",
+     "label": "Reactive Shimmer Plating"
+    },
+    {
+     "kind": "modifier",
+     "target": "maxHp",
+     "value": -40,
+     "op": "add",
+     "label": "Reactive Shimmer Plating (Shimmer strain)"
+    },
+    {
+     "kind": "trait",
+     "name": "Reactive Shimmer Plating",
+     "description": "While not wearing heavy armor, gain +3 AC and resistance to one damage type chosen at installation. DOWNSIDE: maximum HP -40; healing received is halved; -2 to Dexterity saves; attacks against you score a critical hit on a roll of 19-20."
+    }
+   ]
+  }
+ ],
+ "plans": [
+  {
+   "kind": "housing",
+   "name": "Flat Room Dogtown",
+   "district": "dogtown",
+   "monthlyCost": 300,
+   "purchasePrice": 0,
+   "description": "Monthly rent in Dogtown.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Room WCA",
+   "district": "wca",
+   "monthlyCost": 650,
+   "purchasePrice": 0,
+   "description": "Monthly rent in WCA.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Small Apt Dogtown",
+   "district": "dogtown",
+   "monthlyCost": 900,
+   "purchasePrice": 0,
+   "description": "Monthly rent in Dogtown.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Small Apt WCA",
+   "district": "wca",
+   "monthlyCost": 1200,
+   "purchasePrice": 0,
+   "description": "Monthly rent in WCA.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Small Apt NFC",
+   "district": "nfc",
+   "monthlyCost": 4500,
+   "purchasePrice": 0,
+   "description": "Monthly rent in NFC.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "3 Bed WCA",
+   "district": "wca",
+   "monthlyCost": 5500,
+   "purchasePrice": 0,
+   "description": "Monthly rent in WCA.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "3 Bed NFC",
+   "district": "nfc",
+   "monthlyCost": 9000,
+   "purchasePrice": 0,
+   "description": "Monthly rent in NFC.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Full House Dogtown",
+   "district": "dogtown",
+   "monthlyCost": 4500,
+   "purchasePrice": 0,
+   "description": "Monthly rent in Dogtown.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Full House WCA",
+   "district": "wca",
+   "monthlyCost": 8500,
+   "purchasePrice": 0,
+   "description": "Monthly rent in WCA.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Full House NFC",
+   "district": "nfc",
+   "monthlyCost": 12500,
+   "purchasePrice": 0,
+   "description": "Monthly rent in NFC.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "Dogtown Motel",
+   "district": "dogtown",
+   "monthlyCost": 600,
+   "purchasePrice": 0,
+   "description": "20 K per night, billed as 30 nights. No identity needed.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "WCA Motel",
+   "district": "wca",
+   "monthlyCost": 1500,
+   "purchasePrice": 0,
+   "description": "50 K per night, billed as 30 nights. No identity needed.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "WCA Hotel",
+   "district": "wca",
+   "monthlyCost": 4500,
+   "purchasePrice": 0,
+   "description": "150 K per night, billed as 30 nights.",
+   "effects": []
+  },
+  {
+   "kind": "housing",
+   "name": "NFC Hotel",
+   "district": "nfc",
+   "monthlyCost": 15000,
+   "purchasePrice": 0,
+   "description": "500 K per night, billed as 30 nights.",
+   "effects": []
+  },
+  {
+   "kind": "food",
+   "name": "Noodles",
+   "monthlyCost": 150,
+   "purchasePrice": 0,
+   "description": "Permanent Exhaustion 1",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Diet: Noodles",
+     "description": "Permanent Exhaustion 1"
+    }
+   ]
+  },
+  {
+   "kind": "food",
+   "name": "Basic Groceries",
+   "monthlyCost": 450,
+   "purchasePrice": 0,
+   "description": "Exhaustion 1 once/week",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Diet: Basic Groceries",
+     "description": "Exhaustion 1 once/week"
+    }
+   ]
+  },
+  {
+   "kind": "food",
+   "name": "Balanced Diet",
+   "monthlyCost": 900,
+   "purchasePrice": 0,
+   "description": "No penalties",
+   "effects": []
+  },
+  {
+   "kind": "food",
+   "name": "Rich Diet",
+   "monthlyCost": 1200,
+   "purchasePrice": 0,
+   "description": "+2 random stat for month",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Diet: Rich Diet",
+     "description": "+2 random stat for month"
+    }
+   ]
+  },
+  {
+   "kind": "transport",
+   "name": "Public Transport",
+   "monthlyCost": 220,
+   "purchasePrice": 0,
+   "description": "Monthly pass.",
+   "effects": []
+  },
+  {
+   "kind": "transport",
+   "name": "Motorcycle",
+   "monthlyCost": 450,
+   "purchasePrice": 1500,
+   "description": "Buy once for 1500 K, then insurance 50 K + fuel 400 K a month.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Motorcycle",
+     "description": "Personal transport across the districts."
+    }
+   ]
+  },
+  {
+   "kind": "transport",
+   "name": "Old Car",
+   "monthlyCost": 700,
+   "purchasePrice": 4500,
+   "description": "Buy once for 4500 K, then insurance 100 K + fuel 600 K a month.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Old Car",
+     "description": "Personal transport across the districts."
+    }
+   ]
+  },
+  {
+   "kind": "transport",
+   "name": "New SUV",
+   "monthlyCost": 1000,
+   "purchasePrice": 9000,
+   "description": "Buy once for 9000 K, then insurance 150 K + fuel 850 K a month.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "New SUV",
+     "description": "Personal transport across the districts."
+    }
+   ]
+  },
+  {
+   "kind": "transport",
+   "name": "Truck",
+   "monthlyCost": 1200,
+   "purchasePrice": 15000,
+   "description": "Buy once for 15000 K, then insurance 200 K + fuel 1000 K a month.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "Truck",
+     "description": "Personal transport across the districts."
+    }
+   ]
+  },
+  {
+   "kind": "connectivity",
+   "name": "Public Network",
+   "monthlyCost": 20,
+   "purchasePrice": 0,
+   "description": "+0 Hacking while the subscription is paid.",
+   "effects": []
+  },
+  {
+   "kind": "connectivity",
+   "name": "Standard ISP",
+   "monthlyCost": 100,
+   "purchasePrice": 0,
+   "description": "+1 Hacking while the subscription is paid.",
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 1,
+     "op": "add",
+     "label": "Standard ISP"
+    }
+   ]
+  },
+  {
+   "kind": "connectivity",
+   "name": "Fiber Network",
+   "monthlyCost": 250,
+   "purchasePrice": 0,
+   "description": "+2 Hacking while the subscription is paid.",
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 2,
+     "op": "add",
+     "label": "Fiber Network"
+    }
+   ]
+  },
+  {
+   "kind": "connectivity",
+   "name": "Quantum Relay",
+   "monthlyCost": 600,
+   "purchasePrice": 0,
+   "description": "+3 Hacking while the subscription is paid.",
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 3,
+     "op": "add",
+     "label": "Quantum Relay"
+    }
+   ]
+  },
+  {
+   "kind": "connectivity",
+   "name": "Corporate Nexus",
+   "monthlyCost": 1500,
+   "purchasePrice": 0,
+   "description": "+4 Hacking while the subscription is paid.",
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "special.hacking",
+     "value": 4,
+     "op": "add",
+     "label": "Corporate Nexus"
+    }
+   ]
+  },
+  {
+   "kind": "antivirus",
+   "name": "Avast",
+   "monthlyCost": 50,
+   "purchasePrice": 0,
+   "description": "+1 saves vs hacking against hacking.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "ICE: Avast",
+     "description": "+1 saves vs hacking against hacking attempts."
+    }
+   ]
+  },
+  {
+   "kind": "antivirus",
+   "name": "Professional Shield",
+   "monthlyCost": 150,
+   "purchasePrice": 0,
+   "description": "+2 saves against hacking.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "ICE: Professional Shield",
+     "description": "+2 saves against hacking attempts."
+    }
+   ]
+  },
+  {
+   "kind": "antivirus",
+   "name": "Military ICE",
+   "monthlyCost": 350,
+   "purchasePrice": 0,
+   "description": "+3 saves against hacking.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "ICE: Military ICE",
+     "description": "+3 saves against hacking attempts."
+    }
+   ]
+  },
+  {
+   "kind": "antivirus",
+   "name": "Quantum Firewall",
+   "monthlyCost": 800,
+   "purchasePrice": 0,
+   "description": "+4 saves against hacking.",
+   "effects": [
+    {
+     "kind": "trait",
+     "name": "ICE: Quantum Firewall",
+     "description": "+4 saves against hacking attempts."
+    }
+   ]
+  }
+ ],
+ "districts": {
+  "dogtown": {
+   "name": "Dogtown",
+   "tax": 15,
+   "benefits": "Cheap housing, black market access"
+  },
+  "wca": {
+   "name": "WCA",
+   "tax": 25,
+   "benefits": "Better services and security"
+  },
+  "nfc": {
+   "name": "NFC",
+   "tax": 35,
+   "benefits": "Premium services and infrastructure"
+  }
+ },
+ "maintenance": {
+  "common": 25,
+  "uncommon": 100,
+  "rare": 250,
+  "veryRare": 500,
+  "legendary": 1000
+ },
+ "reference": {
+  "missionPayouts": [
+   [
+    "Type",
+    "Tier 1",
+    "Tier 2",
+    "Tier 3"
+   ],
+   [
+    "Target",
+    "500-1000",
+    "1500-3000",
+    "5000-10000"
+   ],
+   [
+    "Theft",
+    "500-1500",
+    "2000-5000",
+    "8000-20000"
+   ],
+   [
+    "Delivery",
+    "200-600",
+    "1500-4000",
+    "5000-12000"
+   ],
+   [
+    "Sabotage",
+    "300-800",
+    "1500-3500",
+    "5000-15000"
+   ]
+  ],
+  "gangTreasury": [
+   [
+    "Rule",
+    "Value"
+   ],
+   [
+    "Minimum Member Share",
+    "10%"
+   ],
+   [
+    "Maximum Member Share",
+    "50%"
+   ],
+   [
+    "Players may gift shares",
+    "Yes"
+   ]
+  ]
+ }
+}

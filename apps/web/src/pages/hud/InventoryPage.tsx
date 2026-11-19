@@ -7,11 +7,14 @@ import { IdentityCard } from "@/components/hud/IdentityCard";
 import { CompactAttributes } from "@/components/hud/SheetPanel";
 import { Bar, ConfirmButton, Icon, Input, Select } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
+import { metaRows } from "@/lib/itemMeta";
 import { useHud } from "./HudShell";
 
 const CATS: { id: string; label: string; icon: string; match: (i: ItemInstanceDto) => boolean }[] = [
   { id: "all", label: "All", icon: "layout-grid", match: () => true },
   { id: "weapon", label: "Weapons", icon: "crosshair", match: (i) => i.definition.category === "weapon" },
+  { id: "attachment", label: "Attachments", icon: "puzzle", match: (i) => i.definition.category === "attachment" },
+  { id: "ammo", label: "Ammo", icon: "circle-dot", match: (i) => i.definition.category === "ammo" },
   { id: "cyberware", label: "Augments", icon: "cpu", match: (i) => i.definition.category === "cyberware" },
   { id: "armor", label: "Armor", icon: "shield", match: (i) => i.definition.category === "armor" },
   { id: "consumable", label: "Consumables", icon: "syringe", match: (i) => i.definition.category === "consumable" },
@@ -256,8 +259,8 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
   const effects = [...d.effects, ...(item.customEffects ?? [])];
   const equippable = Boolean(d.equipmentSlot) || d.category === "weapon" || d.category === "armor";
   const run = (action: Parameters<typeof act.mutate>[0]["action"]) => act.mutate({ itemId: item.id, action });
-  const typeLabel = d.category === "cyberware" ? "Augment" : d.category.charAt(0).toUpperCase() + d.category.slice(1);
-  const subtype = d.category === "cyberware" && d.augmentationSlot ? `${AUGMENTATION_SLOT_META[d.augmentationSlot].name} slot` : d.category === "weapon" ? `${d.damageType ?? "melee"} weapon` : d.equipmentSlot ?? d.category;
+  const typeLabel = d.category === "cyberware" ? (d.meta.shimmer ? "Shimmer fusion" : "Augment") : d.category === "ammo" ? "Ammunition" : d.category.charAt(0).toUpperCase() + d.category.slice(1);
+  const subtype = d.category === "cyberware" && d.augmentationSlot ? `${AUGMENTATION_SLOT_META[d.augmentationSlot].name} slot` : d.category === "weapon" ? String(d.meta.weaponClass ?? `${d.damageType ?? "melee"} weapon`) : d.category === "attachment" ? String(d.meta.attachmentType ?? "attachment") : d.equipmentSlot ?? d.category;
   const mods = effects.filter((e) => e.kind === "modifier").map(describePassiveEffect).join(", ");
   const props = effects.filter((e) => e.kind !== "modifier").map(describePassiveEffect).join(", ");
 
@@ -302,10 +305,16 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
         )}
         {d.category === "cyberware" && (
           <>
-            <dt className="text-muted">Capacity</dt>
+            <dt className="text-muted">Strain</dt>
             <dd className="num text-text">{d.capacityCost}</dd>
           </>
         )}
+        {metaRows(d).map(([k, v]) => (
+          <span key={k} className="contents">
+            <dt className="text-muted">{k}</dt>
+            <dd className="text-text">{v}</dd>
+          </span>
+        ))}
         {item.charges !== null && (
           <>
             <dt className="text-muted">Charges</dt>

@@ -45,6 +45,7 @@ import {
   toActiveEffectDto,
   toCharacterConditionDto,
   toCharacterCore,
+  toCharacterPlanDto,
   toItemInstanceDto,
   toOverrideDto,
 } from "./mappers.js";
@@ -63,6 +64,7 @@ export const fullInclude = {
   conditions: { include: { definition: true }, orderBy: { appliedAt: "asc" } },
   activeEffects: { orderBy: { createdAt: "asc" } },
   overrides: { where: { active: true }, include: { createdBy: { select: { username: true } } } },
+  plans: { include: { plan: true }, orderBy: { startedAt: "asc" } },
 } satisfies Prisma.CharacterInclude;
 
 /** The character with everything the calculator needs, plus the campaign's ability catalog (abilities carry passive effects). */
@@ -122,6 +124,10 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
   }
   for (const eff of full.activeEffects) {
     sources.push({ id: eff.id, kind: "temporary", name: eff.label, active: true, effects: (eff.effects as unknown as PassiveEffect[]) ?? [] });
+  }
+  // Subscriptions (connectivity, diet…) are passive sources while held; the month-end billing drops the unpaid ones.
+  for (const sub of full.plans) {
+    sources.push({ id: sub.id, kind: "plan", name: sub.plan.name, active: true, effects: (sub.plan.effects as unknown as PassiveEffect[]) ?? [] });
   }
   // Abilities: granted directly by the DM or through a grantAbility effect on an active source. Each one is a
   // source of its own so its passive effects (stat and skill modifiers, proficiencies…) reach the calculator.
@@ -209,6 +215,7 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
     activeEffects: full.activeEffects.map(toActiveEffectDto),
     overrides: viewer.isDm || isOwner ? full.overrides.map(toOverrideDto) : [],
     abilities,
+    plans: full.plans.map(toCharacterPlanDto),
     shareToken: viewer.isDm || isOwner ? full.shareToken : null,
     claimToken: viewer.isDm ? full.claimToken : null,
     permissions: {

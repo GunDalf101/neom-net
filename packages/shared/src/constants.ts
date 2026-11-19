@@ -142,6 +142,8 @@ export const ITEM_CATEGORIES = [
   "tool",
   "misc",
   "quest",
+  "attachment",
+  "ammo",
   "custom",
 ] as const;
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
@@ -275,6 +277,32 @@ export const MISSION_KIND_META: Record<MissionKind, { label: string; color: stri
   secondary: { label: "Secondary", color: "cyan", refusable: true, personal: false, blurb: "Optional side work. Accept or decline." },
   personal: { label: "Personal", color: "violet", refusable: false, personal: true, blurb: "One character's own thread. Only they see it." },
 };
+
+// ---------- Shop, districts, plans ----------
+export const DISTRICTS = ["dogtown", "wca", "nfc"] as const;
+export type District = (typeof DISTRICTS)[number];
+/** District tax applies to shop purchases; a character lives where their housing plan is (Dogtown without one). */
+export const DISTRICT_META: Record<District, { name: string; taxPercent: number; benefits: string }> = {
+  dogtown: { name: "Dogtown", taxPercent: 15, benefits: "Cheap housing, black market access" },
+  wca: { name: "WCA", taxPercent: 25, benefits: "Better services and security" },
+  nfc: { name: "NFC", taxPercent: 35, benefits: "Premium services and infrastructure" },
+};
+export function shopPrice(base: number, taxPercent: number): number {
+  return Math.round(base * (1 + taxPercent / 100));
+}
+
+export const PLAN_KINDS = ["housing", "food", "transport", "connectivity", "antivirus"] as const;
+export type PlanKind = (typeof PLAN_KINDS)[number];
+export const PLAN_KIND_META: Record<PlanKind, { label: string; icon: string; color: string; blurb: string }> = {
+  housing: { label: "Housing", icon: "home", color: "amber", blurb: "Where you sleep sets your district tax." },
+  food: { label: "Food", icon: "utensils", color: "lime", blurb: "Eat badly and it shows on the sheet." },
+  transport: { label: "Transport", icon: "car", color: "cyan", blurb: "Vehicles are bought once, then insured and fuelled monthly." },
+  connectivity: { label: "Connectivity", icon: "wifi", color: "violet", blurb: "Better uplink, better Hacking." },
+  antivirus: { label: "Antivirus", icon: "shield-check", color: "magenta", blurb: "ICE between you and the next netrunner." },
+};
+
+/** Monthly upkeep per installed cyberware, by rarity (GM economy handbook). */
+export const CYBERWARE_MAINTENANCE: Record<Rarity, number> = { common: 25, uncommon: 100, rare: 250, veryRare: 500, legendary: 1000, artifact: 2000 };
 
 // ---------- Encyclopedia ----------
 export const ENCYCLOPEDIA_KINDS = ["npc", "location", "item", "lore"] as const;

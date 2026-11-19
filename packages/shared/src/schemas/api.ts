@@ -8,6 +8,8 @@ import {
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
   MISSION_KINDS,
+  PLAN_KINDS,
+  DISTRICTS,
   RARITIES,
   ROLL_CATEGORIES,
   ROLL_VISIBILITIES,
@@ -230,7 +232,31 @@ export const ItemDefinitionInputSchema = z.object({
   ruleIds: z.array(z.string()).max(10).default([]),
   tags: z.array(z.string().max(30)).max(10).default([]),
   visibleToPlayers: z.boolean().default(true),
+  /** Structured catalog data shown on cards (weapon class, magazine, strain…); free-form, not interpreted by the engine. */
+  meta: z.record(z.unknown()).default({}),
+  /** Listed in the shop; `stock` null = unlimited. */
+  forSale: z.boolean().default(false),
+  stock: z.number().int().min(0).max(9999).nullable().default(null),
 });
+
+// ---------- Shop & plans ----------
+export const ShopBuySchema = z.object({
+  characterId: z.string().min(1),
+  definitionId: z.string().min(1),
+  quantity: z.number().int().min(1).max(99).default(1),
+});
+export const PlanDefinitionInputSchema = z.object({
+  kind: z.enum(PLAN_KINDS),
+  name: z.string().min(1).max(80),
+  description: z.string().max(1000).default(""),
+  district: z.enum(DISTRICTS).nullable().default(null),
+  monthlyCost: z.number().int().min(0).max(1_000_000).default(0),
+  purchasePrice: z.number().int().min(0).max(100_000_000).default(0),
+  effects: PassiveEffectListSchema.default([]),
+  visibleToPlayers: z.boolean().default(true),
+  sortOrder: z.number().int().min(0).max(999).default(0),
+});
+export const PlanSubscribeSchema = z.object({ characterId: z.string().min(1), planId: z.string().min(1) });
 
 export const GrantItemSchema = z.object({
   characterId: z.string().min(1),
@@ -493,6 +519,9 @@ export type UpdateCharacterInput = z.infer<typeof UpdateCharacterSchema>;
 export type RollRequestInput = z.infer<typeof RollRequestSchema>;
 export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
+export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
+export type PlanDefinitionInput = z.infer<typeof PlanDefinitionInputSchema>;
+export type PlanSubscribeInput = z.infer<typeof PlanSubscribeSchema>;
 export type RuleDefinitionInput = z.infer<typeof RuleDefinitionInputSchema>;
 export type OverrideInput = z.infer<typeof OverrideInputSchema>;
 export type ConditionDefinitionInput = z.infer<typeof ConditionDefinitionInputSchema>;

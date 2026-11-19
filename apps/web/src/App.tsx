@@ -26,6 +26,7 @@ import { JournalPage } from "@/pages/hud/JournalPage";
 import { MissionsPage } from "@/pages/hud/MissionsPage";
 import { LogPage } from "@/pages/hud/LogPage";
 import { ReputationPage } from "@/pages/hud/ReputationPage";
+import { ShopPage } from "@/pages/hud/ShopPage";
 
 function RequireAuth() {
   const me = useMe();
@@ -55,6 +56,7 @@ export function App() {
           <Route path="/c/:campaignId/hud/:characterId" element={<HudShell />}>
             <Route index element={<CharacterPage />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="shop" element={<ShopPage />} />
             <Route path="cyberware" element={<CyberwarePage />} />
             <Route path="reputation" element={<ReputationPage />} />
             <Route path="encyclopedia" element={<EncyclopediaPage />} />

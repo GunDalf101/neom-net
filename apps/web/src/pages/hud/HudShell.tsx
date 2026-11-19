@@ -28,6 +28,7 @@ export const useHud = () => useOutletContext<HudContext>();
 const TABS = [
   { to: "", label: "Character", icon: "scan-face", end: true },
   { to: "inventory", label: "Inventory", icon: "package" },
+  { to: "shop", label: "Shop", icon: "shopping-cart" },
   { to: "cyberware", label: "Cyberware", icon: "cpu" },
   { to: "reputation", label: "Reputation", icon: "users-round" },
   { to: "encyclopedia", label: "Encyclopedia", icon: "book-open" },

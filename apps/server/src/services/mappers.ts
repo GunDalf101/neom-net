@@ -19,6 +19,8 @@ import type {
   OverrideDto,
   PassiveEffect,
   PendingActionDto,
+  PlanDefinitionDto,
+  CharacterPlanDto,
   Requirement,
   RollRequestDto,
   RollResult,
@@ -103,6 +105,9 @@ export function toItemDefinitionDto(d: Prisma.ItemDefinitionGetPayload<Record<st
     ruleIds: arr<string>(d.ruleIds),
     tags: arr<string>(d.tags),
     visibleToPlayers: d.visibleToPlayers,
+    meta: obj<Record<string, unknown>>(d.meta, {}),
+    forSale: d.forSale,
+    stock: d.stock,
     createdAt: iso(d.createdAt),
     updatedAt: iso(d.updatedAt),
   };
@@ -351,6 +356,26 @@ export function toMissionDto(m: Prisma.MissionGetPayload<{ include: { assignment
     createdAt: iso(m.createdAt),
     updatedAt: iso(m.updatedAt),
   };
+}
+
+export function toPlanDto(p: Prisma.PlanDefinitionGetPayload<Record<string, never>>): PlanDefinitionDto {
+  return {
+    id: p.id,
+    campaignId: p.campaignId,
+    kind: p.kind as PlanDefinitionDto["kind"],
+    name: p.name,
+    description: p.description,
+    district: p.district as PlanDefinitionDto["district"],
+    monthlyCost: p.monthlyCost,
+    purchasePrice: p.purchasePrice,
+    effects: arr<PassiveEffect>(p.effects),
+    visibleToPlayers: p.visibleToPlayers,
+    sortOrder: p.sortOrder,
+  };
+}
+
+export function toCharacterPlanDto(s: Prisma.CharacterPlanGetPayload<{ include: { plan: true } }>): CharacterPlanDto {
+  return { id: s.id, planId: s.planId, plan: toPlanDto(s.plan), startedAt: iso(s.startedAt) };
 }
 
 export function toEncyclopediaDto(e: Prisma.EncyclopediaEntryGetPayload<Record<string, never>>): EncyclopediaEntryDto {

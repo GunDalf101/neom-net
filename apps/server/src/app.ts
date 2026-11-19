@@ -22,6 +22,7 @@ import { dmRouter } from "./routes/dm.js";
 import { encountersRouter } from "./routes/encounters.js";
 import { rulesRouter } from "./routes/rules.js";
 import { storyRouter } from "./routes/story.js";
+import { shopRouter } from "./routes/shop.js";
 
 export function createApp(): Express {
   const app = express();
@@ -56,6 +57,7 @@ export function createApp(): Express {
   app.use("/api/campaigns", dmRouter);
   app.use("/api/campaigns", encountersRouter);
   app.use("/api/campaigns", storyRouter);
+  app.use("/api/campaigns", shopRouter);
   app.use("/api/characters", charactersRouter);
   app.use("/api/push", pushRouter);
   app.use("/api", reputationRouter);

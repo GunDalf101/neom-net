@@ -56,6 +56,7 @@ model Campaign {
   npcs            NpcDefinition[]
   encounters      Encounter[]
   missions        Mission[]
+  plans           PlanDefinition[]
   encyclopedia    EncyclopediaEntry[]
   journal         JournalEntry[]
   rolls           DiceRoll[]
@@ -182,6 +183,7 @@ model Character {
   participants  EncounterParticipant[]
   journal       JournalEntry[]
   missions      MissionAssignment[]
+  plans         CharacterPlan[]
   traces        RuleTrace[]
   pendingActions PendingAction[]
   rollRequests  RollRequest[]
@@ -222,6 +224,11 @@ model ItemDefinition {
   ruleIds          Json     @default("[]")
   tags             Json     @default("[]")
   visibleToPlayers Boolean  @default(true)
+  /// Structured catalog data (weapon class, magazine, attachment slots, strain…) shown on cards; not interpreted by the engine.
+  meta             Json     @default("{}")
+  /// Listed in the campaign shop. `stock` null = unlimited.
+  forSale          Boolean  @default(false)
+  stock            Int?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -544,6 +551,43 @@ model MissionAssignment {
   note        String    @default("")
 
   @@id([missionId, characterId])
+}
+
+/// A subscription the crew can hold: housing, food plan, transport, connectivity, antivirus. One per kind per character.
+model PlanDefinition {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  /// housing | food | transport | connectivity | antivirus
+  kind             String
+  name             String
+  description      String   @default("")
+  /// Housing only: dogtown | wca | nfc — sets the district tax applied to the character's shop purchases.
+  district         String?
+  monthlyCost      Int      @default(0)
+  /// Paid once when subscribing (vehicles).
+  purchasePrice    Int      @default(0)
+  /// Passive effects while subscribed (connectivity grants Hacking, …).
+  effects          Json     @default("[]")
+  visibleToPlayers Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  subscriptions CharacterPlan[]
+
+  @@index([campaignId, kind])
+}
+
+model CharacterPlan {
+  id          String         @id @default(cuid())
+  characterId String
+  character   Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  planId      String
+  plan        PlanDefinition @relation(fields: [planId], references: [id], onDelete: Cascade)
+  startedAt   DateTime       @default(now())
+
+  @@unique([characterId, planId])
+  @@index([characterId])
 }
 
 /// Campaign encyclopedia: NPCs, locations, items and lore the DM publishes for the crew. Players read; the DM writes.

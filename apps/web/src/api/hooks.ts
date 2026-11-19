@@ -33,6 +33,11 @@ import type {
   MessageDto,
   MissionDto,
   MissionInput,
+  MonthlyBillDto,
+  MonthlyBillResultDto,
+  PlanDefinitionDto,
+  PlanDefinitionInput,
+  ShopDto,
   NpcDto,
   NpcInput,
   OverrideDto,
@@ -78,6 +83,9 @@ export const qk = {
   missions: (cid: string) => ["missions", cid] as const,
   journal: (cid: string) => ["journal", cid] as const,
   encyclopedia: (cid: string) => ["encyclopedia", cid] as const,
+  shop: (cid: string, characterId?: string) => (characterId ? (["shop", cid, characterId] as const) : (["shop", cid] as const)),
+  plans: (cid: string) => ["plans", cid] as const,
+  bill: (cid: string) => ["bill", cid] as const,
   abilities: (cid: string) => ["abilities", cid] as const,
   dashboard: (cid: string) => ["dashboard", cid] as const,
   rollRequests: (cid: string) => ["rollRequests", cid] as const,
@@ -687,6 +695,84 @@ export function useMissionOp(cid: string) {
     }),
   );
 }
+// ---------- Shop & plans ----------
+export const useShop = (cid: string, characterId?: string) => useQuery({ queryKey: qk.shop(cid, characterId), queryFn: () => api.get<ShopDto>(`/campaigns/${cid}/shop${characterId ? `?characterId=${characterId}` : ""}`) });
+export function useBuy(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: (body: { characterId: string; definitionId: string; quantity: number }) => api.post<CharacterView>(`/campaigns/${cid}/shop/buy`, body),
+      onSuccess: (v) => {
+        qc.setQueryData(qk.character(v.character.id), v);
+        qc.invalidateQueries({ queryKey: qk.shop(cid) });
+        qc.invalidateQueries({ queryKey: qk.characters(cid) });
+        toast("success", "Purchase complete", `${v.character.credits.toLocaleString()} ₭ left`);
+      },
+    }),
+  );
+}
+export function useImportCatalog(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: () => api.post<{ items: { created: number; updated: number }; plans: { created: number; updated: number } }>(`/campaigns/${cid}/shop/import`, {}),
+      onSuccess: (r) => {
+        for (const key of [qk.items(cid), qk.shop(cid), qk.plans(cid), qk.encyclopedia(cid)]) qc.invalidateQueries({ queryKey: key });
+        toast("success", "NEOM catalog imported", `${r.items.created} new items, ${r.items.updated} refreshed, ${r.plans.created} new plans`);
+      },
+    }),
+  );
+}
+export const usePlans = (cid: string) => useQuery({ queryKey: qk.plans(cid), queryFn: () => api.get<PlanDefinitionDto[]>(`/campaigns/${cid}/plans`) });
+function planMutation(cid: string, path: "subscribe" | "unsubscribe", message: string) {
+  return function usePlanMutation() {
+    const qc = useQueryClient();
+    return useMutation(
+      withToast({
+        mutationFn: (body: { characterId: string; planId: string }) => api.post<CharacterView>(`/campaigns/${cid}/plans/${path}`, body),
+        onSuccess: (v) => {
+          qc.setQueryData(qk.character(v.character.id), v);
+          qc.invalidateQueries({ queryKey: qk.shop(cid) });
+          toast("success", message);
+        },
+      }),
+    );
+  };
+}
+export const useSubscribePlan = (cid: string) => planMutation(cid, "subscribe", "Plan taken")();
+export const useUnsubscribePlan = (cid: string) => planMutation(cid, "unsubscribe", "Plan cancelled")();
+export function useSavePlan(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: ({ id, body }: { id?: string; body: PlanDefinitionInput }) => (id ? api.put<PlanDefinitionDto>(`/campaigns/${cid}/plans/${id}`, body) : api.post<PlanDefinitionDto>(`/campaigns/${cid}/plans`, body)),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.plans(cid) });
+        toast("success", "Plan saved");
+      },
+    }),
+  );
+}
+export function useDeletePlan(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/plans/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.plans(cid) }) }));
+}
+export const useBillPreview = (cid: string, enabled: boolean) => useQuery({ queryKey: qk.bill(cid), queryFn: () => api.get<MonthlyBillDto[]>(`/campaigns/${cid}/plans/bill`), enabled });
+export function useBillMonth(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: () => api.post<MonthlyBillResultDto[]>(`/campaigns/${cid}/plans/bill`, {}),
+      onSuccess: (r) => {
+        for (const key of [qk.bill(cid), qk.characters(cid), qk.dashboard(cid), qk.events(cid)]) qc.invalidateQueries({ queryKey: key });
+        for (const b of r) qc.invalidateQueries({ queryKey: qk.character(b.characterId) });
+        const lapsed = r.flatMap((b) => b.lapsed).length;
+        toast("success", "The month turned", `${r.reduce((s, b) => s + b.paid, 0).toLocaleString()} ₭ collected${lapsed ? `, ${lapsed} plan${lapsed === 1 ? "" : "s"} lapsed` : ""}`);
+      },
+    }),
+  );
+}
+
 export const useEncyclopedia = (cid: string) => useQuery({ queryKey: qk.encyclopedia(cid), queryFn: () => api.get<EncyclopediaEntryDto[]>(`/campaigns/${cid}/encyclopedia`) });
 export function useSaveEncyclopediaEntry(cid: string) {
   const qc = useQueryClient();

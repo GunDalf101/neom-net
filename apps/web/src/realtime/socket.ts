@@ -121,6 +121,8 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
         missions: qk.missions(campaignId),
         journal: qk.journal(campaignId),
         encyclopedia: qk.encyclopedia(campaignId),
+        shop: qk.shop(campaignId),
+        plans: qk.plans(campaignId),
         factions: qk.factions(campaignId),
       };
       const key = map[kind];

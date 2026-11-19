@@ -12,3 +12,7 @@ apps/server/uploads/
 
 # vite-plugin-pwa dev service worker output
 apps/web/dev-dist/
+
+# Source spreadsheets dropped in the root live under docs/catalog once converted
+/*.xlsx
+/*.docx

@@ -21,6 +21,7 @@ const VIEWPORTS = {
 const HUD_PAGES = [
   ["", ["Proficiency Bonus", "Attributes", "Abilities", "Crew"]],
   ["inventory", ["Inventory", "Currency"]],
+  ["shop", ["Shop", "Plans"]],
   ["cyberware", ["Installed systems", "Known cyberware catalog"]],
   ["reputation", ["Reputation", "Neon City"]],
   ["encyclopedia", ["NPCs", "Locations", "Items", "Lore"]],

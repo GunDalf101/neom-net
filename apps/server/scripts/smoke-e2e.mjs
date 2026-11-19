@@ -357,6 +357,75 @@ await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${draftEntry.id}`);
 await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${npcEntry.id}`);
 check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.name.includes("(E2E)")), "Encyclopedia cleaned up");
 
+console.log("    Shop: the NEOM catalog, district-taxed purchases, stock");
+const shop_imported = await dm.call("POST", `/api/campaigns/${cid}/shop/import`, {});
+check(shop_imported.items.created + shop_imported.items.updated >= 150 && shop_imported.plans.created + shop_imported.plans.updated >= 30, `Catalog shop_imported (${shop_imported.items.created} new / ${shop_imported.items.updated} refreshed items, ${shop_imported.plans.created + shop_imported.plans.updated} plans)`);
+const shop_again = await dm.call("POST", `/api/campaigns/${cid}/shop/import`, {});
+check(shop_again.items.created === 0 && shop_again.plans.created === 0, "Re-importing creates nothing new (idempotent)");
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/shop/import`, {}))) === 403, "Players cannot import the catalog (403)");
+// Clear any plans left by an interrupted run so the district is Dogtown.
+view = await player.call("GET", `/api/characters/${charId}`);
+for (const p of view.plans) await dm.call("POST", `/api/campaigns/${cid}/plans/unsubscribe`, { characterId: charId, planId: p.planId });
+let shopView = await player.call("GET", `/api/campaigns/${cid}/shop?characterId=${charId}`);
+check(shopView.district.key === "dogtown" && shopView.district.taxPercent === 15, "Without housing the character shops in Dogtown (15% tax)");
+const yipi = shopView.items.find((i) => i.name === "Yipi-9");
+check(yipi && yipi.price === 1500 && yipi.shopPrice === 1725 && yipi.category === "weapon" && yipi.meta.magazine === 6, `Yipi-9 listed at 1,500 ₭ → 1,725 ₭ with tax (magazine ${yipi?.meta.magazine})`);
+check(shopView.items.some((i) => i.category === "attachment") && shopView.items.some((i) => i.category === "ammo") && shopView.items.some((i) => i.category === "cyberware" && i.meta.shimmer === true), "Attachments, ammo and Shimmer fusions are on the shelves");
+const creditsAtShop = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
+if (creditsAtShop < 5000) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: 5000 - creditsAtShop, note: "e2e float" });
+const beforeBuy = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
+view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: yipi.id, quantity: 1 });
+check(view.character.credits === beforeBuy - 1725 && view.items.some((i) => i.definitionId === yipi.id), `Bought a Yipi-9: ${beforeBuy} → ${view.character.credits} ₭`);
+check((await status(() => claimer.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: yipi.id, quantity: 1 }))) === 403, "Another player cannot shop for your character (403)");
+const ammo9 = shopView.items.find((i) => i.name === "9mm magazine");
+view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: ammo9.id, quantity: 3 });
+const shop_stack = view.items.find((i) => i.definitionId === ammo9.id);
+check(shop_stack && shop_stack.quantity >= 3, `Ammo stacks (${shop_stack?.quantity} × 9mm magazine)`);
+const shop_dear = shopView.items.reduce((a, b) => (a.shopPrice > b.shopPrice ? a : b));
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: shop_dear.id, quantity: 1 }))) === 422, `Cannot afford ${shop_dear.name} (422)`);
+const shop_cheap = shopView.items.find((i) => i.name === "Red Dot Sight");
+await dm.call("PUT", `/api/campaigns/${cid}/items/${shop_cheap.id}`, { ...shop_cheap, stock: 1 });
+view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: shop_cheap.id, quantity: 1 });
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: shop_cheap.id, quantity: 1 }))) === 422, "Stock runs out (422 on the second Red Dot Sight)");
+await dm.call("PUT", `/api/campaigns/${cid}/items/${shop_cheap.id}`, { ...shop_cheap, stock: null });
+
+console.log("    Plans: subscriptions with effects, district tax, month-end billing");
+const planList = await player.call("GET", `/api/campaigns/${cid}/plans`);
+const isp = planList.find((p) => p.name === "Standard ISP");
+const fiber = planList.find((p) => p.name === "Fiber Network");
+const nfcFlat = planList.find((p) => p.name === "Small Apt NFC");
+check(isp && fiber && nfcFlat, "Handbook plans are listed (Standard ISP, Fiber Network, Small Apt NFC)");
+const hackingBefore = (await player.call("GET", `/api/characters/${charId}`)).derived.specialSkills.hacking.value;
+view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: isp.id });
+check(view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.hacking.value === hackingBefore + 1, `Standard ISP: Hacking ${hackingBefore} → ${view.derived.specialSkills.hacking.value}`);
+view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: fiber.id });
+check(!view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.hacking.value === hackingBefore + 2, "Fiber Network replaces the ISP (one connectivity plan at a time), Hacking +2");
+view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: nfcFlat.id });
+shopView = await player.call("GET", `/api/campaigns/${cid}/shop?characterId=${charId}`);
+check(shopView.district.key === "nfc" && shopView.items.find((i) => i.id === yipi.id).shopPrice === 2025, "Living in NFC raises the shop tax to 35% (Yipi-9 → 2,025 ₭)");
+const billPreview = await dm.call("GET", `/api/campaigns/${cid}/plans/bill`);
+const myBill = billPreview.find((b) => b.characterId === charId);
+const expectedPlans = fiber.monthlyCost + nfcFlat.monthlyCost;
+check(myBill && myBill.plans.reduce((s, p) => s + p.cost, 0) === expectedPlans && myBill.maintenance.length >= 1 && myBill.total === expectedPlans + myBill.maintenance.reduce((s, m) => s + m.cost, 0), `Bill preview: plans ${expectedPlans} + upkeep ${myBill?.maintenance.reduce((s, m) => s + m.cost, 0)} = ${myBill?.total} ₭`);
+check((await status(() => player.call("POST", `/api/campaigns/${cid}/plans/bill`, {}))) === 403, "Only the DM turns the month (403)");
+const creditsBeforeMonth = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
+if (creditsBeforeMonth < myBill.total) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: myBill.total - creditsBeforeMonth + 100, note: "e2e rent" });
+const shop_billed = await dm.call("POST", `/api/campaigns/${cid}/plans/bill`, {});
+const shop_mine = shop_billed.find((b) => b.characterId === charId);
+view = await player.call("GET", `/api/characters/${charId}`);
+check(shop_mine.paid === shop_mine.total && shop_mine.lapsed.length === 0 && view.character.credits === shop_mine.credits - shop_mine.total, `Month shop_billed: paid ${shop_mine.paid} ₭, ${view.character.credits} ₭ left`);
+await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: -(view.character.credits), note: "e2e shop_broke" });
+const shop_broke = (await dm.call("POST", `/api/campaigns/${cid}/plans/bill`, {})).find((b) => b.characterId === charId);
+check(shop_broke.lapsed.length === 2 && shop_broke.maintenanceUnpaid === true, `With no kamas both plans lapse and upkeep goes unpaid (${shop_broke.lapsed.join(", ")})`);
+view = await player.call("GET", `/api/characters/${charId}`);
+check(view.plans.length === 0 && view.conditions.some((c) => c.key === "cyberwareMalfunction"), "Lapsed plans are gone and the chrome malfunctions");
+await dm.call("DELETE", `/api/characters/${charId}/conditions/cyberwareMalfunction`);
+// Restore kamas and drop the purchases.
+await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: creditsAtShop, note: "e2e restore" });
+for (const i of view.items.filter((x) => [yipi.id, ammo9.id, shop_cheap.id].includes(x.definitionId))) await dm.call("POST", `/api/characters/${charId}/items/${i.id}/action`, { action: "drop" });
+view = await player.call("GET", `/api/characters/${charId}`);
+check(!view.conditions.some((c) => c.key === "cyberwareMalfunction") && !view.items.some((x) => x.definitionId === yipi.id), "Shop run cleaned up (no malfunction, purchases dropped)");
+
 console.log("    Mission kinds: main cannot be refused, personal is private, completed missions stay with the DM");
 for (const m of await dm.call("GET", `/api/campaigns/${cid}/missions`)) if (m.name.includes("(E2E)")) await dm.call("DELETE", `/api/campaigns/${cid}/missions/${m.id}`);
 const mainM = await dm.call("POST", `/api/campaigns/${cid}/missions`, { name: "Story Beat (E2E)", description: "Main line.", objectives: [{ id: "o1", text: "Go", done: false }], status: "active", assignedCharacterIds: [charId], visibleToPlayers: true });
@@ -707,7 +776,7 @@ const rollRes = await player.call("POST", `/api/campaigns/${cid}/rolls`, { chara
 check(rollRes.expression.replace(/\s/g, "") === "1d20+9" && rollRes.total >= 1 + 9 && rollRes.total <= 20 + 9, `Rolled ${rollRes.expression} = ${rollRes.total}`);
 
 console.log("15. The event history records what happened");
-const events = await dm.call("GET", `/api/campaigns/${cid}/events?limit=100`);
+const events = await dm.call("GET", `/api/campaigns/${cid}/events?limit=200`);
 const types = new Set(events.map((e) => e.type));
 for (const t of ["item.granted", "augmentation.installed", "hp.damage", "rule.applied", "override.set", "override.revoked", "encounter.started", "effect.expired", "condition.applied", "character.shared", "character.unshared"]) {
   check(types.has(t), `event log contains ${t}`);

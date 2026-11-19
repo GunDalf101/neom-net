@@ -1,6 +1,10 @@
 import {
   AUGMENTATION_SLOTS,
   DAMAGE_TYPES,
+  DISTRICTS,
+  DISTRICT_META,
+  PLAN_KINDS,
+  PLAN_KIND_META,
   EQUIPMENT_SLOTS,
   ITEM_CATEGORIES,
   RARITIES,
@@ -11,12 +15,21 @@ import {
   type ConditionDefinitionInput,
   type ItemDefinitionDto,
   type ItemDefinitionInput,
+  type PlanDefinitionDto,
+  type PlanDefinitionInput,
+  type PlanKind,
 } from "@neom/shared";
 import clsx from "clsx";
 import { useState } from "react";
 import {
   useAbilities,
+  useBillMonth,
+  useBillPreview,
   useConditionDefinitions,
+  useDeletePlan,
+  useImportCatalog,
+  usePlans,
+  useSavePlan,
   useDeleteAbility,
   useDeleteCondition,
   useDeleteItemDefinition,
@@ -29,9 +42,10 @@ import {
 import { InstantEffectListEditor, PassiveEffectListEditor, RequirementListEditor } from "@/components/editors/EffectEditors";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
+import { metaRows } from "@/lib/itemMeta";
 import { useDm } from "./DmShell";
 
-type Tab = "items" | "conditions" | "abilities";
+type Tab = "items" | "conditions" | "abilities" | "shop";
 
 export function WorkshopPage() {
   const [tab, setTab] = useState<Tab>("items");
@@ -43,6 +57,7 @@ export function WorkshopPage() {
             ["items", "Items & cyberware", "package"],
             ["conditions", "Conditions", "alert-triangle"],
             ["abilities", "Abilities", "zap"],
+            ["shop", "Shop & plans", "store"],
           ] as [Tab, string, string][]
         ).map(([id, label, icon]) => (
           <button key={id} className={clsx("hud-tab flex items-center gap-2", tab === id && "active danger")} onClick={() => setTab(id)}>
@@ -53,6 +68,7 @@ export function WorkshopPage() {
       {tab === "items" && <ItemsWorkshop />}
       {tab === "conditions" && <ConditionsWorkshop />}
       {tab === "abilities" && <AbilitiesWorkshop />}
+      {tab === "shop" && <ShopWorkshop />}
     </div>
   );
 }
@@ -81,6 +97,9 @@ const emptyItem = (): ItemDefinitionInput => ({
   ruleIds: [],
   tags: [],
   visibleToPlayers: true,
+  meta: {},
+  forSale: false,
+  stock: null,
 });
 
 function toItemInput(d: ItemDefinitionDto): ItemDefinitionInput {
@@ -183,6 +202,15 @@ function ItemsWorkshop() {
                   <option value="1">Yes</option>
                 </Select>
               </Field>
+              <Field label="In the shop" hint="Players buy it with kamas plus their district tax">
+                <Select value={form.forSale ? "1" : "0"} onChange={(e) => set("forSale", e.target.value === "1")}>
+                  <option value="0">Not listed</option>
+                  <option value="1">For sale</option>
+                </Select>
+              </Field>
+              <Field label="Stock (blank = unlimited)">
+                <Input type="number" min={0} value={form.stock ?? ""} onChange={(e) => set("stock", e.target.value === "" ? null : Number(e.target.value))} />
+              </Field>
               {form.category === "cyberware" ? (
                 <>
                   <Field label="Augmentation slot">
@@ -228,6 +256,17 @@ function ItemsWorkshop() {
             <Field label="Description">
               <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
             </Field>
+            {metaRows(form).length > 0 && (
+              <Section title="Catalog data (from the NEOM catalog; shown on cards)">
+                <div className="flex flex-wrap gap-1 text-xs">
+                  {metaRows(form).map(([k, v]) => (
+                    <Badge key={k} color="muted">
+                      {k}: {v}
+                    </Badge>
+                  ))}
+                </div>
+              </Section>
+            )}
             <Section title="Requirements">
               <RequirementListEditor value={form.requirements} onChange={(v) => set("requirements", v)} />
             </Section>
@@ -471,6 +510,160 @@ function AbilitiesWorkshop() {
           </form>
         </Panel>
       )}
+    </div>
+  );
+}
+
+// ---------- Shop & plans ----------
+
+const emptyPlan = (kind: PlanKind = "housing"): PlanDefinitionInput => ({ kind, name: "", description: "", district: kind === "housing" ? "dogtown" : null, monthlyCost: 0, purchasePrice: 0, effects: [], visibleToPlayers: true, sortOrder: 0 });
+
+function ShopWorkshop() {
+  const { campaign } = useDm();
+  const items = useItemDefinitions(campaign.id);
+  const plans = usePlans(campaign.id);
+  const savePlan = useSavePlan(campaign.id);
+  const delPlan = useDeletePlan(campaign.id);
+  const importCatalog = useImportCatalog(campaign.id);
+  const bill = useBillMonth(campaign.id);
+  const [kind, setKind] = useState<PlanKind>("housing");
+  const preview = useBillPreview(campaign.id, true);
+  const [editing, setEditing] = useState<PlanDefinitionDto | "new" | null>(null);
+  const [form, setForm] = useState<PlanDefinitionInput>(emptyPlan());
+  const open = (p: PlanDefinitionDto | "new") => {
+    setEditing(p);
+    setForm(p === "new" ? emptyPlan(kind) : { kind: p.kind, name: p.name, description: p.description, district: p.district, monthlyCost: p.monthlyCost, purchasePrice: p.purchasePrice, effects: p.effects, visibleToPlayers: p.visibleToPlayers, sortOrder: p.sortOrder });
+  };
+  const forSale = (items.data ?? []).filter((d) => d.forSale).length;
+  const meta = PLAN_KIND_META[kind];
+  const inKind = (plans.data ?? []).filter((p) => p.kind === kind);
+  const due = (preview.data ?? []).reduce((s, b) => s + b.total, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel title="Catalog" icon="store" color="amber">
+          <p className="text-xs text-muted">
+            The NEOM catalog (weapons, attachments, ammunition, augments, Shimmer fusions and the economy handbook's plans) ships with the app. Importing adds what is missing and refreshes stats and prices of what is already there, by name; items the players own keep their instances.
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <ConfirmButton size="sm" color="amber" variant="solid" label={forSale ? "Refresh NEOM catalog" : "Import NEOM catalog"} confirmLabel={forSale ? "Refresh by name?" : "Import now?"} disabled={importCatalog.isPending} onConfirm={() => importCatalog.mutate()} />
+            <span className="text-dim">
+              {forSale} item{forSale === 1 ? "" : "s"} for sale · {(plans.data ?? []).length} plans
+            </span>
+          </div>
+          <p className="mt-2 text-[0.65rem] text-dim">Prices in the shop carry the district tax of where each character lives: {DISTRICTS.map((d) => `${DISTRICT_META[d].name} ${DISTRICT_META[d].taxPercent}%`).join(" · ")}. Mark any workshop item "For sale" to put it on the shelves.</p>
+        </Panel>
+        <Panel title="Turn the month" icon="calendar-clock" color="crimson" actions={<Button size="xs" variant="ghost" icon="refresh-cw" onClick={() => preview.refetch()} aria-label="Refresh preview" />}>
+          <p className="text-xs text-muted">Every character pays their plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction.</p>
+          <table className="num mt-2 w-full text-[0.7rem]">
+            <tbody>
+              {(preview.data ?? []).map((b) => (
+                <tr key={b.characterId} className="border-b border-line/40 last:border-0">
+                  <td className="py-0.5 text-text">{b.characterName}</td>
+                  <td className="py-0.5 text-muted">{b.plans.length} plans · {b.maintenance.length} chrome</td>
+                  <td className={clsx("py-0.5 text-right", b.total > b.credits ? "text-crimson" : "text-amber")}>{b.total.toLocaleString()} ₭</td>
+                  <td className="py-0.5 text-right text-dim">of {b.credits.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-xs text-muted">Total due: <span className="num text-amber">{due.toLocaleString()} ₭</span></span>
+            <ConfirmButton size="sm" color="crimson" variant="solid" label="Advance one month" confirmLabel="Bill everyone now?" disabled={bill.isPending} onConfirm={() => bill.mutate()} />
+          </div>
+        </Panel>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
+        <Panel title="Plans" icon="receipt" color={meta.color} actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
+          <div className="mb-2 flex flex-wrap gap-1">
+            {PLAN_KINDS.map((k) => (
+              <button key={k} type="button" className={clsx("hud-tab !px-2 !py-1 !text-[0.55rem]", kind === k && "active")} style={kind === k ? { background: `var(--color-${PLAN_KIND_META[k].color})` } : { color: `var(--color-${PLAN_KIND_META[k].color})` }} onClick={() => setKind(k)}>
+                {PLAN_KIND_META[k].label} <span className="num opacity-70">{(plans.data ?? []).filter((p) => p.kind === k).length}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mb-2 text-[0.65rem] text-dim">{meta.blurb}</p>
+          {inKind.length === 0 && <Empty>No {meta.label.toLowerCase()} plans.</Empty>}
+          <div className="space-y-1">
+            {inKind.map((p) => (
+              <button key={p.id} type="button" onClick={() => open(p)} className={clsx("hud-panel flex w-full items-center gap-2 p-2 text-left text-xs", editing !== "new" && editing?.id === p.id && "lit")} style={{ ["--panel-accent" as string]: `var(--color-${meta.color})` }}>
+                <span className="min-w-0 flex-1 truncate text-text">{p.name}</span>
+                {p.district && <Badge color="muted">{DISTRICT_META[p.district].name}</Badge>}
+                {!p.visibleToPlayers && <Badge color="muted">hidden</Badge>}
+                <span className="num text-amber">{p.monthlyCost.toLocaleString()} ₭/mo</span>
+                {p.purchasePrice > 0 && <span className="num text-cyan">+{p.purchasePrice.toLocaleString()}</span>}
+              </button>
+            ))}
+          </div>
+        </Panel>
+        {editing && (
+          <Panel title={editing === "new" ? "New plan" : `Edit ${form.name}`} icon="hammer" color="crimson" actions={editing !== "new" ? <ConfirmButton size="xs" label="Delete" onConfirm={() => { delPlan.mutate(editing.id); setEditing(null); }} /> : null}>
+            <form
+              className="space-y-3"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await savePlan.mutateAsync({ id: editing === "new" ? undefined : editing.id, body: form });
+                setEditing(null);
+              }}
+            >
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Field label="Kind">
+                  <Select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as PlanKind, district: e.target.value === "housing" ? (form.district ?? "dogtown") : null })}>
+                    {PLAN_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {PLAN_KIND_META[k].label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Name" className="md:col-span-2">
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </Field>
+                <Field label="Monthly cost (₭)">
+                  <Input type="number" min={0} value={form.monthlyCost} onChange={(e) => setForm({ ...form, monthlyCost: Number(e.target.value) })} />
+                </Field>
+                <Field label="Paid once (₭)" hint="Vehicles: the purchase price">
+                  <Input type="number" min={0} value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: Number(e.target.value) })} />
+                </Field>
+                {form.kind === "housing" ? (
+                  <Field label="District" hint="Sets the tax on the tenant's purchases">
+                    <Select value={form.district ?? "dogtown"} onChange={(e) => setForm({ ...form, district: e.target.value as PlanDefinitionInput["district"] })}>
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>
+                          {DISTRICT_META[d].name} ({DISTRICT_META[d].taxPercent}%)
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                ) : (
+                  <Field label="Visible to players">
+                    <Select value={form.visibleToPlayers ? "1" : "0"} onChange={(e) => setForm({ ...form, visibleToPlayers: e.target.value === "1" })}>
+                      <option value="1">Yes</option>
+                      <option value="0">No (DM only)</option>
+                    </Select>
+                  </Field>
+                )}
+              </div>
+              <Field label="Description">
+                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              </Field>
+              <Section title="Effects while subscribed (Hacking bonus, traits…)">
+                <PassiveEffectListEditor value={form.effects} onChange={(v) => setForm({ ...form, effects: v })} />
+              </Section>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setEditing(null)}>
+                  Close
+                </Button>
+                <Button type="submit" variant="solid" color="crimson" icon="save" disabled={savePlan.isPending}>
+                  Save plan
+                </Button>
+              </div>
+            </form>
+          </Panel>
+        )}
+      </div>
     </div>
   );
 }

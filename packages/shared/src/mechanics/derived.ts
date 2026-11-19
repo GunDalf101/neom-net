@@ -22,6 +22,7 @@ export type EffectSourceKind =
   | "item"
   | "augmentation"
   | "condition"
+  | "plan"
   | "temporary"
   | "ability"
   | "campaign";

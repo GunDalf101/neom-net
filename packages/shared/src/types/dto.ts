@@ -4,11 +4,13 @@ import type {
   AugmentationSlot,
   AutomationMode,
   DamageType,
+  District,
   EncyclopediaKind,
   EquipmentSlot,
   ItemCategory,
   ItemStatus,
   MissionKind,
+  PlanKind,
   Rarity,
   RollCategory,
   RollVisibility,
@@ -128,8 +130,55 @@ export interface ItemDefinitionDto {
   ruleIds: string[];
   tags: string[];
   visibleToPlayers: boolean;
+  /** Catalog data for cards: weaponClass, ammoType, rangeFt, fireMode, magazine, attachmentSlots, slotTypes, attachmentType, compatTags, permanentStrain, shimmer… */
+  meta: Record<string, unknown>;
+  forSale: boolean;
+  stock: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PlanDefinitionDto {
+  id: string;
+  campaignId: string;
+  kind: PlanKind;
+  name: string;
+  description: string;
+  district: District | null;
+  monthlyCost: number;
+  purchasePrice: number;
+  effects: PassiveEffect[];
+  visibleToPlayers: boolean;
+  sortOrder: number;
+}
+
+export interface CharacterPlanDto {
+  id: string;
+  planId: string;
+  plan: PlanDefinitionDto;
+  startedAt: string;
+}
+
+/** The storefront as one character sees it: prices already carry their district tax. */
+export interface ShopDto {
+  district: { key: District; name: string; taxPercent: number };
+  items: (ItemDefinitionDto & { shopPrice: number })[];
+}
+
+/** What one character owes at the turn of the month. */
+export interface MonthlyBillDto {
+  characterId: string;
+  characterName: string;
+  credits: number;
+  plans: { planId: string; name: string; kind: PlanKind; cost: number }[];
+  maintenance: { itemId: string; name: string; rarity: Rarity; cost: number }[];
+  total: number;
+}
+
+export interface MonthlyBillResultDto extends MonthlyBillDto {
+  paid: number;
+  lapsed: string[];
+  maintenanceUnpaid: boolean;
 }
 
 export interface ItemInstanceDto {
@@ -212,6 +261,8 @@ export interface CharacterView {
   activeEffects: ActiveEffectDto[];
   overrides: OverrideDto[];
   abilities: AbilityDto[];
+  /** Subscriptions held (housing, food, transport, connectivity, antivirus). */
+  plans: CharacterPlanDto[];
   /** Active share-link token (`/s/<token>`); only sent to the owner and the DM. */
   shareToken: string | null;
   /** Single-use hand-off token; only the DM receives it. */

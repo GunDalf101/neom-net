@@ -58,6 +58,9 @@ function definitionData(input: ItemDefinitionInput) {
     ruleIds: input.ruleIds,
     tags: input.tags,
     visibleToPlayers: input.visibleToPlayers,
+    meta: input.meta as Prisma.InputJsonValue,
+    forSale: input.forSale,
+    stock: input.stock,
   };
 }
 
