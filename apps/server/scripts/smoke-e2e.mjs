@@ -725,6 +725,13 @@ for (const e of encounters.filter((x) => x.status === "active")) {
 enc = await dm.call("POST", `/api/campaigns/${cid}/encounters/${enc.id}/action`, { action: "rollInitiative" });
 enc = await dm.call("POST", `/api/campaigns/${cid}/encounters/${enc.id}/action`, { action: "start" });
 check(enc.status === "active" && enc.round === 1, "Encounter active, round 1");
+{
+  const lockPlan = (await player.call("GET", `/api/campaigns/${cid}/plans`)).find((p) => p.name === "Public Network");
+  check((await status(() => player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: lockPlan.id }))) === 403, "Players cannot change plans while the session is live (403)");
+  const asDm = await dm.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: lockPlan.id });
+  check(asDm.plans.some((p) => p.planId === lockPlan.id), "The DM still can");
+  await dm.call("POST", `/api/campaigns/${cid}/plans/unsubscribe`, { characterId: charId, planId: lockPlan.id });
+}
 const playerEnc = await player.call("GET", `/api/campaigns/${cid}/encounters/${enc.id}`);
 check(playerEnc.participants.every((p) => !p.isNpc || p.hpMax === 2), "Player sees NPC health only as a coarse state");
 

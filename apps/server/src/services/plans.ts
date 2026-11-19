@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign } from "../realtime/io.js";
+import { getActiveSession } from "./campaigns.js";
 import { SYSTEM_ACTOR, applyCondition, buildView, loadCampaignFull, loadFull, type FullCharacter } from "./characters.js";
 import { logEvent } from "./events.js";
 import { toPlanDto } from "./mappers.js";
@@ -49,6 +50,8 @@ async function resolveCharacter(campaignId: string, actor: { userId: string; isD
   const full = await loadFull(characterId);
   if (full.campaignId !== campaignId) throw notFound("Character");
   if (!actor.isDm && full.ownerUserId !== actor.userId) throw forbidden("You can only manage your own character's plans");
+  // Plans are downtime business: once the DM starts a live session they are locked for players until it ends.
+  if (!actor.isDm && (await getActiveSession(campaignId))) throw forbidden("Plans are locked while the session is live. Change them between sessions.");
   return full;
 }
 

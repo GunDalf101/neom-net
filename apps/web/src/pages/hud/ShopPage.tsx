@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
+import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
 import { Link } from "react-router-dom";
 import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
@@ -330,8 +330,11 @@ function AddItemsModal({ open, onClose, campaignId }: { open: boolean; onClose: 
 
 function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignId: string; isDm: boolean }) {
   const plans = usePlans(campaignId);
+  const session = useSession(campaignId);
   const subscribe = useSubscribePlan(campaignId);
   const unsubscribe = useUnsubscribePlan(campaignId);
+  // Downtime only: players cannot touch plans while the DM's session is live.
+  const locked = !isDm && Boolean(session.data);
   const held = new Map(view.plans.map((p) => [p.plan.kind, p]));
   const upkeep = view.items.filter((i) => i.installedSlot).map((i) => ({ name: i.customName ?? i.definition.name, cost: CYBERWARE_MAINTENANCE[i.definition.rarity] }));
   const planTotal = view.plans.reduce((s, p) => s + p.plan.monthlyCost, 0);
@@ -346,6 +349,11 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_300px]" data-testid="plans">
       <div className="space-y-3">
+        {locked && (
+          <div className="flex items-center gap-2 border border-amber/50 bg-amber/5 px-3 py-2 text-xs text-amber" data-testid="plans-locked">
+            <Icon name="lock" size={13} /> Session in progress: plans are locked until the DM ends it. You can still browse.
+          </div>
+        )}
         {plans.isLoading && <Spinner />}
         {!plans.isLoading && (plans.data ?? []).length === 0 && <Empty icon="receipt">{isDm ? "No plans yet: import the NEOM catalog or add plans in the workshop." : "No plans on offer yet."}</Empty>}
         {PLAN_KINDS.map((k) => {
@@ -363,7 +371,7 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
               </div>
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {group.map((p) => (
-                  <PlanCard key={p.id} plan={p} color={m.color} current={current?.planId === p.id} canAfford={view.character.credits >= p.purchasePrice} busy={subscribe.isPending || unsubscribe.isPending} onSubscribe={() => subscribe.mutate({ characterId: view.character.id, planId: p.id })} onCancel={() => unsubscribe.mutate({ characterId: view.character.id, planId: p.id })} />
+                  <PlanCard key={p.id} plan={p} color={m.color} current={current?.planId === p.id} canAfford={view.character.credits >= p.purchasePrice} busy={locked || subscribe.isPending || unsubscribe.isPending} onSubscribe={() => subscribe.mutate({ characterId: view.character.id, planId: p.id })} onCancel={() => unsubscribe.mutate({ characterId: view.character.id, planId: p.id })} />
                 ))}
               </div>
             </section>
