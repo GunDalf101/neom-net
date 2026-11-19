@@ -580,7 +580,7 @@
   {
    "name": "Tactical Knife",
    "rarity": "common",
-   "price": 700,
+   "price": 500,
    "weight": 1,
    "description": "Standard combat knife. Melee / no magazine: fixed listed damage.",
    "damage": "1d4 slashing",
@@ -612,7 +612,7 @@
   {
    "name": "Shock Baton",
    "rarity": "common",
-   "price": 1100,
+   "price": 800,
    "weight": 1,
    "description": "Stun-capable baton. Melee / no magazine: fixed listed damage.",
    "damage": "1d6 bludgeoning + 1d4 lightning",
@@ -644,7 +644,7 @@
   {
    "name": "Thermal Dagger",
    "rarity": "uncommon",
-   "price": 2400,
+   "price": 1500,
    "weight": 1,
    "description": "Heated mono-edge dagger. Melee / no magazine: fixed listed damage.",
    "damage": "1d8 piercing + 1d4 fire",
@@ -679,7 +679,7 @@
   {
    "name": "Kinetic Blade",
    "rarity": "rare",
-   "price": 6500,
+   "price": 2400,
    "weight": 1,
    "description": "Vibration-assisted blade. Melee / no magazine: fixed listed damage.",
    "damage": "1d12 slashing",
@@ -2322,7 +2322,7 @@
    "rarity": "rare",
    "price": 500,
    "weight": 0.3,
-   "description": "Weapon-specific. 2d6 lightning dmg, enemy cyberware disabled 1 round Priced at ×5 of a 100 K standard magazine; the DM may adjust.",
+   "description": "Weapon-specific. 1d6 lightning dmg, enemy cyberware disabled 1 round Priced at ×5 of a 100 K standard magazine; the DM may adjust.",
    "icon": "circle-dot",
    "tags": [
     "ammo",
@@ -2340,7 +2340,7 @@
    "rarity": "rare",
    "price": 1000,
    "weight": 0.3,
-   "description": "Weapon-specific. 2d10 poison dmg , enemy get poison stack for 1min Priced at ×10 of a 100 K standard magazine; the DM may adjust.",
+   "description": "Weapon-specific. 1d8 poison dmg , enemy get poison stack for 1min Priced at ×10 of a 100 K standard magazine; the DM may adjust.",
    "icon": "circle-dot",
    "tags": [
     "ammo",
