@@ -79,10 +79,13 @@ augments = []
 for sheet, shimmer in (("Normal Augments", False), ("Shimmer Fused", True)):
     for r in rows(sheet, A):
         name = r["Augment"]; text = r["D&D Effect / Description"]
+        # House rule: a Shimmer fusion costs twice the strain of a normal augment of the same tier (5 / 10 / 20 → 10 / 20 / 40).
+        base_strain = {"common": 5, "uncommon": 10, "rare": 20, "veryRare": 40, "legendary": 80}[tier[r["Tier"]]]
+        strain = base_strain * 2 if shimmer else num(r["Permanent Cyberpsychosis Strain"])
         aug = {"name": name, "slot": SLOT[r["Body Slot"]], "rarity": tier[r["Tier"]], "price": num(r["Price (Kamas)"]), "weight": 0.5,
-               "description": text, "capacityCost": num(r["Permanent Cyberpsychosis Strain"]), "icon": "cpu" if not shimmer else "sparkles",
+               "description": text, "capacityCost": strain, "icon": "cpu" if not shimmer else "sparkles",
                "tags": ["augment", "shimmer" if shimmer else "standard", r["Primary Stat"]],
-               "meta": {"primaryStat": r["Primary Stat"], "bonus": str(r["Bonus"]), "permanentStrain": num(r["Permanent Cyberpsychosis Strain"]), "activationStrain": num(r["Activation Strain"]) or 0, "shimmer": shimmer,
+               "meta": {"primaryStat": r["Primary Stat"], "bonus": str(r["Bonus"]), "permanentStrain": strain, "activationStrain": num(r["Activation Strain"]) or 0, "shimmer": shimmer,
                         **({"maxHpPenalty": num(r["Maximum HP Penalty"]), "penalty": r["Additional Penalty (non-HP)"]} if shimmer else {})},
                "effects": parse_effects(name, r["Bonus"], text)}
         augments.append(aug)

@@ -41,10 +41,9 @@ interface Catalog {
   reference: { missionPayouts: string[][]; gangTreasury: string[][] };
 }
 
-let cached: Catalog | null = null;
+/** Read fresh on every import (rare), so a regenerated catalog never needs a restart. */
 export function loadCatalog(): Catalog {
-  if (!cached) cached = JSON.parse(readFileSync(new URL("./neom-catalog.json", import.meta.url), "utf8")) as Catalog;
-  return cached;
+  return JSON.parse(readFileSync(new URL("./neom-catalog.json", import.meta.url), "utf8")) as Catalog;
 }
 
 type ItemRow = Omit<Prisma.ItemDefinitionUncheckedCreateInput, "campaignId" | "id">;

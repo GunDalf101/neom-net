@@ -370,6 +370,8 @@ let shopView = await player.call("GET", `/api/campaigns/${cid}/shop`);
 const yipi = shopView.items.find((i) => i.name === "Yipi-9");
 check(yipi && yipi.price === 1500 && yipi.category === "weapon" && yipi.meta.magazine === 6, `Yipi-9 listed at its sheet price, 1,500 ₭ (magazine ${yipi?.meta.magazine})`);
 check(shopView.items.some((i) => i.category === "attachment") && shopView.items.some((i) => i.category === "ammo") && shopView.items.some((i) => i.category === "cyberware" && i.meta.shimmer === true), "Attachments, ammo and Shimmer fusions are on the shelves");
+const shimmerStrain = shopView.items.filter((i) => i.category === "cyberware" && i.meta.shimmer === true).map((i) => `${i.rarity}:${i.capacityCost}`);
+check(shimmerStrain.every((x) => x === "uncommon:20" || x === "rare:40") && shopView.items.some((i) => i.name === "Combat Predictor" && i.capacityCost === 20), "Shimmer fusions cost twice the strain of a normal augment of their tier (uncommon 20, rare 40)");
 const creditsAtShop = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
 if (creditsAtShop < 5000) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: 5000 - creditsAtShop, note: "e2e float" });
 const beforeBuy = (await player.call("GET", `/api/characters/${charId}`)).character.credits;

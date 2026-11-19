@@ -3810,7 +3810,7 @@
    "price": 7000,
    "weight": 0.5,
    "description": "Your Hacking checks gain +5. Once per short rest, take a restricted second action. DOWNSIDE: maximum HP -45; -2 to INT checks while below half HP; psychic damage you deal is reduced by one die size; disadvantage on Wisdom saves; using the extra action deals 1d6 psychic damage to you.",
-   "capacityCost": 60,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -3820,7 +3820,7 @@
    "meta": {
     "primaryStat": "INT",
     "bonus": "5",
-    "permanentStrain": 60,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 45,
@@ -3854,7 +3854,7 @@
    "price": 7250,
    "weight": 0.5,
    "description": "Gain +5 to ranged attack rolls and see invisible creatures within 10 feet. DOWNSIDE: maximum HP -40; -2 to Dexterity saves; disadvantage on Perception checks in bright light; bright flashes can blind you until the end of your next turn unless you pass a DC 15 Constitution save.",
-   "capacityCost": 60,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -3864,7 +3864,7 @@
    "meta": {
     "primaryStat": "DEX",
     "bonus": "5",
-    "permanentStrain": 60,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 40,
@@ -3899,7 +3899,7 @@
    "price": 7500,
    "weight": 0.5,
    "description": "Gain +5 to Perception and cannot be surprised while conscious; once per short rest, use a reaction to impose disadvantage on an attack by a creature you can hear. DOWNSIDE: maximum HP -35; thunder damage taken is doubled, but your own thunder damage is halved.",
-   "capacityCost": 55,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -3909,7 +3909,7 @@
    "meta": {
     "primaryStat": "WIS",
     "bonus": "5",
-    "permanentStrain": 55,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 35,
@@ -3944,7 +3944,7 @@
    "price": 7750,
    "weight": 0.5,
    "description": "Once per short rest, emit a 30-foot cone; creatures make a Wisdom save or become frightened for 1 minute, repeating the save at end of each turn. DOWNSIDE: maximum HP -40; -2 to Charisma checks; thunder damage you deal is reduced by one die size; you cannot whisper.",
-   "capacityCost": 60,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -3954,7 +3954,7 @@
    "meta": {
     "primaryStat": "CHA",
     "bonus": "5",
-    "permanentStrain": 60,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 40,
@@ -3982,7 +3982,7 @@
    "price": 8000,
    "weight": 0.5,
    "description": "Your unarmed strikes deal 1d12 slashing damage, gain +5 to attack rolls, count as enhanced weapons, and deal +1d8 necrotic damage once per turn. DOWNSIDE: maximum HP -45; disadvantage on Sleight of Hand; ranged weapon damage is reduced by 2.",
-   "capacityCost": 65,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -3992,7 +3992,7 @@
    "meta": {
     "primaryStat": "STR",
     "bonus": "5",
-    "permanentStrain": 65,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 45,
@@ -4026,7 +4026,7 @@
    "price": 8250,
    "weight": 0.5,
    "description": "Gain +5 Athletics, count as two sizes larger for lifting, pushing, and grappling, and deal +1d8 melee damage. DOWNSIDE: maximum HP -50; speed -10 feet; -2 to Dexterity saves; -2 to ranged weapon attack rolls.",
-   "capacityCost": 65,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4036,7 +4036,7 @@
    "meta": {
     "primaryStat": "STR",
     "bonus": "5",
-    "permanentStrain": 65,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 50,
@@ -4085,7 +4085,7 @@
    "price": 8500,
    "weight": 0.5,
    "description": "While not wearing heavy armor, gain +4 AC, resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks, and advantage on Constitution saves. DOWNSIDE: maximum HP -75; speed -10 feet; -2 to Dexterity saves; vulnerability to lightning damage. AC bonus does not stack with other torso plating.",
-   "capacityCost": 75,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4095,7 +4095,7 @@
    "meta": {
     "primaryStat": "CON",
     "bonus": "5",
-    "permanentStrain": 75,
+    "permanentStrain": 40,
     "activationStrain": 4,
     "shimmer": true,
     "maxHpPenalty": 75,
@@ -4160,7 +4160,7 @@
    "price": 8750,
    "weight": 0.5,
    "description": "Gain a flying speed of 40 feet, can hover, and gain +5 to Dexterity saves. DOWNSIDE: maximum HP -45; ground speed -10 feet; -2 to Strength checks; when hit by lightning damage, your flight shuts down and you are stunned until the end of your next turn.",
-   "capacityCost": 65,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4170,7 +4170,7 @@
    "meta": {
     "primaryStat": "DEX",
     "bonus": "5",
-    "permanentStrain": 65,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 45,
@@ -4212,7 +4212,7 @@
    "price": 9000,
    "weight": 0.5,
    "description": "As a bonus action, teleport up to 30 feet to a space you can see three times per short rest; your next attack that turn has advantage. DOWNSIDE: maximum HP -45; each teleport deals 1d4 force damage to you; after the third use before resting, gain one level of exhaustion.",
-   "capacityCost": 65,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4222,7 +4222,7 @@
    "meta": {
     "primaryStat": "DEX",
     "bonus": "5",
-    "permanentStrain": 65,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 45,
@@ -4250,7 +4250,7 @@
    "price": 7000,
    "weight": 0.5,
    "description": "You cannot be knocked prone while conscious, gain +5 to resist forced movement, and can walk on vertical metal surfaces. DOWNSIDE: maximum HP -40; speed -15 feet; -5 to swimming checks; you cannot benefit from the Dash action.",
-   "capacityCost": 60,
+   "capacityCost": 40,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4260,7 +4260,7 @@
    "meta": {
     "primaryStat": "STR",
     "bonus": "5",
-    "permanentStrain": 60,
+    "permanentStrain": 40,
     "activationStrain": 3,
     "shimmer": true,
     "maxHpPenalty": 40,
@@ -4295,7 +4295,7 @@
    "price": 4500,
    "weight": 0.5,
    "description": "Gain +4 to Hacking checks and advantage on initiative rolls. Once per long rest, treat one failed Intelligence check as a 20. DOWNSIDE: maximum HP -25; -2 to Wisdom saves; after each long rest, roll a d20; on 1-4, gain one level of exhaustion.",
-   "capacityCost": 40,
+   "capacityCost": 20,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4305,7 +4305,7 @@
    "meta": {
     "primaryStat": "INT",
     "bonus": "4",
-    "permanentStrain": 40,
+    "permanentStrain": 20,
     "activationStrain": 2,
     "shimmer": true,
     "maxHpPenalty": 25,
@@ -4353,7 +4353,7 @@
    "price": 4900,
    "weight": 0.5,
    "description": "Gain +4 to Dexterity saves and ignore difficult terrain. DOWNSIDE: maximum HP -25; -2 to Constitution saves; you cannot gain temporary HP.",
-   "capacityCost": 40,
+   "capacityCost": 20,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4363,7 +4363,7 @@
    "meta": {
     "primaryStat": "DEX",
     "bonus": "4",
-    "permanentStrain": 40,
+    "permanentStrain": 20,
     "activationStrain": 2,
     "shimmer": true,
     "maxHpPenalty": 25,
@@ -4405,7 +4405,7 @@
    "price": 5300,
    "weight": 0.5,
    "description": "Speed +20 feet, +4 Acrobatics, and opportunity attacks against you have disadvantage after you move at least 10 feet on your turn. DOWNSIDE: maximum HP -30; -2 to Strength checks; if you end your turn without moving at least 10 feet, take 1d6 force damage.",
-   "capacityCost": 45,
+   "capacityCost": 20,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4415,7 +4415,7 @@
    "meta": {
     "primaryStat": "DEX",
     "bonus": "4",
-    "permanentStrain": 45,
+    "permanentStrain": 20,
     "activationStrain": 2,
     "shimmer": true,
     "maxHpPenalty": 30,
@@ -4457,7 +4457,7 @@
    "price": 5700,
    "weight": 0.5,
    "description": "Gain +4 Athletics and +1d8 melee damage. When reduced below half HP, gain advantage on melee attacks for 1 minute. DOWNSIDE: maximum HP -35; -2 to Wisdom saves; while the feature is active, you cannot willingly move away from a hostile creature you can see.",
-   "capacityCost": 50,
+   "capacityCost": 20,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4467,7 +4467,7 @@
    "meta": {
     "primaryStat": "STR",
     "bonus": "4",
-    "permanentStrain": 50,
+    "permanentStrain": 20,
     "activationStrain": 2,
     "shimmer": true,
     "maxHpPenalty": 35,
@@ -4509,7 +4509,7 @@
    "price": 6100,
    "weight": 0.5,
    "description": "While not wearing heavy armor, gain +3 AC and resistance to one damage type chosen at installation. DOWNSIDE: maximum HP -40; healing received is halved; -2 to Dexterity saves; attacks against you score a critical hit on a roll of 19-20.",
-   "capacityCost": 50,
+   "capacityCost": 20,
    "icon": "sparkles",
    "tags": [
     "augment",
@@ -4519,7 +4519,7 @@
    "meta": {
     "primaryStat": "CON",
     "bonus": "4",
-    "permanentStrain": 50,
+    "permanentStrain": 20,
     "activationStrain": 2,
     "shimmer": true,
     "maxHpPenalty": 40,
