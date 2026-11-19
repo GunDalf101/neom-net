@@ -380,6 +380,19 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
         })}
       </div>
       <aside className="hud-panel h-fit p-3 text-xs" style={{ ["--panel-accent" as string]: "var(--color-amber)" }} data-testid="plans-outlook">
+        <div className="hud-title mb-2 text-amber">Accounts</div>
+        <div className="mb-2 grid grid-cols-2 gap-2" data-testid="accounts">
+          <div className="border border-amber/50 bg-bg-0/60 px-2 py-1.5">
+            <div className="text-[0.55rem] uppercase tracking-wider text-muted">Balance</div>
+            <div className="num text-[1.05rem] font-bold text-amber">{view.character.credits.toLocaleString()} ₭</div>
+            <div className="text-[0.55rem] text-dim">spendable</div>
+          </div>
+          <div className="border border-cyan/40 bg-bg-0/60 px-2 py-1.5">
+            <div className="text-[0.55rem] uppercase tracking-wider text-muted">Savings</div>
+            <div className="num text-[1.05rem] font-bold text-cyan">{view.character.savings.toLocaleString()} ₭</div>
+            <div className="text-[0.55rem] text-dim">banked at session end</div>
+          </div>
+        </div>
         <div className="hud-title mb-2 text-amber">Monthly outlook</div>
         <div className="mb-2 border-b border-line/60 pb-2" data-testid="payday">
           <div className="flex justify-between gap-2">
@@ -422,7 +435,7 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
           <span className={clsx("num", balanceAfter < 0 ? "text-crimson" : "text-text")}>{balanceAfter.toLocaleString()} ₭</span>
         </div>
         <div className="mt-1 text-[0.65rem] text-dim">
-          The DM turns the month: salary lands first (taxed where you live), then plans and upkeep are collected. Plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning.
+          The DM turns the month: salary lands in your balance first (taxed where you live), then plans and upkeep are collected from it. Plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning. When a session ends, whatever balance is left is banked into savings.
         </div>
       </aside>
     </div>

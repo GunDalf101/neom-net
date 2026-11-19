@@ -52,7 +52,7 @@ export async function grantResource(campaignId: string, dmUserId: string, input:
     type: `resource.${verb}`,
     actorUserId: dmUserId,
     characterId: full.id,
-    summary: `DM ${verb} ${Math.abs(input.amount)} ${field === "progressionPoints" ? "progression points" : field.toUpperCase() === "XP" ? "XP" : field} ${input.amount >= 0 ? "to" : "from"} ${full.name}${input.note ? ` — ${input.note}` : ""}`,
+    summary: `DM ${verb} ${Math.abs(input.amount)} ${field === "progressionPoints" ? "progression points" : field === "savings" ? "₭ of savings" : field.toUpperCase() === "XP" ? "XP" : field} ${input.amount >= 0 ? "to" : "from"} ${full.name}${input.note ? ` — ${input.note}` : ""}`,
     payload: { resource: field, amount: input.amount, before: current, after: next },
   });
   emitCharacterUpdated(campaignId, full.id);

@@ -495,7 +495,7 @@ export function useDmGrant(cid: string) {
   const qc = useQueryClient();
   return useMutation(
     withToast({
-      mutationFn: (body: { characterId: string; resource: "xp" | "progressionPoints" | "credits" | "inspiration"; amount: number; note?: string }) => api.post(`/campaigns/${cid}/dm/grant`, body),
+      mutationFn: (body: { characterId: string; resource: "xp" | "progressionPoints" | "credits" | "savings" | "inspiration"; amount: number; note?: string }) => api.post(`/campaigns/${cid}/dm/grant`, body),
       onSuccess: (_d, v) => {
         qc.invalidateQueries({ queryKey: qk.character(v.characterId) });
         qc.invalidateQueries({ queryKey: qk.dashboard(cid) });

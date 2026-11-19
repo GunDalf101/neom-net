@@ -75,6 +75,7 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     adjustments: obj<Record<string, number>>(c.adjustments, {}),
     abilityIds: arr<string>(c.abilityIds),
     salary: c.salary,
+    savings: c.savings,
     version: c.version,
     createdAt: iso(c.createdAt),
     updatedAt: iso(c.updatedAt),

@@ -103,6 +103,8 @@ export interface CharacterCore {
   abilityIds: string[];
   /** Monthly salary in kamas (gross); the district tax is withheld when the month turns. */
   salary: number;
+  /** Savings account: swept from the balance when a session ends. Not spendable in the shop. */
+  savings: number;
   version: number;
   createdAt: string;
   updatedAt: string;

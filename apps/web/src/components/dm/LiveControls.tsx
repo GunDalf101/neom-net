@@ -218,7 +218,7 @@ function GrantTab({ campaignId, view }: { campaignId: string; view: NonNullable<
   const giveItem = useGrantItem(campaignId);
   const abilities = useAbilities(campaignId);
   const update = useUpdateCharacter(characterId);
-  const [resource, setResource] = useState<"xp" | "progressionPoints" | "credits" | "inspiration">("xp");
+  const [resource, setResource] = useState<"xp" | "progressionPoints" | "credits" | "savings" | "inspiration">("xp");
   const [amount, setAmount] = useState(100);
   const [note, setNote] = useState("");
   const [defId, setDefId] = useState("");
@@ -232,7 +232,8 @@ function GrantTab({ campaignId, view }: { campaignId: string; view: NonNullable<
           <Select value={resource} onChange={(e) => setResource(e.target.value as typeof resource)} className="!w-40">
             <option value="xp">Experience</option>
             <option value="progressionPoints">Progression points</option>
-            <option value="credits">Kamas</option>
+            <option value="credits">Kamas (balance)</option>
+            <option value="savings">Savings</option>
             <option value="inspiration">Inspiration</option>
           </Select>
         </Field>

@@ -166,6 +166,8 @@ model Character {
   progressionPoints Int    @default(0)
   /// Monthly salary in kamas, paid net of the district tax when the DM turns the month. DM sets it.
   salary           Int     @default(3000)
+  /// Savings account: the balance left when a session ends is swept here. Shopping and bills use `credits` (the balance).
+  savings          Int     @default(0)
   /// Flat DM adjustments keyed by stat target (`skill.athletics`: 2). Shown as a "DM adjustment" breakdown line.
   adjustments      Json    @default("{}")
   /// Abilities the DM granted directly (AbilityDefinition ids); items and conditions can grant more through effects.

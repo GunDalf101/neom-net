@@ -3,7 +3,7 @@ import type { CampaignDto, CampaignSummaryDto, CreateCampaignInput, LiveSessionD
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { badRequest, notFound } from "../errors.js";
-import { emitToCampaign, onlineUserIds } from "../realtime/io.js";
+import { emitCharacterUpdated, emitToCampaign, onlineUserIds } from "../realtime/io.js";
 import { campaignSettings, requireDm, requireMember } from "./access.js";
 import { logEvent } from "./events.js";
 import { toSessionDto } from "./mappers.js";
@@ -156,7 +156,25 @@ export async function startSession(campaignId: string, userId: string): Promise<
 
 export async function endSession(campaignId: string, userId: string): Promise<void> {
   await requireDm(campaignId, userId);
-  await prisma.liveSession.updateMany({ where: { campaignId, endedAt: null }, data: { endedAt: new Date() } });
+  const closed = await prisma.liveSession.updateMany({ where: { campaignId, endedAt: null }, data: { endedAt: new Date() } });
   await logEvent({ campaignId, type: "session.ended", actorUserId: userId, summary: "Live session ended" });
   emitToCampaign(campaignId, "session.updated", { campaignId, session: null });
+  // House rule: whatever balance a runner still holds when the session ends goes into their savings account.
+  if (closed.count > 0) {
+    const chars = await prisma.character.findMany({ where: { campaignId, credits: { gt: 0 } }, select: { id: true, name: true, credits: true, savings: true, ownerUserId: true } });
+    for (const c of chars) {
+      await prisma.character.update({ where: { id: c.id }, data: { savings: { increment: c.credits }, credits: 0, version: { increment: 1 } } });
+      await logEvent({
+        campaignId,
+        type: "savings.deposit",
+        actorUserId: userId,
+        characterId: c.id,
+        summary: `${c.name} banked ${c.credits.toLocaleString()} ₭ at the end of the session (savings ${(c.savings + c.credits).toLocaleString()} ₭)`,
+        payload: { amount: c.credits, savingsAfter: c.savings + c.credits },
+        visibility: "owner",
+        ownerUserId: c.ownerUserId,
+      });
+      emitCharacterUpdated(campaignId, c.id);
+    }
+  }
 }
