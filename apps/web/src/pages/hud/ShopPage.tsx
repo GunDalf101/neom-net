@@ -1,10 +1,11 @@
 import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, describePassiveEffect, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useBuy, useImportCatalog, usePlans, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
-import { Badge, Button, ConfirmButton, Empty, Icon, Input, Spinner } from "@/components/ui";
+import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
+import { Link } from "react-router-dom";
+import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
-import { SHELF_META, SHELF_ORDER, metaRows, shelfOf } from "@/lib/itemMeta";
+import { SHELF_META, SHELF_ORDER, metaRows, shelfOf, toItemInput } from "@/lib/itemMeta";
 import { useHud } from "./HudShell";
 
 type ShopItem = ItemDefinitionDto & { shopPrice: number };
@@ -17,6 +18,7 @@ export function ShopPage() {
   const [shelf, setShelf] = useState<string>("weapon");
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const items = shop.data?.items ?? [];
   const shelves = useMemo(() => SHELF_ORDER.filter((s) => items.some((i) => shelfOf(i) === s)), [items]);
   const active = shelves.includes(shelf) ? shelf : shelf === "plans" ? "plans" : (shelves[0] ?? "plans");
@@ -40,9 +42,15 @@ export function ShopPage() {
           <span className="text-[0.6rem] uppercase tracking-wider text-muted">kamas</span>
         </span>
         {isDm && (
-          <ConfirmButton size="xs" color="amber" variant="outline" label={items.length ? "Refresh NEOM catalog" : "Import NEOM catalog"} confirmLabel={items.length ? "Refresh prices & stats?" : "Import 150+ items?"} disabled={importCatalog.isPending} onConfirm={() => importCatalog.mutate()} />
+          <span className="flex flex-wrap items-center gap-1" data-testid="shop-dm-tools">
+            <Button size="xs" color="amber" icon="plus" onClick={() => setAdding(true)}>
+              Add items
+            </Button>
+            <ConfirmButton size="xs" color="amber" variant="outline" label={items.length ? "Refresh NEOM catalog" : "Import NEOM catalog"} confirmLabel={items.length ? "Refresh prices & stats?" : "Import 150+ items?"} disabled={importCatalog.isPending} onConfirm={() => importCatalog.mutate()} />
+          </span>
         )}
       </section>
+      {isDm && <AddItemsModal open={adding} onClose={() => setAdding(false)} campaignId={campaign.id} />}
 
       <div className="flex flex-wrap items-center gap-1" data-testid="shop-shelves">
         {shelves.map((s) => (
@@ -67,7 +75,7 @@ export function ShopPage() {
           {items.length > 0 && list.length === 0 && <Empty icon="store">Nothing matches.</Empty>}
           <div className="grid gap-2 md:grid-cols-2">
             {list.map((it) => (
-              <ShopCard key={it.id} item={it} view={view} campaignId={campaign.id} taxPercent={d?.taxPercent ?? 0} open={openId === it.id} onToggle={() => setOpenId(openId === it.id ? null : it.id)} />
+              <ShopCard key={it.id} item={it} view={view} campaignId={campaign.id} taxPercent={d?.taxPercent ?? 0} isDm={isDm} open={openId === it.id} onToggle={() => setOpenId(openId === it.id ? null : it.id)} />
             ))}
           </div>
         </>
@@ -76,9 +84,12 @@ export function ShopPage() {
   );
 }
 
-function ShopCard({ item: it, view, campaignId, taxPercent, open, onToggle }: { item: ShopItem; view: CharacterView; campaignId: string; taxPercent: number; open: boolean; onToggle: () => void }) {
+function ShopCard({ item: it, view, campaignId, taxPercent, isDm, open, onToggle }: { item: ShopItem; view: CharacterView; campaignId: string; taxPercent: number; isDm: boolean; open: boolean; onToggle: () => void }) {
   const buy = useBuy(campaignId);
+  const save = useSaveItemDefinition(campaignId);
   const [qty, setQty] = useState(1);
+  const [stockDraft, setStockDraft] = useState<string | null>(null);
+  const setShelf = (patch: Partial<ReturnType<typeof toItemInput>>) => save.mutate({ id: it.id, body: { ...toItemInput(it), ...patch } });
   const rc = accent(RARITY_COLOR[it.rarity]);
   const total = it.shopPrice * (it.stackable ? qty : 1);
   const broke = view.character.credits < total;
@@ -97,6 +108,7 @@ function ShopCard({ item: it, view, campaignId, taxPercent, open, onToggle }: { 
           <span className="block truncate text-[0.68rem] text-muted">{sub}</span>
         </span>
         {owned > 0 && <Badge color="cyan" title="Already in your inventory">owned ×{owned}</Badge>}
+        {isDm && !it.visibleToPlayers && <Badge color="crimson" title="Hidden from players: they do not see this item">hidden</Badge>}
         {it.stock !== null && <Badge color={soldOut ? "crimson" : "muted"}>{soldOut ? "sold out" : `${it.stock} left`}</Badge>}
         <span className="rarity-pill hidden sm:inline">{rarityName(it.rarity)}</span>
         <span className={clsx("num shrink-0 text-[0.95rem] font-bold", broke ? "text-dim" : "text-amber")}>{it.shopPrice.toLocaleString()} ₭</span>
@@ -134,9 +146,78 @@ function ShopCard({ item: it, view, campaignId, taxPercent, open, onToggle }: { 
               </Button>
             </span>
           </div>
+          {isDm && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-line/50 pt-2 text-xs" data-testid="shop-dm-row">
+              <span className="font-display text-[0.5rem] tracking-[0.2em] text-crimson">DM</span>
+              <span className="text-muted">stock</span>
+              <Input
+                className="num !w-20 !py-1"
+                placeholder="∞"
+                value={stockDraft ?? (it.stock === null ? "" : String(it.stock))}
+                inputMode="numeric"
+                onFocus={() => setStockDraft(it.stock === null ? "" : String(it.stock))}
+                onChange={(e) => setStockDraft(e.target.value.replace(/[^0-9]/g, ""))}
+                onBlur={() => {
+                  if (stockDraft !== null) {
+                    const next = stockDraft === "" ? null : Number(stockDraft);
+                    if (next !== it.stock) setShelf({ stock: next });
+                  }
+                  setStockDraft(null);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                aria-label="Stock (blank = unlimited)"
+              />
+              <span className="text-muted">price</span>
+              <Input className="num !w-24 !py-1" key={`p${it.price}`} defaultValue={it.price} inputMode="numeric" aria-label="Base price" onBlur={(e) => { const n = Number(e.target.value.replace(/[^0-9]/g, "")); if (Number.isFinite(n) && n !== it.price) setShelf({ price: n }); }} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+              <Button size="xs" variant="ghost" icon={it.visibleToPlayers ? "eye-off" : "eye"} disabled={save.isPending} onClick={() => setShelf({ visibleToPlayers: !it.visibleToPlayers })}>
+                {it.visibleToPlayers ? "Hide" : "Show"}
+              </Button>
+              <Link to={`/c/${campaignId}/dm/workshop`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]" title="Edit stats, effects and description in the workshop">
+                <Icon name="hammer" size={11} /> Edit
+              </Link>
+              <ConfirmButton size="xs" color="crimson" variant="outline" label="Remove from shop" confirmLabel="Take it off the shelf?" disabled={save.isPending} onConfirm={() => setShelf({ forSale: false })} />
+            </div>
+          )}
         </div>
       )}
     </article>
+  );
+}
+
+/** DM: put existing workshop items on the shelves. New items are created in the workshop and show up here unlisted. */
+function AddItemsModal({ open, onClose, campaignId }: { open: boolean; onClose: () => void; campaignId: string }) {
+  const items = useItemDefinitions(campaignId);
+  const save = useSaveItemDefinition(campaignId);
+  const [q, setQ] = useState("");
+  const unlisted = (items.data ?? []).filter((d) => !d.forSale && (!q || d.name.toLowerCase().includes(q.toLowerCase()) || d.category.includes(q.toLowerCase())));
+  return (
+    <Modal open={open} onClose={onClose} title="Add items to the shop" color="amber">
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <Input placeholder="Search unlisted items…" value={q} onChange={(e) => setQ(e.target.value)} className="!py-1 text-xs" autoFocus />
+          <Link to={`/c/${campaignId}/dm/workshop`} className="hud-btn !px-2 !py-1 !text-[0.55rem]" style={{ ["--btn-color" as string]: "var(--color-crimson)" }}>
+            <Icon name="hammer" size={11} /> New item
+          </Link>
+        </div>
+        {unlisted.length === 0 && <div className="py-4 text-center text-dim">{items.data?.length ? "Everything is already on the shelves." : "No items yet. Create one in the workshop or import the NEOM catalog."}</div>}
+        <div className="max-h-[50vh] space-y-1 overflow-y-auto pr-1" data-testid="shop-add-list">
+          {unlisted.map((d) => (
+            <div key={d.id} className="hud-panel flex items-center gap-2 p-2" style={{ ["--panel-accent" as string]: accent(RARITY_COLOR[d.rarity]) }}>
+              <Icon name={d.icon} size={14} style={{ color: accent(RARITY_COLOR[d.rarity]) }} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-text">{d.name}</span>
+                <span className="text-dim">
+                  {d.category} · {d.price.toLocaleString()} ₭{!d.visibleToPlayers ? " · hidden from players" : ""}
+                </span>
+              </span>
+              <Button size="xs" color="amber" icon="plus" disabled={save.isPending} onClick={() => save.mutate({ id: d.id, body: { ...toItemInput(d), forSale: true } })}>
+                Add
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
   );
 }
 

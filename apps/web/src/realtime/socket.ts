@@ -127,6 +127,8 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
       };
       const key = map[kind];
       if (key) invalidate(key);
+      // Item definitions feed the shop shelves too.
+      if (kind === "items") invalidate(qk.shop(campaignId));
     };
 
     const onSheetSent: ServerToClientEvents["sheet.sent"] = (p) => {

@@ -347,6 +347,7 @@ export function useSaveItemDefinition(cid: string) {
       mutationFn: ({ id, body }: { id?: string; body: ItemDefinitionInput }) => (id ? api.put<ItemDefinitionDto>(`/campaigns/${cid}/items/${id}`, body) : api.post<ItemDefinitionDto>(`/campaigns/${cid}/items`, body)),
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: qk.items(cid) });
+        qc.invalidateQueries({ queryKey: qk.shop(cid) });
         toast("success", "Item definition saved");
       },
     }),

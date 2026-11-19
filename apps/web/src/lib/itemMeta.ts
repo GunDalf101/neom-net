@@ -1,4 +1,4 @@
-import type { ItemDefinitionDto } from "@neom/shared";
+import type { ItemDefinitionDto, ItemDefinitionInput } from "@neom/shared";
 
 /** Human labels for the structured catalog data carried in `ItemDefinition.meta`. Unknown keys are shown as-is. */
 const LABELS: Record<string, string> = {
@@ -42,6 +42,11 @@ export function metaRows(d: Pick<ItemDefinitionDto, "meta">): [string, string][]
     out.push([LABELS[k] ?? k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()), text]);
   }
   return out;
+}
+
+/** A definition as the PUT body expects it (the server ignores id / timestamps). */
+export function toItemInput(d: ItemDefinitionDto): ItemDefinitionInput {
+  return { ...d, imageUrl: d.imageUrl ?? null };
 }
 
 /** Shop / inventory section an item belongs to: Shimmer fusions get their own shelf. */
