@@ -343,7 +343,8 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const district = (held.get("housing")?.plan.district ?? "dogtown") as keyof typeof DISTRICT_META;
   const tax = DISTRICT_META[district].taxPercent;
   const net = netSalary(view.character.salary, tax);
-  const balanceAfter = view.character.credits + net - total;
+  const monthNet = net - total;
+  const balanceAfter = view.character.credits + monthNet;
   const byKind = (k: PlanKind) => (plans.data ?? []).filter((p) => p.kind === k);
 
   return (
@@ -399,23 +400,26 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
           {view.plans.map((p) => (
             <li key={p.id} className="flex justify-between gap-2">
               <span className="truncate text-text">{p.plan.name}</span>
-              <span className="num text-muted">{p.plan.monthlyCost.toLocaleString()}</span>
+              <span className="num text-crimson/80">−{p.plan.monthlyCost.toLocaleString()}</span>
             </li>
           ))}
           {upkeep.map((u, i) => (
             <li key={i} className="flex justify-between gap-2">
               <span className="truncate text-muted">upkeep · {u.name}</span>
-              <span className="num text-muted">{u.cost}</span>
+              <span className="num text-crimson/80">−{u.cost.toLocaleString()}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-2 flex items-center justify-between border-t border-line/60 pt-2">
-          <span className="font-display text-[0.6rem] uppercase tracking-wider text-muted">Due per month</span>
-          <span className={clsx("num text-[1.1rem] font-bold", total > view.character.credits + net ? "text-crimson" : "text-amber")}>{total.toLocaleString()} ₭</span>
+        <div className="mt-2 flex items-center justify-between border-t border-line/60 pt-2" data-testid="month-net">
+          <span className="font-display text-[0.6rem] uppercase tracking-wider text-muted">Net this month</span>
+          <span className={clsx("num text-[1.1rem] font-bold", monthNet < 0 ? "text-crimson" : monthNet > 0 ? "text-ok" : "text-amber")}>
+            {monthNet > 0 ? "+" : ""}
+            {monthNet.toLocaleString()} ₭
+          </span>
         </div>
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-muted">Balance after the month</span>
-          <span className={clsx("num font-bold", balanceAfter < 0 ? "text-crimson" : "text-text")}>{balanceAfter.toLocaleString()} ₭</span>
+        <div className="mt-1 flex items-center justify-between text-muted">
+          <span>Balance after the month</span>
+          <span className={clsx("num", balanceAfter < 0 ? "text-crimson" : "text-text")}>{balanceAfter.toLocaleString()} ₭</span>
         </div>
         <div className="mt-1 text-[0.65rem] text-dim">
           The DM turns the month: salary lands first (taxed where you live), then plans and upkeep are collected. Plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning.
