@@ -281,12 +281,18 @@ export const MISSION_KIND_META: Record<MissionKind, { label: string; color: stri
 // ---------- Shop, districts, plans ----------
 export const DISTRICTS = ["dogtown", "wca", "nfc"] as const;
 export type District = (typeof DISTRICTS)[number];
-/** Districts from the GM handbook (housing plans belong to one). The tax figure is reference for the DM; shop prices are not taxed. */
+/** Districts from the GM handbook (housing plans belong to one). The tax is withheld from the monthly salary of whoever lives there. */
 export const DISTRICT_META: Record<District, { name: string; taxPercent: number; benefits: string }> = {
   dogtown: { name: "Dogtown", taxPercent: 15, benefits: "Cheap housing, black market access" },
   wca: { name: "WCA", taxPercent: 25, benefits: "Better services and security" },
   nfc: { name: "NFC", taxPercent: 35, benefits: "Premium services and infrastructure" },
 };
+
+export const DEFAULT_SALARY = 3000;
+/** Net salary after the district's withholding. */
+export function netSalary(gross: number, taxPercent: number): number {
+  return Math.round(gross * (1 - taxPercent / 100));
+}
 
 export const PLAN_KINDS = ["housing", "food", "transport", "connectivity", "antivirus"] as const;
 export type PlanKind = (typeof PLAN_KINDS)[number];

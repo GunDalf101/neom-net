@@ -1,7 +1,7 @@
 import { AUGMENTATION_SLOT_META, describePassiveEffect, describeRequirement, unmetRequirements, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useDmGrant, useItemAction } from "@/api/hooks";
+import { useDmGrant, useItemAction, useUpdateCharacter } from "@/api/hooks";
 import { requirementContext } from "@/components/hud/AugmentationDrawer";
 import { IdentityCard } from "@/components/hud/IdentityCard";
 import { CompactAttributes } from "@/components/hud/SheetPanel";
@@ -134,6 +134,7 @@ export function InventoryPage() {
 function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
   const { character: c, permissions } = view;
   const grant = useDmGrant(c.campaignId);
+  const update = useUpdateCharacter(c.id);
   const [delta, setDelta] = useState(100);
   const [setTo, setSetTo] = useState("");
   const [note, setNote] = useState("");
@@ -174,7 +175,18 @@ function CurrencyPanel({ view }: { view: ReturnType<typeof useHud>["view"] }) {
             </button>
             <Input placeholder="note (optional)" value={note} onChange={(e) => setNote(e.target.value)} className="!py-1 text-xs" />
           </div>
+          <div className="flex items-center gap-1.5 border-t border-amber/20 pt-1.5">
+            <span className="text-muted">Monthly salary</span>
+            <input className="valbox !text-[0.9rem] w-24" key={`s${c.salary}`} defaultValue={c.salary} inputMode="numeric" title="Paid when the DM turns the month, minus the district tax" data-testid="salary-input" onBlur={(e) => { const n = Number(e.target.value.replace(/[^0-9]/g, "")); if (Number.isFinite(n) && n !== c.salary) update.mutate({ salary: n }); }} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+            <span className="text-[0.6rem] text-dim">₭ gross, taxed by district on payday</span>
+          </div>
           <div className="text-[0.6rem] text-dim">Every change is logged in the event history.</div>
+        </div>
+      )}
+      {!permissions.isDm && (
+        <div className="mt-1.5 flex items-center justify-between text-[0.65rem] text-muted">
+          <span>Monthly salary (before district tax)</span>
+          <span className="num text-text">{c.salary.toLocaleString()} ₭</span>
         </div>
       )}
     </section>

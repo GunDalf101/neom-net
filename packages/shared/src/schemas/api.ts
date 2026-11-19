@@ -150,6 +150,8 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   adjustments: z.record(StatTargetSchema, z.number().int().min(-50).max(50)).optional(),
   /** DM only: abilities granted directly to the character (replaces the whole list). */
   abilityIds: z.array(z.string().min(1)).max(50).optional(),
+  /** DM only: monthly salary in kamas, taxed by district when the month turns. */
+  salary: z.number().int().min(0).max(1_000_000).optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
   progressionPoints: z.number().int().min(0).max(10_000).optional(),
   /** Optimistic concurrency: reject if the server version differs. */

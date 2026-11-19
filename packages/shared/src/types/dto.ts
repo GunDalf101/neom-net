@@ -101,6 +101,8 @@ export interface CharacterCore {
   adjustments: Record<string, number>;
   /** Abilities the DM granted directly (items and conditions can grant more). */
   abilityIds: string[];
+  /** Monthly salary in kamas (gross); the district tax is withheld when the month turns. */
+  salary: number;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -164,14 +166,22 @@ export interface ShopDto {
   items: ItemDefinitionDto[];
 }
 
-/** What one character owes at the turn of the month. */
+/** What one character earns and owes at the turn of the month. */
 export interface MonthlyBillDto {
   characterId: string;
   characterName: string;
   credits: number;
+  /** Where they live (housing plan; Dogtown without one) and the tax withheld from the salary there. */
+  district: District;
+  taxPercent: number;
+  salaryGross: number;
+  salaryNet: number;
   plans: { planId: string; name: string; kind: PlanKind; cost: number }[];
   maintenance: { itemId: string; name: string; rarity: Rarity; cost: number }[];
+  /** Plans + upkeep. */
   total: number;
+  /** credits + salaryNet − total, if everything gets paid. */
+  balanceAfter: number;
 }
 
 export interface MonthlyBillResultDto extends MonthlyBillDto {

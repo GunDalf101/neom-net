@@ -1,4 +1,4 @@
-import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
 import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
@@ -337,6 +337,10 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const planTotal = view.plans.reduce((s, p) => s + p.plan.monthlyCost, 0);
   const upkeepTotal = upkeep.reduce((s, u) => s + u.cost, 0);
   const total = planTotal + upkeepTotal;
+  const district = (held.get("housing")?.plan.district ?? "dogtown") as keyof typeof DISTRICT_META;
+  const tax = DISTRICT_META[district].taxPercent;
+  const net = netSalary(view.character.salary, tax);
+  const balanceAfter = view.character.credits + net - total;
   const byKind = (k: PlanKind) => (plans.data ?? []).filter((p) => p.kind === k);
 
   return (
@@ -368,6 +372,20 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
       </div>
       <aside className="hud-panel h-fit p-3 text-xs" style={{ ["--panel-accent" as string]: "var(--color-amber)" }} data-testid="plans-outlook">
         <div className="hud-title mb-2 text-amber">Monthly outlook</div>
+        <div className="mb-2 border-b border-line/60 pb-2" data-testid="payday">
+          <div className="flex justify-between gap-2">
+            <span className="text-text">Salary</span>
+            <span className="num text-text">{view.character.salary.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between gap-2 text-muted">
+            <span>{DISTRICT_META[district].name} tax {tax}%</span>
+            <span className="num">−{(view.character.salary - net).toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span className="font-display text-[0.6rem] uppercase tracking-wider text-muted">Payday</span>
+            <span className="num font-bold text-ok">+{net.toLocaleString()} ₭</span>
+          </div>
+        </div>
         {view.plans.length === 0 && upkeep.length === 0 && <div className="text-dim">Nothing due. No plans, no chrome to maintain.</div>}
         <ul className="space-y-0.5">
           {view.plans.map((p) => (
@@ -385,10 +403,14 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
         </ul>
         <div className="mt-2 flex items-center justify-between border-t border-line/60 pt-2">
           <span className="font-display text-[0.6rem] uppercase tracking-wider text-muted">Due per month</span>
-          <span className={clsx("num text-[1.1rem] font-bold", total > view.character.credits ? "text-crimson" : "text-amber")}>{total.toLocaleString()} ₭</span>
+          <span className={clsx("num text-[1.1rem] font-bold", total > view.character.credits + net ? "text-crimson" : "text-amber")}>{total.toLocaleString()} ₭</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-muted">Balance after the month</span>
+          <span className={clsx("num font-bold", balanceAfter < 0 ? "text-crimson" : "text-text")}>{balanceAfter.toLocaleString()} ₭</span>
         </div>
         <div className="mt-1 text-[0.65rem] text-dim">
-          The DM turns the month; plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning.
+          The DM turns the month: salary lands first (taxed where you live), then plans and upkeep are collected. Plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning.
         </div>
       </aside>
     </div>

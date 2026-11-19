@@ -5,7 +5,7 @@ const LABELS: Record<string, string> = {
   background: "Background", biography: "Biography", portraitUrl: "Portrait", level: "Level", xp: "XP", hpMaxBase: "Base max HP",
   baseSpeed: "Base speed", hitDieSize: "Hit die", inspiration: "Inspiration", progressionPoints: "Points",
   acBase: "Base AC", acBonus: "AC adjustment", cyberpsychosis: "Cyberpsychosis points", credits: "Kamas", attributes: "Attribute", skills: "Skill", saveProficiencies: "Save", specialSkills: "Cyberpunk skill",
-  adjustments: "DM adjustment", abilityIds: "Granted abilities",
+  adjustments: "DM adjustment", abilityIds: "Granted abilities", salary: "Monthly salary",
 };
 const PROF = ["none", "proficient", "expertise"];
 

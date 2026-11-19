@@ -1,4 +1,4 @@
-import { CYBERWARE_MAINTENANCE, type CharacterView, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
+import { CYBERWARE_MAINTENANCE, DISTRICT_META, netSalary, type CharacterView, type District, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
@@ -97,13 +97,23 @@ export async function unsubscribe(campaignId: string, actor: { userId: string; i
 
 // ---------- Monthly billing ----------
 
+/** A character lives where their housing plan is; Dogtown without one. */
+export function districtOf(full: Pick<FullCharacter, "plans">): District {
+  const housing = full.plans.find((p) => p.plan.kind === "housing" && p.plan.district);
+  return (housing?.plan.district as District | undefined) ?? "dogtown";
+}
+
 export function monthlyBill(full: FullCharacter): MonthlyBillDto {
+  const district = districtOf(full);
+  const taxPercent = DISTRICT_META[district].taxPercent;
+  const salaryGross = full.salary;
+  const salaryNet = netSalary(salaryGross, taxPercent);
   const plans = full.plans.map((p) => ({ planId: p.planId, name: p.plan.name, kind: p.plan.kind as MonthlyBillDto["plans"][number]["kind"], cost: p.plan.monthlyCost }));
   const maintenance = full.items
     .filter((i) => i.installedSlot)
     .map((i) => ({ itemId: i.id, name: i.customName ?? i.definition.name, rarity: i.definition.rarity as Rarity, cost: CYBERWARE_MAINTENANCE[i.definition.rarity as Rarity] ?? 0 }));
   const total = plans.reduce((s, p) => s + p.cost, 0) + maintenance.reduce((s, m) => s + m.cost, 0);
-  return { characterId: full.id, characterName: full.name, credits: full.credits, plans, maintenance, total };
+  return { characterId: full.id, characterName: full.name, credits: full.credits, district, taxPercent, salaryGross, salaryNet, plans, maintenance, total, balanceAfter: full.credits + salaryNet - total };
 }
 
 /** What every character would pay if the month turned now. */
@@ -112,14 +122,16 @@ export async function previewMonth(campaignId: string): Promise<MonthlyBillDto[]
 }
 
 /**
- * Turns the month: every character pays plans then cyberware upkeep. Plans that cannot be paid lapse (most
- * expensive first); unpaid upkeep leaves the chrome glitching (Cyberware Malfunction) until the DM clears it.
+ * Turns the month: every character is paid their salary net of the district tax, then pays plans and cyberware
+ * upkeep. Plans that cannot be paid lapse (most expensive first); unpaid upkeep leaves the chrome glitching
+ * (Cyberware Malfunction) until the DM clears it.
  */
 export async function billMonth(campaignId: string, dmUserId: string): Promise<MonthlyBillResultDto[]> {
   const results: MonthlyBillResultDto[] = [];
   for (const full of await loadCampaignFull(campaignId)) {
     const bill = monthlyBill(full);
-    let credits = full.credits;
+    // Payday first, so the rent comes out of this month's salary.
+    let credits = full.credits + bill.salaryNet;
     const lapsed: string[] = [];
     const keep = [...bill.plans].sort((a, b) => a.cost - b.cost);
     const affordable: typeof keep = [];
@@ -140,14 +152,14 @@ export async function billMonth(campaignId: string, dmUserId: string): Promise<M
     const paid = planTotal + upkeepPaid;
     await prisma.$transaction(async (tx) => {
       if (lapsed.length) await tx.characterPlan.deleteMany({ where: { characterId: full.id, plan: { name: { in: lapsed } } } });
-      await tx.character.update({ where: { id: full.id }, data: { credits: { decrement: paid }, version: { increment: 1 } } });
+      await tx.character.update({ where: { id: full.id }, data: { credits: { increment: bill.salaryNet - paid }, version: { increment: 1 } } });
     });
     await logEvent({
       campaignId,
       type: "month.billed",
       actorUserId: dmUserId,
       characterId: full.id,
-      summary: `${full.name} paid ${paid.toLocaleString()} ₭ for the month (${affordable.length} plan${affordable.length === 1 ? "" : "s"}${upkeep ? `, upkeep ${maintenanceUnpaid ? "UNPAID" : upkeep.toLocaleString() + " ₭"}` : ""})${lapsed.length ? ` — lapsed: ${lapsed.join(", ")}` : ""}`,
+      summary: `${full.name}: salary ${bill.salaryGross.toLocaleString()} ₭ − ${bill.taxPercent}% ${DISTRICT_META[bill.district].name} tax = +${bill.salaryNet.toLocaleString()} ₭; paid ${paid.toLocaleString()} ₭ (${affordable.length} plan${affordable.length === 1 ? "" : "s"}${upkeep ? `, upkeep ${maintenanceUnpaid ? "UNPAID" : upkeep.toLocaleString() + " ₭"}` : ""})${lapsed.length ? ` — lapsed: ${lapsed.join(", ")}` : ""}`,
       payload: { ...bill, paid, lapsed, maintenanceUnpaid } as unknown as Record<string, unknown>,
       visibility: "owner",
       ownerUserId: full.ownerUserId,

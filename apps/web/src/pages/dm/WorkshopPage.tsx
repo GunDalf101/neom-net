@@ -30,6 +30,7 @@ import {
   useImportCatalog,
   usePlans,
   useSavePlan,
+  useUpdateCharacter,
   useDeleteAbility,
   useDeleteCondition,
   useDeleteItemDefinition,
@@ -516,6 +517,25 @@ function AbilitiesWorkshop() {
 
 // ---------- Shop & plans ----------
 
+/** DM: a character's gross monthly salary, saved on blur. */
+function SalaryBox({ characterId, value, onSaved }: { characterId: string; value: number; onSaved: () => void }) {
+  const update = useUpdateCharacter(characterId);
+  return (
+    <Input
+      key={`s${value}`}
+      defaultValue={value}
+      inputMode="numeric"
+      className="num !w-24 !py-0.5 text-xs"
+      aria-label="Monthly salary"
+      onBlur={(e) => {
+        const n = Number(e.target.value.replace(/[^0-9]/g, ""));
+        if (Number.isFinite(n) && n !== value) update.mutate({ salary: n }, { onSuccess: onSaved });
+      }}
+      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+    />
+  );
+}
+
 const emptyPlan = (kind: PlanKind = "housing"): PlanDefinitionInput => ({ kind, name: "", description: "", district: kind === "housing" ? "dogtown" : null, monthlyCost: 0, purchasePrice: 0, effects: [], visibleToPlayers: true, sortOrder: 0 });
 
 function ShopWorkshop() {
@@ -555,21 +575,35 @@ function ShopWorkshop() {
           <p className="mt-2 text-[0.65rem] text-dim">Shop prices are the listed prices, untaxed. Mark any workshop item "For sale" to put it on the shelves, or curate directly from the HUD Shop tab.</p>
         </Panel>
         <Panel title="Turn the month" icon="calendar-clock" color="crimson" actions={<Button size="xs" variant="ghost" icon="refresh-cw" onClick={() => preview.refetch()} aria-label="Refresh preview" />}>
-          <p className="text-xs text-muted">Every character pays their plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction.</p>
-          <table className="num mt-2 w-full text-[0.7rem]">
+          <p className="text-xs text-muted">Payday first: each character receives their salary minus the tax of the district they live in (Dogtown 15% · WCA 25% · NFC 35%, from the housing plan). Then they pay plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction.</p>
+          <table className="num mt-2 w-full text-[0.7rem]" data-testid="month-preview">
+            <thead>
+              <tr className="text-left text-[0.55rem] uppercase tracking-wider text-dim">
+                <th className="font-normal">Runner</th>
+                <th className="font-normal">Salary (gross)</th>
+                <th className="text-right font-normal">Net</th>
+                <th className="text-right font-normal">Due</th>
+                <th className="text-right font-normal">After</th>
+              </tr>
+            </thead>
             <tbody>
               {(preview.data ?? []).map((b) => (
                 <tr key={b.characterId} className="border-b border-line/40 last:border-0">
-                  <td className="py-0.5 text-text">{b.characterName}</td>
-                  <td className="py-0.5 text-muted">{b.plans.length} plans · {b.maintenance.length} chrome</td>
-                  <td className={clsx("py-0.5 text-right", b.total > b.credits ? "text-crimson" : "text-amber")}>{b.total.toLocaleString()} ₭</td>
-                  <td className="py-0.5 text-right text-dim">of {b.credits.toLocaleString()}</td>
+                  <td className="py-0.5 text-text">
+                    {b.characterName} <span className="text-dim">· {DISTRICT_META[b.district].name}</span>
+                  </td>
+                  <td className="py-0.5">
+                    <SalaryBox characterId={b.characterId} value={b.salaryGross} onSaved={() => preview.refetch()} />
+                  </td>
+                  <td className="py-0.5 text-right text-ok">+{b.salaryNet.toLocaleString()}</td>
+                  <td className="py-0.5 text-right text-amber" title={`${b.plans.length} plans · ${b.maintenance.length} chrome`}>{b.total.toLocaleString()}</td>
+                  <td className={clsx("py-0.5 text-right", b.balanceAfter < 0 ? "text-crimson" : "text-text")}>{b.balanceAfter.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-muted">Total due: <span className="num text-amber">{due.toLocaleString()} ₭</span></span>
+            <span className="text-xs text-muted">Total due: <span className="num text-amber">{due.toLocaleString()} ₭</span> · payroll: <span className="num text-ok">{(preview.data ?? []).reduce((s, b) => s + b.salaryNet, 0).toLocaleString()} ₭</span></span>
             <ConfirmButton size="sm" color="crimson" variant="solid" label="Advance one month" confirmLabel="Bill everyone now?" disabled={bill.isPending} onConfirm={() => bill.mutate()} />
           </div>
         </Panel>
