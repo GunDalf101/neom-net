@@ -16,8 +16,7 @@ const viewer = (req: AuthedRequest, isDm: boolean) => ({ userId: req.user.id, is
 // Shop
 shopRouter.get("/:campaignId/shop", wrap<AuthedRequest>(async (req, res) => {
   const m = await requireMember(pid(req), req.user.id);
-  const characterId = typeof req.query.characterId === "string" ? req.query.characterId : undefined;
-  res.json(await shop.getShop(pid(req), viewer(req, m.isDm), characterId));
+  res.json(await shop.getShop(pid(req), viewer(req, m.isDm)));
 }));
 shopRouter.post("/:campaignId/shop/buy", wrap<AuthedRequest>(async (req, res) => {
   const m = await requireMember(pid(req), req.user.id);

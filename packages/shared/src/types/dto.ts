@@ -159,10 +159,9 @@ export interface CharacterPlanDto {
   startedAt: string;
 }
 
-/** The storefront as one character sees it: prices already carry their district tax. */
+/** The storefront: every item for sale at its listed price. */
 export interface ShopDto {
-  district: { key: District; name: string; taxPercent: number };
-  items: (ItemDefinitionDto & { shopPrice: number })[];
+  items: ItemDefinitionDto[];
 }
 
 /** What one character owes at the turn of the month. */

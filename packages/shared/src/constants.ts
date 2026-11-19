@@ -281,20 +281,17 @@ export const MISSION_KIND_META: Record<MissionKind, { label: string; color: stri
 // ---------- Shop, districts, plans ----------
 export const DISTRICTS = ["dogtown", "wca", "nfc"] as const;
 export type District = (typeof DISTRICTS)[number];
-/** District tax applies to shop purchases; a character lives where their housing plan is (Dogtown without one). */
+/** Districts from the GM handbook (housing plans belong to one). The tax figure is reference for the DM; shop prices are not taxed. */
 export const DISTRICT_META: Record<District, { name: string; taxPercent: number; benefits: string }> = {
   dogtown: { name: "Dogtown", taxPercent: 15, benefits: "Cheap housing, black market access" },
   wca: { name: "WCA", taxPercent: 25, benefits: "Better services and security" },
   nfc: { name: "NFC", taxPercent: 35, benefits: "Premium services and infrastructure" },
 };
-export function shopPrice(base: number, taxPercent: number): number {
-  return Math.round(base * (1 + taxPercent / 100));
-}
 
 export const PLAN_KINDS = ["housing", "food", "transport", "connectivity", "antivirus"] as const;
 export type PlanKind = (typeof PLAN_KINDS)[number];
 export const PLAN_KIND_META: Record<PlanKind, { label: string; icon: string; color: string; blurb: string }> = {
-  housing: { label: "Housing", icon: "home", color: "amber", blurb: "Where you sleep sets your district tax." },
+  housing: { label: "Housing", icon: "home", color: "amber", blurb: "Where you sleep between runs." },
   food: { label: "Food", icon: "utensils", color: "lime", blurb: "Eat badly and it shows on the sheet." },
   transport: { label: "Transport", icon: "car", color: "cyan", blurb: "Vehicles are bought once, then insured and fuelled monthly." },
   connectivity: { label: "Connectivity", icon: "wifi", color: "violet", blurb: "Better uplink, better Hacking." },

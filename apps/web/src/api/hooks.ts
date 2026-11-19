@@ -83,7 +83,7 @@ export const qk = {
   missions: (cid: string) => ["missions", cid] as const,
   journal: (cid: string) => ["journal", cid] as const,
   encyclopedia: (cid: string) => ["encyclopedia", cid] as const,
-  shop: (cid: string, characterId?: string) => (characterId ? (["shop", cid, characterId] as const) : (["shop", cid] as const)),
+  shop: (cid: string) => ["shop", cid] as const,
   plans: (cid: string) => ["plans", cid] as const,
   bill: (cid: string) => ["bill", cid] as const,
   abilities: (cid: string) => ["abilities", cid] as const,
@@ -697,7 +697,7 @@ export function useMissionOp(cid: string) {
   );
 }
 // ---------- Shop & plans ----------
-export const useShop = (cid: string, characterId?: string) => useQuery({ queryKey: qk.shop(cid, characterId), queryFn: () => api.get<ShopDto>(`/campaigns/${cid}/shop${characterId ? `?characterId=${characterId}` : ""}`) });
+export const useShop = (cid: string) => useQuery({ queryKey: qk.shop(cid), queryFn: () => api.get<ShopDto>(`/campaigns/${cid}/shop`) });
 export function useBuy(cid: string) {
   const qc = useQueryClient();
   return useMutation(

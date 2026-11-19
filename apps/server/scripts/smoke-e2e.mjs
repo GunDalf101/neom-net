@@ -366,22 +366,21 @@ check((await status(() => player.call("POST", `/api/campaigns/${cid}/shop/import
 // Clear any plans left by an interrupted run so the district is Dogtown.
 view = await player.call("GET", `/api/characters/${charId}`);
 for (const p of view.plans) await dm.call("POST", `/api/campaigns/${cid}/plans/unsubscribe`, { characterId: charId, planId: p.planId });
-let shopView = await player.call("GET", `/api/campaigns/${cid}/shop?characterId=${charId}`);
-check(shopView.district.key === "dogtown" && shopView.district.taxPercent === 15, "Without housing the character shops in Dogtown (15% tax)");
+let shopView = await player.call("GET", `/api/campaigns/${cid}/shop`);
 const yipi = shopView.items.find((i) => i.name === "Yipi-9");
-check(yipi && yipi.price === 1500 && yipi.shopPrice === 1725 && yipi.category === "weapon" && yipi.meta.magazine === 6, `Yipi-9 listed at 1,500 ₭ → 1,725 ₭ with tax (magazine ${yipi?.meta.magazine})`);
+check(yipi && yipi.price === 1500 && yipi.category === "weapon" && yipi.meta.magazine === 6, `Yipi-9 listed at its sheet price, 1,500 ₭ (magazine ${yipi?.meta.magazine})`);
 check(shopView.items.some((i) => i.category === "attachment") && shopView.items.some((i) => i.category === "ammo") && shopView.items.some((i) => i.category === "cyberware" && i.meta.shimmer === true), "Attachments, ammo and Shimmer fusions are on the shelves");
 const creditsAtShop = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
 if (creditsAtShop < 5000) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: 5000 - creditsAtShop, note: "e2e float" });
 const beforeBuy = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
 view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: yipi.id, quantity: 1 });
-check(view.character.credits === beforeBuy - 1725 && view.items.some((i) => i.definitionId === yipi.id), `Bought a Yipi-9: ${beforeBuy} → ${view.character.credits} ₭`);
+check(view.character.credits === beforeBuy - 1500 && view.items.some((i) => i.definitionId === yipi.id), `Bought a Yipi-9 for exactly 1,500 ₭: ${beforeBuy} → ${view.character.credits} ₭`);
 check((await status(() => claimer.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: yipi.id, quantity: 1 }))) === 403, "Another player cannot shop for your character (403)");
 const ammo9 = shopView.items.find((i) => i.name === "9mm magazine");
 view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: ammo9.id, quantity: 3 });
 const shop_stack = view.items.find((i) => i.definitionId === ammo9.id);
 check(shop_stack && shop_stack.quantity >= 3, `Ammo stacks (${shop_stack?.quantity} × 9mm magazine)`);
-const shop_dear = shopView.items.reduce((a, b) => (a.shopPrice > b.shopPrice ? a : b));
+const shop_dear = shopView.items.reduce((a, b) => (a.price > b.price ? a : b));
 check((await status(() => player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: shop_dear.id, quantity: 1 }))) === 422, `Cannot afford ${shop_dear.name} (422)`);
 const shop_cheap = shopView.items.find((i) => i.name === "Red Dot Sight");
 await dm.call("PUT", `/api/campaigns/${cid}/items/${shop_cheap.id}`, { ...shop_cheap, stock: 1 });
@@ -401,8 +400,8 @@ check(view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.
 view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: fiber.id });
 check(!view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.hacking.value === hackingBefore + 2, "Fiber Network replaces the ISP (one connectivity plan at a time), Hacking +2");
 view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: nfcFlat.id });
-shopView = await player.call("GET", `/api/campaigns/${cid}/shop?characterId=${charId}`);
-check(shopView.district.key === "nfc" && shopView.items.find((i) => i.id === yipi.id).shopPrice === 2025, "Living in NFC raises the shop tax to 35% (Yipi-9 → 2,025 ₭)");
+shopView = await player.call("GET", `/api/campaigns/${cid}/shop`);
+check(view.plans.some((p) => p.planId === nfcFlat.id) && shopView.items.find((i) => i.id === yipi.id).price === 1500, "Housing never changes shop prices (Yipi-9 still 1,500 ₭ from NFC)");
 const billPreview = await dm.call("GET", `/api/campaigns/${cid}/plans/bill`);
 const myBill = billPreview.find((b) => b.characterId === charId);
 const expectedPlans = fiber.monthlyCost + nfcFlat.monthlyCost;

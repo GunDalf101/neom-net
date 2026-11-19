@@ -1,40 +1,96 @@
-import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, describePassiveEffect, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
 import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useShop, useSubscribePlan, useUnsubscribePlan } from "@/api/hooks";
 import { Link } from "react-router-dom";
-import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Spinner } from "@/components/ui";
+import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { SHELF_META, SHELF_ORDER, metaRows, shelfOf, toItemInput } from "@/lib/itemMeta";
 import { useHud } from "./HudShell";
 
-type ShopItem = ItemDefinitionDto & { shopPrice: number };
+type ShopItem = ItemDefinitionDto;
+type SortKey = "price" | "priceDesc" | "name" | "rarity";
+const RARITY_RANK: Record<string, number> = Object.fromEntries(RARITIES.map((r, i) => [r, i]));
+
+/** The sub-type a shelf filters on: weapon class, attachment type, body slot or ammo type. */
+function typeOf(it: ShopItem): string | null {
+  if (it.category === "weapon") return (it.meta.weaponClass as string | undefined) ?? null;
+  if (it.category === "attachment") return (it.meta.attachmentType as string | undefined) ?? null;
+  if (it.category === "cyberware") return it.augmentationSlot ? AUGMENTATION_SLOT_META[it.augmentationSlot].name : null;
+  if (it.category === "ammo") return (it.meta.ammoType as string | undefined) ?? null;
+  return it.equipmentSlot ?? null;
+}
+/** Compatibility tags an item advertises (weapons and attachments share one vocabulary: Pistol, SMG, Rifle, Smart…). */
+function compatOf(it: Pick<ItemDefinitionDto, "meta">): string[] {
+  const tags = it.meta.compatTags;
+  return Array.isArray(tags) ? (tags as string[]) : [];
+}
+/** What the character's own weapons accept: their compatibility tags and ammunition types. */
+function ownedCompat(view: CharacterView): { tags: Set<string>; ammo: Set<string> } {
+  const tags = new Set<string>();
+  const ammo = new Set<string>();
+  for (const i of view.items) {
+    if (i.definition.category !== "weapon") continue;
+    for (const t of compatOf(i.definition)) tags.add(t);
+    const a = i.definition.meta.ammoType;
+    if (typeof a === "string" && a !== "None") ammo.add(a);
+  }
+  return { tags, ammo };
+}
 
 /** The Neo City storefront: catalog shelves by kind, district-taxed prices, and the subscriptions a runner lives on. */
 export function ShopPage() {
   const { view, campaign, isDm } = useHud();
-  const shop = useShop(campaign.id, view.character.id);
+  const shop = useShop(campaign.id);
   const importCatalog = useImportCatalog(campaign.id);
   const [shelf, setShelf] = useState<string>("weapon");
   const [search, setSearch] = useState("");
+  const [rarity, setRarity] = useState<Rarity | "">("");
+  const [type, setType] = useState("");
+  const [compat, setCompat] = useState("");
+  const [affordable, setAffordable] = useState(false);
+  const [sort, setSort] = useState<SortKey>("price");
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const items = shop.data?.items ?? [];
   const shelves = useMemo(() => SHELF_ORDER.filter((s) => items.some((i) => shelfOf(i) === s)), [items]);
   const active = shelves.includes(shelf) ? shelf : shelf === "plans" ? "plans" : (shelves[0] ?? "plans");
-  const list = items.filter((i) => shelfOf(i) === active && (!search || i.name.toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase())));
-  const d = shop.data?.district;
+  const onShelf = items.filter((i) => shelfOf(i) === active);
+  const types = useMemo(() => [...new Set(onShelf.map(typeOf).filter((t): t is string => Boolean(t)))].sort(), [onShelf]);
+  const compatTags = useMemo(() => [...new Set(onShelf.flatMap(compatOf))].sort(), [onShelf]);
+  const mine = useMemo(() => ownedCompat(view), [view]);
+  const list = useMemo(() => {
+    const q = search.toLowerCase();
+    const out = onShelf.filter((i) => {
+      if (q && !i.name.toLowerCase().includes(q) && !i.description.toLowerCase().includes(q)) return false;
+      if (rarity && i.rarity !== rarity) return false;
+      if (type && typeOf(i) !== type) return false;
+      if (affordable && i.price > view.character.credits) return false;
+      if (compat === "mine") {
+        if (i.category === "ammo") return typeof i.meta.ammoType === "string" && mine.ammo.has(i.meta.ammoType);
+        const tags = compatOf(i);
+        return tags.length === 0 || tags.some((t) => mine.tags.has(t));
+      }
+      if (compat) return compatOf(i).includes(compat);
+      return true;
+    });
+    const cmp: Record<SortKey, (a: ShopItem, b: ShopItem) => number> = {
+      price: (a, b) => a.price - b.price,
+      priceDesc: (a, b) => b.price - a.price,
+      name: (a, b) => a.name.localeCompare(b.name),
+      rarity: (a, b) => (RARITY_RANK[b.rarity] ?? 0) - (RARITY_RANK[a.rarity] ?? 0) || a.price - b.price,
+    };
+    return [...out].sort(cmp[sort]);
+  }, [onShelf, search, rarity, type, compat, affordable, sort, view.character.credits, mine]);
+  const filtersOn = Boolean(rarity || type || compat || affordable || search);
+  const showCompat = active === "attachment" || active === "weapon" || active === "ammo";
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-3" data-testid="shop">
       <section className="hud-panel flex flex-wrap items-center gap-3 px-3 py-2" style={{ ["--panel-accent" as string]: "var(--color-amber)" }}>
         <span className="font-display text-[1.1rem] font-black uppercase tracking-[0.08em] text-amber glow-text">Shop</span>
-        <span className="flex items-center gap-2 text-xs text-muted">
-          <Icon name="map-pin" size={12} />
-          {d ? `${d.name} · ${d.taxPercent}% district tax` : "…"}
-          <span className="hidden text-dim sm:inline" title="Your housing plan sets the district. Without one you shop in Dogtown.">
-            ({view.plans.find((p) => p.plan.kind === "housing")?.plan.name ?? "no housing"})
-          </span>
+        <span className="text-xs text-muted">
+          {items.length} items on the shelves · listed prices, no tax
         </span>
         <span className="ml-auto flex items-center gap-2 border border-amber/50 bg-bg-0/60 px-3 py-1" data-testid="shop-kamas">
           <Icon name="coins" size={14} className="text-amber" />
@@ -54,7 +110,7 @@ export function ShopPage() {
 
       <div className="flex flex-wrap items-center gap-1" data-testid="shop-shelves">
         {shelves.map((s) => (
-          <button key={s} type="button" className={clsx("hud-tab flex items-center gap-2", active === s && "active")} onClick={() => setShelf(s)}>
+          <button key={s} type="button" className={clsx("hud-tab flex items-center gap-2", active === s && "active")} onClick={() => { setShelf(s); setType(""); setCompat(""); }}>
             <Icon name={SHELF_META[s]?.icon ?? "package"} size={12} /> {SHELF_META[s]?.label ?? s}
             <span className="num text-[0.55rem] opacity-70">{items.filter((i) => shelfOf(i) === s).length}</span>
           </button>
@@ -63,8 +119,58 @@ export function ShopPage() {
           <Icon name="receipt" size={12} /> Plans
           <span className="num text-[0.55rem] opacity-70">{view.plans.length}</span>
         </button>
-        {active !== "plans" && <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="ml-auto !w-40 !py-1 text-xs" aria-label="Search the shop" />}
       </div>
+
+      {active !== "plans" && (
+        <div className="hud-panel flex flex-wrap items-center gap-2 px-2 py-1.5 text-xs" style={{ ["--panel-accent" as string]: "var(--color-line-2)" }} data-testid="shop-filters">
+          <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="!w-36 !py-1 text-xs" aria-label="Search the shop" />
+          <span className="flex items-center gap-1" role="group" aria-label="Rarity">
+            {(["", ...RARITIES.filter((r) => onShelf.some((i) => i.rarity === r))] as (Rarity | "")[]).map((r) => (
+              <button key={r || "all"} type="button" className={clsx("hud-btn !px-2 !py-0.5 !text-[0.5rem]", rarity !== r && "hud-btn-ghost")} style={{ ["--btn-color" as string]: r ? accent(RARITY_COLOR[r]) : "var(--color-cyan)" }} onClick={() => setRarity(r)} aria-pressed={rarity === r}>
+                {r ? rarityName(r) : "All tiers"}
+              </button>
+            ))}
+          </span>
+          {types.length > 1 && (
+            <Select value={type} onChange={(e) => setType(e.target.value)} className="!w-auto !py-1 text-xs" aria-label="Type">
+              <option value="">{active === "cyberware" || active === "shimmer" ? "Any body slot" : active === "ammo" ? "Any calibre" : "Any type"}</option>
+              {types.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          )}
+          {showCompat && (
+            <Select value={compat} onChange={(e) => setCompat(e.target.value)} className="!w-auto !py-1 text-xs" aria-label="Compatibility" data-testid="shop-compat">
+              <option value="">Any compatibility</option>
+              <option value="mine" disabled={mine.tags.size === 0 && mine.ammo.size === 0}>
+                {mine.tags.size || mine.ammo.size ? "Fits my weapons" : "Fits my weapons (none tagged yet)"}
+              </option>
+              {compatTags.map((t) => (
+                <option key={t} value={t}>
+                  Fits {t}
+                </option>
+              ))}
+            </Select>
+          )}
+          <button type="button" className={clsx("hud-btn !px-2 !py-0.5 !text-[0.5rem]", !affordable && "hud-btn-ghost")} style={{ ["--btn-color" as string]: "var(--color-amber)" }} onClick={() => setAffordable((v) => !v)} aria-pressed={affordable}>
+            <Icon name="coins" size={10} /> I can afford
+          </button>
+          <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="ml-auto !w-auto !py-1 text-xs" aria-label="Sort">
+            <option value="price">Price ↑</option>
+            <option value="priceDesc">Price ↓</option>
+            <option value="rarity">Rarity</option>
+            <option value="name">Name</option>
+          </Select>
+          <span className="num text-dim">{list.length}/{onShelf.length}</span>
+          {filtersOn && (
+            <Button size="xs" variant="ghost" icon="x" onClick={() => { setSearch(""); setRarity(""); setType(""); setCompat(""); setAffordable(false); }}>
+              Clear
+            </Button>
+          )}
+        </div>
+      )}
 
       {shop.isLoading && <Spinner />}
       {active === "plans" ? (
@@ -72,10 +178,10 @@ export function ShopPage() {
       ) : (
         <>
           {!shop.isLoading && items.length === 0 && <Empty icon="store">{isDm ? "The shelves are empty. Import the NEOM catalog above, or mark workshop items as for sale." : "The shop has nothing on the shelves yet."}</Empty>}
-          {items.length > 0 && list.length === 0 && <Empty icon="store">Nothing matches.</Empty>}
+          {items.length > 0 && list.length === 0 && <Empty icon="store">Nothing matches these filters.</Empty>}
           <div className="grid gap-2 md:grid-cols-2">
             {list.map((it) => (
-              <ShopCard key={it.id} item={it} view={view} campaignId={campaign.id} taxPercent={d?.taxPercent ?? 0} isDm={isDm} open={openId === it.id} onToggle={() => setOpenId(openId === it.id ? null : it.id)} />
+              <ShopCard key={it.id} item={it} view={view} campaignId={campaign.id} isDm={isDm} open={openId === it.id} onToggle={() => setOpenId(openId === it.id ? null : it.id)} />
             ))}
           </div>
         </>
@@ -84,14 +190,14 @@ export function ShopPage() {
   );
 }
 
-function ShopCard({ item: it, view, campaignId, taxPercent, isDm, open, onToggle }: { item: ShopItem; view: CharacterView; campaignId: string; taxPercent: number; isDm: boolean; open: boolean; onToggle: () => void }) {
+function ShopCard({ item: it, view, campaignId, isDm, open, onToggle }: { item: ShopItem; view: CharacterView; campaignId: string; isDm: boolean; open: boolean; onToggle: () => void }) {
   const buy = useBuy(campaignId);
   const save = useSaveItemDefinition(campaignId);
   const [qty, setQty] = useState(1);
   const [stockDraft, setStockDraft] = useState<string | null>(null);
   const setShelf = (patch: Partial<ReturnType<typeof toItemInput>>) => save.mutate({ id: it.id, body: { ...toItemInput(it), ...patch } });
   const rc = accent(RARITY_COLOR[it.rarity]);
-  const total = it.shopPrice * (it.stackable ? qty : 1);
+  const total = it.price * (it.stackable ? qty : 1);
   const broke = view.character.credits < total;
   const soldOut = it.stock !== null && it.stock <= 0;
   const sub = it.category === "cyberware" && it.augmentationSlot ? `${AUGMENTATION_SLOT_META[it.augmentationSlot].name} · strain ${it.capacityCost}` : it.category === "weapon" ? `${String(it.meta.weaponClass ?? "weapon")} · ${it.damage ?? ""}` : it.category === "attachment" ? String(it.meta.attachmentType ?? "attachment") : it.category === "ammo" ? "per magazine" : it.category;
@@ -111,7 +217,7 @@ function ShopCard({ item: it, view, campaignId, taxPercent, isDm, open, onToggle
         {isDm && !it.visibleToPlayers && <Badge color="crimson" title="Hidden from players: they do not see this item">hidden</Badge>}
         {it.stock !== null && <Badge color={soldOut ? "crimson" : "muted"}>{soldOut ? "sold out" : `${it.stock} left`}</Badge>}
         <span className="rarity-pill hidden sm:inline">{rarityName(it.rarity)}</span>
-        <span className={clsx("num shrink-0 text-[0.95rem] font-bold", broke ? "text-dim" : "text-amber")}>{it.shopPrice.toLocaleString()} ₭</span>
+        <span className={clsx("num shrink-0 text-[0.95rem] font-bold", broke ? "text-dim" : "text-amber")}>{it.price.toLocaleString()} ₭</span>
         <Icon name={open ? "chevron-up" : "chevron-down"} size={14} className="text-muted" />
       </button>
       {open && (
@@ -136,8 +242,9 @@ function ShopCard({ item: it, view, campaignId, taxPercent, isDm, open, onToggle
           {it.effects.length > 0 && <div className="text-[0.75rem] text-violet">{it.effects.filter((e) => e.kind !== "trait").map(describePassiveEffect).join(" · ") || "Rules as written (see description)"}</div>}
           <div className="flex flex-wrap items-center gap-2 border-t border-line/50 pt-2 text-xs">
             <span className="text-dim">
-              {it.price.toLocaleString()} ₭ + {taxPercent}% tax = <span className="num text-text">{it.shopPrice.toLocaleString()} ₭</span>
+              <span className="num text-text">{it.price.toLocaleString()} ₭</span>
               {it.stackable && qty > 1 ? ` × ${qty} = ${total.toLocaleString()} ₭` : ""}
+              {compatOf(it).length > 0 && <span className="ml-2">fits {compatOf(it).join(", ")}</span>}
             </span>
             <span className="ml-auto flex items-center gap-2">
               {it.stackable && <Input type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} className="num !w-16 !py-1" aria-label="Quantity" />}
@@ -281,7 +388,7 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
           <span className={clsx("num text-[1.1rem] font-bold", total > view.character.credits ? "text-crimson" : "text-amber")}>{total.toLocaleString()} ₭</span>
         </div>
         <div className="mt-1 text-[0.65rem] text-dim">
-          The DM turns the month; plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning. District: {DISTRICT_META[(held.get("housing")?.plan.district ?? "dogtown") as keyof typeof DISTRICT_META].name}.
+          The DM turns the month; plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning.
         </div>
       </aside>
     </div>

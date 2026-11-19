@@ -1,34 +1,21 @@
-import { DISTRICT_META, shopPrice, type CharacterView, type District, type ShopBuyInput, type ShopDto } from "@neom/shared";
+import type { CharacterView, ShopBuyInput, ShopDto } from "@neom/shared";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign } from "../realtime/io.js";
 import { importCatalog, type ImportResult } from "../catalog/catalog.js";
 import { getMembership } from "./access.js";
-import { loadFull, type FullCharacter } from "./characters.js";
+import { loadFull } from "./characters.js";
 import { logEvent } from "./events.js";
 import { grantItem } from "./items.js";
 import { toItemDefinitionDto } from "./mappers.js";
 
-/** A character lives where their housing plan is; without one they are in Dogtown. */
-export function districtOf(full: Pick<FullCharacter, "plans">): District {
-  const housing = full.plans.find((p) => p.plan.kind === "housing" && p.plan.district);
-  return (housing?.plan.district as District | undefined) ?? "dogtown";
-}
-
-/** The storefront with district-taxed prices for one character (or Dogtown prices when no character is given). */
-export async function getShop(campaignId: string, viewer: { userId: string; isDm: boolean }, characterId?: string): Promise<ShopDto> {
-  let district: District = "dogtown";
-  if (characterId) {
-    const full = await loadFull(characterId);
-    if (full.campaignId !== campaignId) throw notFound("Character");
-    district = districtOf(full);
-  }
-  const tax = DISTRICT_META[district].taxPercent;
+/** The storefront: items for sale (the DM also sees the ones hidden from players). */
+export async function getShop(campaignId: string, viewer: { userId: string; isDm: boolean }): Promise<ShopDto> {
   const rows = await prisma.itemDefinition.findMany({ where: viewer.isDm ? { campaignId, forSale: true } : { campaignId, forSale: true, visibleToPlayers: true }, orderBy: [{ category: "asc" }, { price: "asc" }] });
-  return { district: { key: district, name: DISTRICT_META[district].name, taxPercent: tax }, items: rows.map((r) => ({ ...toItemDefinitionDto(r), shopPrice: shopPrice(r.price, tax) })) };
+  return { items: rows.map(toItemDefinitionDto) };
 }
 
-/** Buys from the shop for a character: owner or DM, paid in kamas with the district tax, stock permitting. */
+/** Buys from the shop for a character: owner or DM, paid in kamas at the listed price, stock permitting. */
 export async function buy(campaignId: string, actor: { userId: string; isDm: boolean }, input: ShopBuyInput): Promise<CharacterView> {
   const full = await loadFull(input.characterId);
   if (full.campaignId !== campaignId) throw notFound("Character");
@@ -36,9 +23,7 @@ export async function buy(campaignId: string, actor: { userId: string; isDm: boo
   const def = await prisma.itemDefinition.findFirst({ where: { id: input.definitionId, campaignId, forSale: true, ...(actor.isDm ? {} : { visibleToPlayers: true }) } });
   if (!def) throw notFound("Shop item");
   if (def.stock !== null && def.stock < input.quantity) throw ruleViolation(def.stock === 0 ? `${def.name} is sold out` : `Only ${def.stock} × ${def.name} left`, { stock: def.stock });
-  const district = districtOf(full);
-  const tax = DISTRICT_META[district].taxPercent;
-  const unit = shopPrice(def.price, tax);
+  const unit = def.price;
   const total = unit * input.quantity;
   if (full.credits < total) throw ruleViolation(`Not enough kamas: ${total.toLocaleString()} needed, ${full.credits.toLocaleString()} available`, { total, credits: full.credits });
 
@@ -55,8 +40,8 @@ export async function buy(campaignId: string, actor: { userId: string; isDm: boo
     type: "shop.purchase",
     actorUserId: actor.userId,
     characterId: full.id,
-    summary: `${full.name} bought ${input.quantity > 1 ? `${input.quantity}× ` : ""}${def.name} for ${total.toLocaleString()} ₭ (${DISTRICT_META[district].name} tax ${tax}%)`,
-    payload: { definitionId: def.id, quantity: input.quantity, unitPrice: unit, basePrice: def.price, taxPercent: tax, district, total },
+    summary: `${full.name} bought ${input.quantity > 1 ? `${input.quantity}× ` : ""}${def.name} for ${total.toLocaleString()} ₭`,
+    payload: { definitionId: def.id, quantity: input.quantity, unitPrice: unit, total },
     visibility: "owner",
     ownerUserId: full.ownerUserId,
   });

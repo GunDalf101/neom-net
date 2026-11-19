@@ -202,7 +202,7 @@ function ItemsWorkshop() {
                   <option value="1">Yes</option>
                 </Select>
               </Field>
-              <Field label="In the shop" hint="Players buy it with kamas plus their district tax">
+              <Field label="In the shop" hint="Players buy it with kamas at this price">
                 <Select value={form.forSale ? "1" : "0"} onChange={(e) => set("forSale", e.target.value === "1")}>
                   <option value="0">Not listed</option>
                   <option value="1">For sale</option>
@@ -552,7 +552,7 @@ function ShopWorkshop() {
               {forSale} item{forSale === 1 ? "" : "s"} for sale · {(plans.data ?? []).length} plans
             </span>
           </div>
-          <p className="mt-2 text-[0.65rem] text-dim">Prices in the shop carry the district tax of where each character lives: {DISTRICTS.map((d) => `${DISTRICT_META[d].name} ${DISTRICT_META[d].taxPercent}%`).join(" · ")}. Mark any workshop item "For sale" to put it on the shelves.</p>
+          <p className="mt-2 text-[0.65rem] text-dim">Shop prices are the listed prices, untaxed. Mark any workshop item "For sale" to put it on the shelves, or curate directly from the HUD Shop tab.</p>
         </Panel>
         <Panel title="Turn the month" icon="calendar-clock" color="crimson" actions={<Button size="xs" variant="ghost" icon="refresh-cw" onClick={() => preview.refetch()} aria-label="Refresh preview" />}>
           <p className="text-xs text-muted">Every character pays their plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction.</p>
@@ -628,7 +628,7 @@ function ShopWorkshop() {
                   <Input type="number" min={0} value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: Number(e.target.value) })} />
                 </Field>
                 {form.kind === "housing" ? (
-                  <Field label="District" hint="Sets the tax on the tenant's purchases">
+                  <Field label="District">
                     <Select value={form.district ?? "dogtown"} onChange={(e) => setForm({ ...form, district: e.target.value as PlanDefinitionInput["district"] })}>
                       {DISTRICTS.map((d) => (
                         <option key={d} value={d}>
