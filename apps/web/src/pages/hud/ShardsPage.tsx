@@ -144,6 +144,7 @@ export function ShardsPage() {
                   <span className="block truncate text-[0.9rem] font-semibold text-text">{s.name}</span>
                   <span className="block truncate text-[0.68rem] text-muted">
                     {m.label} · {level === 0 ? "cantrip" : `level ${level}`} · {s.action}
+                    {s.equivalent && <span className="text-cyan/80" data-testid="shard-equivalent"> · {s.equivalent}</span>}
                   </span>
                 </span>
                 <span className="num shrink-0 text-[0.8rem] font-bold text-violet">{s.effect}</span>
