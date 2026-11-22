@@ -374,6 +374,28 @@ let shopView = await player.call("GET", `/api/campaigns/${cid}/shop`);
 const yipi = shopView.items.find((i) => i.name === "Yipi-9");
 check(yipi && yipi.price === 1500 && yipi.category === "weapon" && yipi.meta.magazine === 6, `Yipi-9 listed at its sheet price, 1,500 ₭ (magazine ${yipi?.meta.magazine})`);
 check(shopView.items.some((i) => i.category === "attachment") && shopView.items.some((i) => i.category === "ammo") && shopView.items.some((i) => i.category === "cyberware" && i.meta.shimmer === true), "Attachments, ammo and Shimmer fusions are on the shelves");
+{
+  const shop_riot = shopView.items.find((i) => i.name === "Riotbreaker Armor");
+  check(shop_riot && shop_riot.category === "armor" && shop_riot.price === 4500 && shop_riot.equipmentSlot === "armor", "Armor catalogue is on the shelves (Riotbreaker Armor, 4,500 ₭, armor slot)");
+  const shop_vest = shopView.items.find((i) => i.name === "Reinforced Kevlar Vest");
+  const shop_jugg = shopView.items.find((i) => i.name === "Juggernaut Exoskeleton");
+  check(shop_vest && shop_vest.effects.some((e) => e.kind === "modifier" && e.target === "ac" && e.op === "setBase" && e.value === 13 && e.dexCap === 2) && shop_jugg?.requirements.some((r) => r.kind === "attribute" && r.attribute === "str" && r.min === 15), "Armor carries its AC formula (vest: base 13, DEX max +2) and requirements (Juggernaut: STR 15)");
+  const shop_c0 = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
+  if (shop_c0 < 2500) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: 2500 - shop_c0 + 100, note: "e2e armor" });
+  view = await player.call("POST", `/api/campaigns/${cid}/shop/buy`, { characterId: charId, definitionId: shop_vest.id, quantity: 1 });
+  const shop_vestInst = view.items.find((i) => i.definitionId === shop_vest.id);
+  const shop_acBefore = view.derived.ac.value;
+  const shop_prevArmor = view.items.find((i) => i.equippedSlot === "armor");
+  const shop_dexMod = Math.floor((view.derived.attributes.dex.value - 10) / 2);
+  view = await player.call("POST", `/api/characters/${charId}/items/${shop_vestInst.id}/action`, { action: "equip" });
+  const shop_expectAc = 13 + Math.min(shop_dexMod, 2) + (view.derived.ac.value - (13 + Math.min(shop_dexMod, 2)) === view.character.acBonus ? view.character.acBonus : 0);
+  check(view.items.find((i) => i.id === shop_vestInst.id).equippedSlot === "armor" && view.derived.ac.value === shop_expectAc && view.derived.ac.breakdown.some((b) => b.kind === "base" && b.value === 13), `Wearing the vest sets AC to 13 + DEX (max +2): ${shop_acBefore} → ${view.derived.ac.value}`);
+  view = await player.call("POST", `/api/characters/${charId}/items/${shop_vestInst.id}/action`, { action: "unequip" });
+  view = await player.call("POST", `/api/characters/${charId}/items/${shop_vestInst.id}/action`, { action: "sell" });
+  check(!view.items.some((i) => i.id === shop_vestInst.id), `Sold the vest back (${view.items.filter((i) => i.definitionId === shop_vest.id).length} left)`);
+  if (shop_prevArmor) view = await player.call("POST", `/api/characters/${charId}/items/${shop_prevArmor.id}/action`, { action: "equip" });
+  check(view.derived.ac.value === shop_acBefore, `Old armor back on (${shop_prevArmor?.definition.name ?? "none"}): AC ${view.derived.ac.value} as before`);
+}
 const shimmerStrain = shopView.items.filter((i) => i.category === "cyberware" && i.meta.shimmer === true).map((i) => `${i.rarity}:${i.capacityCost}`);
 check(shimmerStrain.every((x) => x === "uncommon:20" || x === "rare:40") && shopView.items.some((i) => i.name === "Combat Predictor" && i.capacityCost === 20), "Shimmer fusions cost twice the strain of a normal augment of their tier (uncommon 20, rare 40)");
 const creditsAtShop = (await player.call("GET", `/api/characters/${charId}`)).character.credits;

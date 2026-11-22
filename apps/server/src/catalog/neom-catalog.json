@@ -1,6 +1,6 @@
 {
- "version": 1,
- "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook",
+ "version": 2,
+ "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook, Neon_City_Armor_Catalogue",
  "weapons": [
   {
    "name": "Yipi-9",
@@ -2352,6 +2352,381 @@
     "priceMultiplier": 10,
     "special": true
    }
+  }
+ ],
+ "armor": [
+  {
+   "name": "Streetrunner Jacket",
+   "rarity": "common",
+   "price": 1500,
+   "weight": 4,
+   "description": "AC 12 + DEX modifier. Lightweight street protection; no movement penalty. No additional protection.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "light"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "12 + DEX modifier",
+    "armorWeight": "light",
+    "requirement": null,
+    "perks": "Lightweight street protection; no movement penalty.",
+    "downsides": "No additional protection."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 12,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Streetrunner Jacket (armor)"
+    },
+    {
+     "kind": "trait",
+     "name": "Streetrunner Jacket: perks",
+     "description": "Lightweight street protection; no movement penalty."
+    },
+    {
+     "kind": "trait",
+     "name": "Streetrunner Jacket: downsides",
+     "description": "No additional protection."
+    }
+   ]
+  },
+  {
+   "name": "Reinforced Kevlar Vest",
+   "rarity": "common",
+   "price": 2500,
+   "weight": 4,
+   "description": "AC 13 + DEX modifier (max +2). Reliable ballistic protection; no movement penalty. Limited protection compared with heavier armor.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "light"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "13 + DEX modifier (max +2)",
+    "armorWeight": "light",
+    "requirement": null,
+    "perks": "Reliable ballistic protection; no movement penalty.",
+    "downsides": "Limited protection compared with heavier armor."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 13,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Reinforced Kevlar Vest (armor)",
+     "dexCap": 2
+    },
+    {
+     "kind": "trait",
+     "name": "Reinforced Kevlar Vest: perks",
+     "description": "Reliable ballistic protection; no movement penalty."
+    },
+    {
+     "kind": "trait",
+     "name": "Reinforced Kevlar Vest: downsides",
+     "description": "Limited protection compared with heavier armor."
+    }
+   ]
+  },
+  {
+   "name": "Riotbreaker Armor",
+   "rarity": "uncommon",
+   "price": 4500,
+   "weight": 12,
+   "description": "AC 15. +1 AC against melee attacks. Disadvantage on Stealth checks.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "heavy"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "15",
+    "armorWeight": "heavy",
+    "requirement": "Heavy armor profile",
+    "perks": "+1 AC against melee attacks.",
+    "downsides": "Disadvantage on Stealth checks."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 15,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Riotbreaker Armor (armor)",
+     "dexCap": 0
+    },
+    {
+     "kind": "advantage",
+     "on": "skill.stealth",
+     "mode": "disadvantage",
+     "note": "Riotbreaker Armor"
+    },
+    {
+     "kind": "trait",
+     "name": "Riotbreaker Armor: perks",
+     "description": "+1 AC against melee attacks."
+    },
+    {
+     "kind": "trait",
+     "name": "Riotbreaker Armor: downsides",
+     "description": "Disadvantage on Stealth checks."
+    }
+   ]
+  },
+  {
+   "name": "Mercenary Combat Suit",
+   "rarity": "uncommon",
+   "price": 5500,
+   "weight": 12,
+   "description": "AC 16. Integrated impact padding; dependable combat protection. Disadvantage on Stealth checks.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "heavy"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "16",
+    "armorWeight": "heavy",
+    "requirement": "DEX bonus not added",
+    "perks": "Integrated impact padding; dependable combat protection.",
+    "downsides": "Disadvantage on Stealth checks."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 16,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Mercenary Combat Suit (armor)",
+     "dexCap": 0
+    },
+    {
+     "kind": "advantage",
+     "on": "skill.stealth",
+     "mode": "disadvantage",
+     "note": "Mercenary Combat Suit"
+    },
+    {
+     "kind": "trait",
+     "name": "Mercenary Combat Suit: perks",
+     "description": "Integrated impact padding; dependable combat protection."
+    },
+    {
+     "kind": "trait",
+     "name": "Mercenary Combat Suit: downsides",
+     "description": "Disadvantage on Stealth checks."
+    }
+   ]
+  },
+  {
+   "name": "Ghostweave Suit",
+   "rarity": "rare",
+   "price": 7500,
+   "weight": 4,
+   "description": "AC 14 + DEX modifier (max +3). Advantage on Stealth checks; once per short rest, gain advantage on one Stealth check. Less protective than heavy combat armor.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "light"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "14 + DEX modifier (max +3)",
+    "armorWeight": "light",
+    "requirement": null,
+    "perks": "Advantage on Stealth checks; once per short rest, gain advantage on one Stealth check.",
+    "downsides": "Less protective than heavy combat armor."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 14,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Ghostweave Suit (armor)",
+     "dexCap": 3
+    },
+    {
+     "kind": "advantage",
+     "on": "skill.stealth",
+     "mode": "advantage",
+     "note": "Ghostweave Suit"
+    },
+    {
+     "kind": "trait",
+     "name": "Ghostweave Suit: perks",
+     "description": "Advantage on Stealth checks; once per short rest, gain advantage on one Stealth check."
+    },
+    {
+     "kind": "trait",
+     "name": "Ghostweave Suit: downsides",
+     "description": "Less protective than heavy combat armor."
+    }
+   ]
+  },
+  {
+   "name": "Faraday Tactical Armor",
+   "rarity": "rare",
+   "price": 8500,
+   "weight": 4,
+   "description": "AC 15 + DEX modifier (max +2). Advantage on saving throws against hostile hacking; blocks unauthorized wireless connections to implanted cyberware. Disadvantage on checks requiring wireless communication.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "light",
+    "anti-hacking"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "15 + DEX modifier (max +2)",
+    "armorWeight": "light",
+    "requirement": null,
+    "perks": "Advantage on saving throws against hostile hacking; blocks unauthorized wireless connections to implanted cyberware.",
+    "downsides": "Disadvantage on checks requiring wireless communication.",
+    "antiHacking": true
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 15,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Faraday Tactical Armor (armor)",
+     "dexCap": 2
+    },
+    {
+     "kind": "trait",
+     "name": "Faraday Tactical Armor: perks",
+     "description": "Advantage on saving throws against hostile hacking; blocks unauthorized wireless connections to implanted cyberware."
+    },
+    {
+     "kind": "trait",
+     "name": "Faraday Tactical Armor: downsides",
+     "description": "Disadvantage on checks requiring wireless communication."
+    }
+   ]
+  },
+  {
+   "name": "Juggernaut Exoskeleton",
+   "rarity": "veryRare",
+   "price": 12000,
+   "weight": 12,
+   "description": "AC 18. Resistance to bludgeoning damage; advantage against being shoved or knocked prone. Disadvantage on Stealth checks; movement speed reduced by 5 ft.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "heavy"
+   ],
+   "requirements": [
+    {
+     "kind": "attribute",
+     "attribute": "str",
+     "min": 15
+    }
+   ],
+   "meta": {
+    "acFormula": "18",
+    "armorWeight": "heavy",
+    "requirement": "STR 15 required",
+    "perks": "Resistance to bludgeoning damage; advantage against being shoved or knocked prone.",
+    "downsides": "Disadvantage on Stealth checks; movement speed reduced by 5 ft."
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 18,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Juggernaut Exoskeleton (armor)",
+     "dexCap": 0
+    },
+    {
+     "kind": "advantage",
+     "on": "skill.stealth",
+     "mode": "disadvantage",
+     "note": "Juggernaut Exoskeleton"
+    },
+    {
+     "kind": "resistance",
+     "damageType": "bludgeoning",
+     "level": "resistance"
+    },
+    {
+     "kind": "modifier",
+     "target": "speed",
+     "value": -2,
+     "op": "add",
+     "label": "Juggernaut Exoskeleton"
+    },
+    {
+     "kind": "trait",
+     "name": "Juggernaut Exoskeleton: perks",
+     "description": "Resistance to bludgeoning damage; advantage against being shoved or knocked prone."
+    },
+    {
+     "kind": "trait",
+     "name": "Juggernaut Exoskeleton: downsides",
+     "description": "Disadvantage on Stealth checks; movement speed reduced by 5 ft."
+    }
+   ]
+  },
+  {
+   "name": "Aegis Neural Shield",
+   "rarity": "veryRare",
+   "price": 15000,
+   "weight": 4,
+   "description": "AC 16 + DEX modifier (max +2). Advantage on saving throws against hostile hacking; once per long rest, negate one hostile hack targeting the wearer; resistant to EMP effects. Cannot benefit from external wireless buffs while active.",
+   "icon": "shield",
+   "tags": [
+    "armor",
+    "light",
+    "anti-hacking"
+   ],
+   "requirements": [],
+   "meta": {
+    "acFormula": "16 + DEX modifier (max +2)",
+    "armorWeight": "light",
+    "requirement": null,
+    "perks": "Advantage on saving throws against hostile hacking; once per long rest, negate one hostile hack targeting the wearer; resistant to EMP effects.",
+    "downsides": "Cannot benefit from external wireless buffs while active.",
+    "antiHacking": true
+   },
+   "effects": [
+    {
+     "kind": "modifier",
+     "target": "ac",
+     "value": 16,
+     "op": "setBase",
+     "stackGroup": "armor",
+     "label": "Aegis Neural Shield (armor)",
+     "dexCap": 2
+    },
+    {
+     "kind": "trait",
+     "name": "Aegis Neural Shield: perks",
+     "description": "Advantage on saving throws against hostile hacking; once per long rest, negate one hostile hack targeting the wearer; resistant to EMP effects."
+    },
+    {
+     "kind": "trait",
+     "name": "Aegis Neural Shield: downsides",
+     "description": "Cannot benefit from external wireless buffs while active."
+    }
+   ]
   }
  ],
  "augments": [

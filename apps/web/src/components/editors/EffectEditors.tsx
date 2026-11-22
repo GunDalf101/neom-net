@@ -144,6 +144,11 @@ function PassiveEffectFields({ e, onChange, abilities }: { e: PassiveEffect; onC
               <option value="min">Minimum</option>
             </Select>
           </Field>
+          {e.op === "setBase" && e.target === "ac" && (
+            <Field label="DEX cap" hint="Blank = full DEX · 0 = none" className="sm:col-span-2">
+              <Input type="number" min={0} max={10} value={e.dexCap ?? ""} onChange={(ev) => onChange({ ...e, dexCap: ev.target.value === "" ? undefined : Number(ev.target.value) })} placeholder="full" />
+            </Field>
+          )}
           <Field label="Stack group" hint="Same group = highest wins" className="sm:col-span-2">
             <Input value={e.stackGroup ?? ""} onChange={(ev) => onChange({ ...e, stackGroup: ev.target.value || undefined })} placeholder="e.g. armor" />
           </Field>

@@ -227,6 +227,9 @@ function composeStat(
     for (const line of baseLines) {
       if (line.kind === "base") {
         breakdown.push({ ...line, kind: "suppressed", suppressedReason: `Replaced by ${best.source.name}` });
+      } else if (line.kind === "attribute" && best.effect.dexCap !== undefined && line.value > best.effect.dexCap) {
+        // Armor caps (or forbids) the DEX bonus on top of its base.
+        breakdown.push({ ...line, label: best.effect.dexCap === 0 ? `${line.label} (none in ${best.source.name})` : `${line.label} (max +${best.effect.dexCap} in ${best.source.name})`, value: best.effect.dexCap });
       } else {
         breakdown.push(line);
       }

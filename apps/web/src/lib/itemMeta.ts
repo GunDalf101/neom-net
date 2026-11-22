@@ -20,6 +20,12 @@ const LABELS: Record<string, string> = {
   maxHpPenalty: "Max HP penalty",
   penalty: "Downside",
   priceMultiplier: "Price",
+  acFormula: "Armor Class",
+  armorWeight: "Armor weight",
+  requirement: "Requires",
+  perks: "Perks",
+  downsides: "Downsides",
+  antiHacking: "Anti-hacking",
 };
 const HIDDEN = new Set(["shimmer", "perMagazine", "special"]);
 const ORDER = Object.keys(LABELS);

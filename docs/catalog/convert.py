@@ -1,7 +1,7 @@
 import sys, json, re
 sys.path.insert(0, sys.argv[1])
 from dump import xlsx, docx
-W = xlsx(sys.argv[2]); A = xlsx(sys.argv[3]); H = docx(sys.argv[4])
+W = xlsx(sys.argv[2]); A = xlsx(sys.argv[3]); H = docx(sys.argv[4]); AR = xlsx(sys.argv[5])
 def rows(sheet, src): 
     r = src[sheet]; head = r[0]; return [dict(zip(head, x + [""] * (len(head) - len(x)))) for x in r[1:] if any(str(c).strip() for c in x)]
 def num(s):
@@ -90,6 +90,42 @@ for sheet, shimmer in (("Normal Augments", False), ("Shimmer Fused", True)):
                         **({"maxHpPenalty": num(r["Maximum HP Penalty"]), "penalty": r["Additional Penalty (non-HP)"]} if shimmer else {})},
                "effects": parse_effects(name, r["Bonus"], text)}
         augments.append(aug)
+# ---- armor catalogue (Neon_City_Armor_Catalogue.xlsx: two title rows, then the header) ----
+def armor_rows():
+    r = AR["Armor Catalogue"]; hi = next(i for i, x in enumerate(r) if x and str(x[0]).strip() == "Armor")
+    head = r[hi]; return [dict(zip(head, x + [""] * (len(head) - len(x)))) for x in r[hi + 1:] if any(str(c).strip() for c in x)]
+def armor_effects(name, ac, perks, downsides):
+    eff = []
+    m = re.match(r"(\d+)(?:\s*\+\s*DEX modifier(?:\s*\(max \+(\d+)\))?)?", ac.strip())
+    base = int(m.group(1)); dex_cap = None if m.group(2) is None and "+ DEX" in ac else (int(m.group(2)) if m.group(2) else 0)
+    mod_ac = {"kind": "modifier", "target": "ac", "value": base, "op": "setBase", "stackGroup": "armor", "label": f"{name} (armor)"}
+    if dex_cap is not None: mod_ac["dexCap"] = dex_cap
+    eff.append(mod_ac)
+    text = f"{perks} {downsides}"
+    if re.search(r"Disadvantage on Stealth", text): eff.append({"kind": "advantage", "on": "skill.stealth", "mode": "disadvantage", "note": name})
+    if re.search(r"Advantage on Stealth checks", text): eff.append({"kind": "advantage", "on": "skill.stealth", "mode": "advantage", "note": name})
+    if re.search(r"Resistance to bludgeoning", text, re.I): eff.append({"kind": "resistance", "damageType": "bludgeoning", "level": "resistance"})
+    m = re.search(r"movement speed reduced by (\d+) ft", text, re.I)
+    if m: eff.append(mod("speed", -ft_to_m(int(m.group(1))), name))
+    if perks and perks != "No additional protection.": eff.append({"kind": "trait", "name": f"{name}: perks", "description": perks[:500]})
+    if downsides: eff.append({"kind": "trait", "name": f"{name}: downsides", "description": downsides[:500]})
+    return eff
+armor = []
+for r in armor_rows():
+    raw_tier = r["Rarity"]; parts = [p.strip() for p in raw_tier.split("•")]
+    name = r["Armor"]; ac = r["Armor Class (AC)"]; req = r["Requirements / Limits"]
+    reqs = []
+    m = re.match(r"(STR|DEX|CON|INT|WIS|CHA) (\d+) required", req)
+    if m: reqs.append({"kind": "attribute", "attribute": ATTR[m.group(1).lower()], "min": int(m.group(2))})
+    heavy = "Heavy" in req or "+ DEX" not in ac
+    armor.append({
+        "name": name, "rarity": tier[parts[0]], "price": num(r["Price (Kamas)"]), "weight": 12 if heavy else 4,
+        "description": f"AC {ac}. {r['Perks']} {r['Downsides']}".strip(),
+        "icon": "shield", "tags": ["armor", "heavy" if heavy else "light", *(["anti-hacking"] if "Anti-Hacking" in raw_tier else [])],
+        "requirements": reqs,
+        "meta": {"acFormula": ac, "armorWeight": "heavy" if heavy else "light", "requirement": req if req != "None" else None, "perks": r["Perks"], "downsides": r["Downsides"], **({"antiHacking": True} if "Anti-Hacking" in raw_tier else {})},
+        "effects": armor_effects(name, ac, r["Perks"], r["Downsides"]),
+    })
 # ---- handbook plans ----
 def table(heading):
     out = []; grab = False
@@ -119,8 +155,9 @@ for name, cost, effect in table("Antivirus")[1:]:
 districts = {r[0].lower(): {"name": r[0], "tax": int(r[1].rstrip("%")), "benefits": r[2]} for r in table("Districts & Taxes")[1:]}
 maintenance = {tier[r[0]]: num(r[1]) for r in table("Cyberware Maintenance")[1:]}
 reference = {"missionPayouts": table("Mission Types"), "gangTreasury": table("Gang Treasury Rules")}
-out = {"version": 1, "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook", "weapons": weapons, "attachments": attachments, "ammo": ammo, "augments": augments, "plans": plans, "districts": districts, "maintenance": maintenance, "reference": reference}
-json.dump(out, open(sys.argv[5], "w"), indent=1, ensure_ascii=False)
+out = {"version": 2, "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook, Neon_City_Armor_Catalogue", "weapons": weapons, "attachments": attachments, "ammo": ammo, "armor": armor, "augments": augments, "plans": plans, "districts": districts, "maintenance": maintenance, "reference": reference}
+json.dump(out, open(sys.argv[6], "w"), indent=1, ensure_ascii=False)
+for a in armor: print(f"{a['name']:26} {a['rarity']:9} {a['price']:>6}  " + "; ".join(f"{e.get('target', e.get('on', e.get('damageType','')))}{(' base %d' % e['value']) if e.get('op')=='setBase' else ('%+d' % e['value']) if 'value' in e else ''}{(' dexCap %s' % e['dexCap']) if 'dexCap' in e else ''}" for e in a['effects'] if e['kind'] != 'trait') + (f"  req {a['requirements']}" if a['requirements'] else ""))
 print({k: len(v) for k, v in out.items() if isinstance(v, list)})
 for a in augments:
     mods = [e for e in a["effects"] if e["kind"] != "trait"]

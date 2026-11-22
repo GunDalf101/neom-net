@@ -18,7 +18,7 @@ def xlsx(path):
     out = {}
     for sh in wb.find("m:sheets", NS):
         name = sh.get("name"); target = relmap[sh.get("{%s}id" % NS["r"])]
-        target = target if target.startswith("xl/") else "xl/" + target.lstrip("/")
+        target = target.lstrip("/"); target = target if target.startswith("xl/") else "xl/" + target
         root = ET.fromstring(z.read(target))
         rows = []
         for row in root.iter("{%s}row" % NS["m"]):

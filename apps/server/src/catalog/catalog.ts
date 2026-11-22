@@ -4,7 +4,7 @@
  * (category, name), so it can be re-run after edits without duplicating anything the DM already has.
  */
 import { readFileSync } from "node:fs";
-import type { PassiveEffect, PlanKind, District } from "@neom/shared";
+import type { PassiveEffect, PlanKind, District, Requirement } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 
@@ -21,6 +21,7 @@ interface CatalogItem {
   slot?: string;
   capacityCost?: number;
   effects?: PassiveEffect[];
+  requirements?: Requirement[];
 }
 interface CatalogPlan {
   kind: PlanKind;
@@ -36,6 +37,8 @@ interface Catalog {
   weapons: CatalogItem[];
   attachments: CatalogItem[];
   ammo: CatalogItem[];
+  /** Neon City Armor Catalogue (v2). */
+  armor?: CatalogItem[];
   augments: CatalogItem[];
   plans: CatalogPlan[];
   reference: { missionPayouts: string[][]; gangTreasury: string[][] };
@@ -59,7 +62,7 @@ function itemRows(c: Catalog): ItemRow[] {
     tags: it.tags,
     meta: it.meta as Prisma.InputJsonValue,
     effects: (it.effects ?? []) as unknown as Prisma.InputJsonValue,
-    requirements: [] as unknown as Prisma.InputJsonValue,
+    requirements: (it.requirements ?? []) as unknown as Prisma.InputJsonValue,
     useEffects: [] as unknown as Prisma.InputJsonValue,
     ruleIds: [],
     forSale: true,
@@ -69,6 +72,7 @@ function itemRows(c: Catalog): ItemRow[] {
     ...c.weapons.map((w) => ({ ...base(w), category: "weapon", equipmentSlot: "mainHand", damage: w.damage ?? null, damageType: "physical", capacityCost: 0, stackable: false })),
     ...c.attachments.map((a) => ({ ...base(a), category: "attachment", capacityCost: 0, stackable: false })),
     ...c.ammo.map((a) => ({ ...base(a), category: "ammo", capacityCost: 0, stackable: true })),
+    ...(c.armor ?? []).map((a) => ({ ...base(a), category: "armor", equipmentSlot: "armor", capacityCost: 0, stackable: false })),
     ...c.augments.map((a) => ({ ...base(a), category: "cyberware", augmentationSlot: a.slot ?? null, capacityCost: a.capacityCost ?? 0, stackable: false })),
   ];
 }
@@ -77,6 +81,28 @@ export interface ImportResult {
   items: { created: number; updated: number };
   plans: { created: number; updated: number };
   lore: { created: number };
+}
+
+/**
+ * Boot-time catch-up: every campaign that already imported the catalog receives the rows it is missing
+ * (new sheets such as the armor catalogue) without anyone pressing a button. Create-only: nothing the DM
+ * has already is touched.
+ */
+export async function appendCatalogToImportedCampaigns(): Promise<{ campaigns: number; created: number }> {
+  const c = loadCatalog();
+  const rows = itemRows(c);
+  const names = rows.map((r) => r.name);
+  const imported = await prisma.itemDefinition.groupBy({ by: ["campaignId"], where: { name: { in: names }, forSale: true }, _count: { _all: true }, having: { campaignId: { _count: { gt: 20 } } } });
+  let created = 0;
+  for (const g of imported) {
+    const have = new Set((await prisma.itemDefinition.findMany({ where: { campaignId: g.campaignId }, select: { category: true, name: true } })).map((d) => `${d.category}\u0000${d.name}`));
+    for (const row of rows) {
+      if (have.has(`${row.category}\u0000${row.name}`)) continue;
+      await prisma.itemDefinition.create({ data: { campaignId: g.campaignId, ...row } });
+      created++;
+    }
+  }
+  return { campaigns: imported.length, created };
 }
 
 /** Upserts the whole catalog into a campaign. Existing rows keep their id (and so every granted instance). */

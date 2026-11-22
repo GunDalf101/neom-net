@@ -4,11 +4,18 @@ import { config } from "./config.js";
 import { prisma } from "./db.js";
 import { logger } from "./logger.js";
 import { createRealtime } from "./realtime/io.js";
+import { appendCatalogToImportedCampaigns } from "./catalog/catalog.js";
 import { ensureBuiltinConditions } from "./services/conditions.js";
 
 async function main() {
   await prisma.$connect();
   await ensureBuiltinConditions();
+  try {
+    const added = await appendCatalogToImportedCampaigns();
+    if (added.created) logger.info(added, "Catalog catch-up: new catalog items appended to imported campaigns");
+  } catch (err) {
+    logger.error({ err }, "Catalog catch-up failed; the DM can still use Refresh NEOM catalog");
+  }
   if (process.env.SEED_ON_BOOT === "true") {
     // Hosted deployments without a shell (e.g. Render free plan): seed the demo campaign once.
     const { demoCampaignExists, seedDemo } = await import("../prisma/seed.js");

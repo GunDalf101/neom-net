@@ -49,6 +49,8 @@ export const ModifierEffectSchema = z.object({
   /** Modifiers sharing a stackGroup on the same target do not stack: only the highest applies. */
   stackGroup: z.string().max(40).optional(),
   label: z.string().max(80).optional(),
+  /** Armor only (target `ac`, op `setBase`): cap on the DEX modifier added on top, 0 = no DEX at all. */
+  dexCap: z.number().int().min(0).max(10).optional(),
 });
 
 export const ProficiencyEffectSchema = z.object({
@@ -215,7 +217,8 @@ export function describePassiveEffect(e: PassiveEffect): string {
     case "modifier": {
       const sign = e.value >= 0 ? "+" : "";
       const op = e.op === "setBase" ? "base " : e.op === "min" ? "min " : "";
-      return `${op}${describeTarget(e.target)} ${sign}${e.value}`;
+      const cap = e.dexCap === undefined ? "" : e.dexCap === 0 ? " (no DEX)" : ` (DEX max +${e.dexCap})`;
+      return `${op}${describeTarget(e.target)} ${e.op === "setBase" ? "" : sign}${e.value}${cap}`;
     }
     case "proficiency":
       return `${e.level === "expertise" ? "Expertise" : "Proficiency"} in ${describeTarget(e.target)}`;
