@@ -153,6 +153,8 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   abilityIds: z.array(z.string().min(1)).max(50).optional(),
   /** DM only: monthly salary in kamas, taxed by district when the month turns. */
   salary: z.number().int().min(0).max(1_000_000).optional(),
+  /** DM only: set the savings account outright (players move money with the savings transfer). */
+  savings: z.number().int().min(0).max(100_000_000).optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
   progressionPoints: z.number().int().min(0).max(10_000).optional(),
   /** Optimistic concurrency: reject if the server version differs. */
@@ -259,7 +261,17 @@ export const PlanDefinitionInputSchema = z.object({
   visibleToPlayers: z.boolean().default(true),
   sortOrder: z.number().int().min(0).max(999).default(0),
 });
-export const PlanSubscribeSchema = z.object({ characterId: z.string().min(1), planId: z.string().min(1) });
+export const PlanSubscribeSchema = z.object({
+  characterId: z.string().min(1),
+  planId: z.string().min(1),
+  /** DM only: sponsorship applied as the plan is taken (also knocks the same share off the purchase price). */
+  discountPercent: z.number().int().min(0).max(100).optional(),
+  sponsor: z.string().trim().max(60).nullable().optional(),
+});
+/** DM sponsors (or stops sponsoring) a plan the character already holds. */
+export const PlanSponsorSchema = z.object({ characterId: z.string().min(1), planId: z.string().min(1), discountPercent: z.number().int().min(0).max(100), sponsor: z.string().trim().max(60).nullable().default(null) });
+/** DM turns the month for everyone, or pays one character's month with `characterId`. */
+export const BillMonthSchema = z.object({ characterId: z.string().min(1).optional() });
 
 export const GrantItemSchema = z.object({
   characterId: z.string().min(1),
@@ -535,6 +547,8 @@ export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;
 export type TaxDistrictInput = z.infer<typeof TaxDistrictSchema>;
 export type PlanDefinitionInput = z.infer<typeof PlanDefinitionInputSchema>;
 export type PlanSubscribeInput = z.infer<typeof PlanSubscribeSchema>;
+export type BillMonthInput = z.infer<typeof BillMonthSchema>;
+export type PlanSponsorInput = z.infer<typeof PlanSponsorSchema>;
 export type RuleDefinitionInput = z.infer<typeof RuleDefinitionInputSchema>;
 export type OverrideInput = z.infer<typeof OverrideInputSchema>;
 export type ConditionDefinitionInput = z.infer<typeof ConditionDefinitionInputSchema>;

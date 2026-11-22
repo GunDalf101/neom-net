@@ -1,7 +1,7 @@
-import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type District, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, defaultPlanFor, describePassiveEffect, netSalary, planDue, type CharacterPlanDto, type CharacterView, type ItemDefinitionDto, type District, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useSetTaxDistrict, useTransferSavings, useUnsubscribePlan } from "@/api/hooks";
+import { useBillMonth, useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSponsorPlan, useSubscribePlan, useSetTaxDistrict, useTransferSavings, useUnsubscribePlan, useUpdateCharacter } from "@/api/hooks";
 import { Link } from "react-router-dom";
 import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
@@ -335,13 +335,20 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const unsubscribe = useUnsubscribePlan(campaignId);
   const transfer = useTransferSavings(view.character.id);
   const setDistrict = useSetTaxDistrict(view.character.id);
+  const sponsor = useSponsorPlan(campaignId);
+  const update = useUpdateCharacter(view.character.id);
+  const payMonth = useBillMonth(campaignId);
   const [move, setMove] = useState("");
   const canMove = view.permissions.isOwner || isDm;
   // Downtime only: players cannot touch plans while the DM's session is live.
   const locked = !isDm && Boolean(session.data);
   const held = new Map(view.plans.map((p) => [p.plan.kind, p]));
   const upkeep = view.items.filter((i) => i.installedSlot).map((i) => ({ name: i.customName ?? i.definition.name, cost: CYBERWARE_MAINTENANCE[i.definition.rarity] }));
-  const planTotal = view.plans.reduce((s, p) => s + p.plan.monthlyCost, 0);
+  // Required kinds are never "none": without a plan the cheapest one is billed (and taken) when the month turns.
+  const defaults = PLAN_KINDS.filter((k) => PLAN_KIND_META[k].required && !held.has(k))
+    .map((k) => defaultPlanFor(k, plans.data ?? []))
+    .filter((p): p is PlanDefinitionDto => Boolean(p));
+  const planTotal = view.plans.reduce((s, p) => s + p.monthlyDue, 0) + defaults.reduce((s, p) => s + p.monthlyCost, 0);
   const upkeepTotal = upkeep.reduce((s, u) => s + u.cost, 0);
   const total = planTotal + upkeepTotal;
   // Housing decides the tax district; without housing the player registers wherever they like (Dogtown by default).
@@ -375,11 +382,31 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
                 <span className="flex items-center gap-1.5" style={{ color: `var(--color-${m.color})` }}>
                   <Icon name={m.icon} size={12} /> {m.label}
                 </span>
-                <span className="text-[0.55rem] text-dim">{current ? `current: ${current.plan.name}` : m.blurb}</span>
+                <span className="flex items-center gap-1.5 text-[0.55rem] text-dim">
+                  {m.required && <Badge color={current ? "muted" : "crimson"}>{current ? "required" : "required · none picked"}</Badge>}
+                  {current ? `current: ${current.plan.name}` : m.blurb}
+                </span>
               </div>
+              {m.required && !current && defaults.find((d) => d.kind === k) && (
+                <div className="mb-1.5 text-[0.65rem] text-crimson/90" data-testid={`plan-default-${k}`}>
+                  Not optional: until you pick one, {defaults.find((d) => d.kind === k)!.name} ({defaults.find((d) => d.kind === k)!.monthlyCost.toLocaleString()} ₭ / month) is billed and taken when the month turns.
+                </div>
+              )}
               <div className="grid gap-1.5 sm:grid-cols-2">
                 {group.map((p) => (
-                  <PlanCard key={p.id} plan={p} color={m.color} current={current?.planId === p.id} canAfford={view.character.credits >= p.purchasePrice} busy={locked || subscribe.isPending || unsubscribe.isPending} onSubscribe={() => subscribe.mutate({ characterId: view.character.id, planId: p.id })} onCancel={() => unsubscribe.mutate({ characterId: view.character.id, planId: p.id })} />
+                  <PlanCard
+                    key={p.id}
+                    plan={p}
+                    color={m.color}
+                    held={current?.planId === p.id ? current : null}
+                    canCancel={isDm || !m.required}
+                    isDm={isDm}
+                    canAfford={view.character.credits >= p.purchasePrice}
+                    busy={locked || subscribe.isPending || unsubscribe.isPending || sponsor.isPending}
+                    onSubscribe={() => subscribe.mutate({ characterId: view.character.id, planId: p.id })}
+                    onCancel={() => unsubscribe.mutate({ characterId: view.character.id, planId: p.id })}
+                    onSponsor={(discountPercent, who) => sponsor.mutate({ characterId: view.character.id, planId: p.id, discountPercent, sponsor: who })}
+                  />
                 ))}
               </div>
             </section>
@@ -391,13 +418,13 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
         <div className="mb-2 grid grid-cols-2 gap-2" data-testid="accounts">
           <div className="border border-amber/50 bg-bg-0/60 px-2 py-1.5">
             <div className="text-[0.55rem] uppercase tracking-wider text-muted">Balance</div>
-            <div className="num text-[1.05rem] font-bold text-amber">{view.character.credits.toLocaleString()} ₭</div>
-            <div className="text-[0.55rem] text-dim">spendable</div>
+            {isDm ? <MoneyBox value={view.character.credits} color="amber" label="Balance" testId="dm-balance" onSave={(n) => update.mutate({ credits: n })} /> : <div className="num text-[1.05rem] font-bold text-amber">{view.character.credits.toLocaleString()} ₭</div>}
+            <div className="text-[0.55rem] text-dim">{isDm ? "DM: type to set" : "spendable"}</div>
           </div>
           <div className="border border-cyan/40 bg-bg-0/60 px-2 py-1.5">
             <div className="text-[0.55rem] uppercase tracking-wider text-muted">Savings</div>
-            <div className="num text-[1.05rem] font-bold text-cyan">{view.character.savings.toLocaleString()} ₭</div>
-            <div className="text-[0.55rem] text-dim">yours, banked at session end</div>
+            {isDm ? <MoneyBox value={view.character.savings} color="cyan" label="Savings" testId="dm-savings" onSave={(n) => update.mutate({ savings: n })} /> : <div className="num text-[1.05rem] font-bold text-cyan">{view.character.savings.toLocaleString()} ₭</div>}
+            <div className="text-[0.55rem] text-dim">{isDm ? "DM: type to set" : "yours, banked at session end"}</div>
           </div>
         </div>
         {canMove && (
@@ -413,9 +440,9 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
         )}
         <div className="hud-title mb-2 text-amber">Monthly outlook</div>
         <div className="mb-2 border-b border-line/60 pb-2" data-testid="payday">
-          <div className="flex justify-between gap-2">
-            <span className="text-text">Salary</span>
-            <span className="num text-text">{view.character.salary.toLocaleString()}</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-text">Salary{isDm && <span className="text-dim"> · DM sets</span>}</span>
+            {isDm ? <MoneyBox value={view.character.salary} color="text" label="Monthly salary" testId="dm-salary" small onSave={(n) => update.mutate({ salary: n })} /> : <span className="num text-text">{view.character.salary.toLocaleString()}</span>}
           </div>
           <div className="flex items-center justify-between gap-2 text-muted">
             {canPickDistrict ? (
@@ -447,12 +474,21 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
             <span className="num font-bold text-ok">+{net.toLocaleString()} ₭</span>
           </div>
         </div>
-        {view.plans.length === 0 && upkeep.length === 0 && <div className="text-dim">Nothing due. No plans, no chrome to maintain.</div>}
+        {view.plans.length === 0 && defaults.length === 0 && upkeep.length === 0 && <div className="text-dim">Nothing due. No plans, no chrome to maintain.</div>}
         <ul className="space-y-0.5">
           {view.plans.map((p) => (
             <li key={p.id} className="flex justify-between gap-2">
-              <span className="truncate text-text">{p.plan.name}</span>
-              <span className="num text-crimson/80">−{p.plan.monthlyCost.toLocaleString()}</span>
+              <span className="truncate text-text">
+                {p.plan.name}
+                {p.discountPercent > 0 && <span className="text-ok"> · {p.discountPercent === 100 ? "paid" : `−${p.discountPercent}%`}{p.sponsor ? ` by ${p.sponsor}` : ""}</span>}
+              </span>
+              <span className={clsx("num", p.monthlyDue ? "text-crimson/80" : "text-ok")}>−{p.monthlyDue.toLocaleString()}</span>
+            </li>
+          ))}
+          {defaults.map((p) => (
+            <li key={p.id} className="flex justify-between gap-2" data-testid="outlook-default">
+              <span className="truncate text-crimson/90">{p.name} <span className="text-dim">· default {PLAN_KIND_META[p.kind].label.toLowerCase()}</span></span>
+              <span className="num text-crimson/80">−{p.monthlyCost.toLocaleString()}</span>
             </li>
           ))}
           {upkeep.map((u, i) => (
@@ -473,6 +509,12 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
           <span>Balance after the month</span>
           <span className={clsx("num", balanceAfter < 0 ? "text-crimson" : "text-text")}>{balanceAfter.toLocaleString()} ₭</span>
         </div>
+        {isDm && (
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-line/60 pt-2" data-testid="pay-month">
+            <span className="text-[0.65rem] text-muted">Pay this character's month now (salary in, bills out).</span>
+            <ConfirmButton size="xs" color="ok" variant="solid" label="Pay month" confirmLabel={`${monthNet >= 0 ? "+" : ""}${monthNet.toLocaleString()} ₭?`} disabled={payMonth.isPending} onConfirm={() => payMonth.mutate({ characterId: view.character.id })} />
+          </div>
+        )}
         <div className="mt-1 text-[0.65rem] text-dim">
           The DM turns the month: salary lands in your balance first (taxed where you live), then plans and upkeep are collected from it. Plans you cannot pay lapse (dearest first) and unpaid chrome upkeep leaves your cyberware malfunctioning. When a session ends, whatever balance is left is banked into savings.
         </div>
@@ -481,8 +523,14 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   );
 }
 
-function PlanCard({ plan, color, current, canAfford, busy, onSubscribe, onCancel }: { plan: PlanDefinitionDto; color: string; current: boolean; canAfford: boolean; busy: boolean; onSubscribe: () => void; onCancel: () => void }) {
+function PlanCard({ plan, color, held, canCancel, isDm, canAfford, busy, onSubscribe, onCancel, onSponsor }: { plan: PlanDefinitionDto; color: string; held: CharacterPlanDto | null; canCancel: boolean; isDm: boolean; canAfford: boolean; busy: boolean; onSubscribe: () => void; onCancel: () => void; onSponsor: (discountPercent: number, sponsor: string | null) => void }) {
   const effects = plan.effects.filter((e) => e.kind !== "trait").map(describePassiveEffect);
+  const current = Boolean(held);
+  const [discount, setDiscount] = useState<number | null>(null);
+  const [who, setWho] = useState<string | null>(null);
+  const pct = discount ?? held?.discountPercent ?? 0;
+  const payer = who ?? held?.sponsor ?? "";
+  const dirty = held ? pct !== held.discountPercent || (payer.trim() || null) !== (held.sponsor ?? null) : false;
   return (
     <div className={clsx("hud-panel p-2", current && "lit")} style={{ ["--panel-accent" as string]: current ? `var(--color-${color})` : "var(--color-line-2)" }} data-testid="plan-card" data-current={current}>
       <div className="flex items-start justify-between gap-2">
@@ -490,18 +538,63 @@ function PlanCard({ plan, color, current, canAfford, busy, onSubscribe, onCancel
           <div className="truncate font-semibold text-text">{plan.name}</div>
           <div className="text-[0.7rem] text-muted">{plan.description}</div>
           {effects.length > 0 && <div className="text-[0.68rem] text-violet">{effects.join(" · ")}</div>}
+          {held && held.discountPercent > 0 && (
+            <div className="text-[0.68rem] text-ok" data-testid="plan-sponsor">
+              {held.discountPercent === 100 ? "Paid in full" : `${held.discountPercent}% covered`} by {held.sponsor || "a benefactor"} · you pay {held.monthlyDue.toLocaleString()} ₭
+            </div>
+          )}
         </div>
         <div className="shrink-0 text-right">
-          <div className="num text-[0.95rem] font-bold text-amber">{plan.monthlyCost.toLocaleString()} ₭</div>
+          <div className="num text-[0.95rem] font-bold text-amber">
+            {held && held.discountPercent > 0 ? (
+              <>
+                <s className="text-muted">{plan.monthlyCost.toLocaleString()}</s> {held.monthlyDue.toLocaleString()}
+              </>
+            ) : (
+              plan.monthlyCost.toLocaleString()
+            )}{" "}
+            ₭
+          </div>
           <div className="text-[0.55rem] uppercase tracking-wider text-muted">per month</div>
           {plan.purchasePrice > 0 && <div className="num text-[0.65rem] text-cyan">+ {plan.purchasePrice.toLocaleString()} ₭ once</div>}
         </div>
       </div>
+      {isDm && held && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1 border-t border-line/40 pt-1.5" data-testid="sponsor-controls">
+          <Select value={String(pct)} onChange={(e) => setDiscount(Number(e.target.value))} className="!w-auto !py-0.5 text-[0.7rem]" aria-label="Sponsorship">
+            <option value="0">Pays in full</option>
+            <option value="25">25% off</option>
+            <option value="50">Half paid</option>
+            <option value="75">75% off</option>
+            <option value="100">Free</option>
+          </Select>
+          <Input value={payer} placeholder="who pays (Arasaka…)" aria-label="Sponsor" className="!w-36 !py-0.5 text-[0.7rem]" disabled={pct === 0} onChange={(e) => setWho(e.target.value)} />
+          <Button
+            size="xs"
+            color="ok"
+            icon="check"
+            disabled={busy || !dirty}
+            onClick={() => {
+              onSponsor(pct, pct ? payer.trim() || null : null);
+              setDiscount(null);
+              setWho(null);
+            }}
+          >
+            Apply
+          </Button>
+        </div>
+      )}
       <div className="mt-1.5 flex justify-end">
         {current ? (
-          <Button size="xs" variant="ghost" icon="x" disabled={busy} onClick={onCancel}>
-            Cancel plan
-          </Button>
+          canCancel ? (
+            <Button size="xs" variant="ghost" icon="x" disabled={busy} onClick={onCancel}>
+              Cancel plan
+            </Button>
+          ) : (
+            <span className="text-[0.65rem] text-dim" title="Not optional: pick another plan of this kind to switch">
+              Required · switch to change
+            </span>
+          )
         ) : (
           <Button size="xs" color={color} icon="check" disabled={busy || !canAfford} title={!canAfford ? `Needs ${plan.purchasePrice.toLocaleString()} ₭ up front` : undefined} onClick={onSubscribe}>
             {plan.purchasePrice > 0 ? "Buy & subscribe" : "Subscribe"}
@@ -509,5 +602,25 @@ function PlanCard({ plan, color, current, canAfford, busy, onSubscribe, onCancel
         )}
       </div>
     </div>
+  );
+}
+
+/** DM-editable kama figure: type a number, blur or Enter saves. */
+function MoneyBox({ value, color, label, testId, small, onSave }: { value: number; color: string; label: string; testId: string; small?: boolean; onSave: (n: number) => void }) {
+  return (
+    <input
+      key={`${testId}-${value}`}
+      className={clsx("valbox", small ? "!text-[0.85rem] w-20" : "!text-[1rem] w-24")}
+      style={{ ["--val-color" as string]: `var(--color-${color})` }}
+      defaultValue={value}
+      inputMode="numeric"
+      aria-label={label}
+      data-testid={testId}
+      onBlur={(e) => {
+        const n = Number(e.target.value.replace(/[^0-9]/g, ""));
+        if (Number.isFinite(n) && n !== value) onSave(n);
+      }}
+      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+    />
   );
 }

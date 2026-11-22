@@ -583,7 +583,7 @@ function ShopWorkshop() {
           <p className="mt-2 text-[0.65rem] text-dim">Shop prices are the listed prices, untaxed. Mark any workshop item "For sale" to put it on the shelves, or curate directly from the HUD Shop tab.</p>
         </Panel>
         <Panel title="Turn the month" icon="calendar-clock" color="crimson" actions={<Button size="xs" variant="ghost" icon="refresh-cw" onClick={() => preview.refetch()} aria-label="Refresh preview" />}>
-          <p className="text-xs text-muted">Payday first: each character receives their salary minus the tax of the district they live in (Dogtown 15% · WCA 25% · NFC 35%, from the housing plan). Then they pay plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction.</p>
+          <p className="text-xs text-muted">Payday first: each character receives their salary minus the tax of the district they live in (Dogtown 15% · WCA 25% · NFC 35%, from the housing plan, else the district they registered in). Then they pay plans and the upkeep of installed cyberware (common 25 · uncommon 100 · rare 250 · very rare 500 · legendary 1000 ₭). Housing, food, transport and connectivity are not optional: a character without one is billed and enrolled in the cheapest plan of that kind. Sponsored plans are collected at the discounted price. Plans they cannot pay lapse, dearest first; unpaid upkeep applies Cyberware Malfunction. A single character's month can be paid from their Plans tab.</p>
           <table className="num mt-2 w-full text-[0.7rem]" data-testid="month-preview">
             <thead>
               <tr className="text-left text-[0.55rem] uppercase tracking-wider text-dim">
@@ -612,7 +612,7 @@ function ShopWorkshop() {
           </table>
           <div className="mt-2 flex items-center justify-between">
             <span className="text-xs text-muted">Total due: <span className="num text-amber">{due.toLocaleString()} ₭</span> · payroll: <span className="num text-ok">{(preview.data ?? []).reduce((s, b) => s + b.salaryNet, 0).toLocaleString()} ₭</span></span>
-            <ConfirmButton size="sm" color="crimson" variant="solid" label="Advance one month" confirmLabel="Bill everyone now?" disabled={bill.isPending} onConfirm={() => bill.mutate()} />
+            <ConfirmButton size="sm" color="crimson" variant="solid" label="Advance one month" confirmLabel="Bill everyone now?" disabled={bill.isPending} onConfirm={() => bill.mutate({})} />
           </div>
         </Panel>
       </div>

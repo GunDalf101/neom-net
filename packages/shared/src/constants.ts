@@ -297,13 +297,30 @@ export function netSalary(gross: number, taxPercent: number): number {
 
 export const PLAN_KINDS = ["housing", "food", "transport", "connectivity", "antivirus"] as const;
 export type PlanKind = (typeof PLAN_KINDS)[number];
-export const PLAN_KIND_META: Record<PlanKind, { label: string; icon: string; color: string; blurb: string }> = {
-  housing: { label: "Housing", icon: "home", color: "amber", blurb: "Where you sleep between runs." },
-  food: { label: "Food", icon: "utensils", color: "lime", blurb: "Eat badly and it shows on the sheet." },
-  transport: { label: "Transport", icon: "car", color: "cyan", blurb: "Vehicles are bought once, then insured and fuelled monthly." },
-  connectivity: { label: "Connectivity", icon: "wifi", color: "violet", blurb: "Better uplink, better Hacking." },
-  antivirus: { label: "Antivirus", icon: "shield-check", color: "magenta", blurb: "ICE between you and the next netrunner." },
+/**
+ * `required` kinds are not optional: a character always holds one. Players switch between plans but cannot drop to
+ * none, and when the month turns a character without one is enrolled in the cheapest plan of that kind.
+ */
+export const PLAN_KIND_META: Record<PlanKind, { label: string; icon: string; color: string; blurb: string; required: boolean }> = {
+  housing: { label: "Housing", icon: "home", color: "amber", blurb: "Where you sleep between runs.", required: true },
+  food: { label: "Food", icon: "utensils", color: "lime", blurb: "Eat badly and it shows on the sheet.", required: true },
+  transport: { label: "Transport", icon: "car", color: "cyan", blurb: "Vehicles are bought once, then insured and fuelled monthly.", required: true },
+  connectivity: { label: "Connectivity", icon: "wifi", color: "violet", blurb: "Better uplink, better Hacking.", required: true },
+  antivirus: { label: "Antivirus", icon: "shield-check", color: "magenta", blurb: "ICE between you and the next netrunner. Optional.", required: false },
 };
+/** What a sponsored plan actually costs per month after the DM's discount (100 = free). */
+export function planDue(monthlyCost: number, discountPercent: number): number {
+  return Math.max(0, Math.round(monthlyCost * (100 - Math.min(100, Math.max(0, discountPercent))) / 100));
+}
+export const REQUIRED_PLAN_KINDS = PLAN_KINDS.filter((k) => PLAN_KIND_META[k].required);
+
+/** The plan a character is enrolled in by default for a required kind: cheapest monthly cost, no purchase price if possible. */
+export function defaultPlanFor<T extends { kind: PlanKind; monthlyCost: number; purchasePrice: number; visibleToPlayers: boolean }>(kind: PlanKind, plans: readonly T[]): T | null {
+  const pool = plans.filter((p) => p.kind === kind && p.visibleToPlayers);
+  const free = pool.filter((p) => p.purchasePrice === 0);
+  const pick = (free.length ? free : pool).sort((a, b) => a.monthlyCost - b.monthlyCost || a.purchasePrice - b.purchasePrice)[0];
+  return pick ?? null;
+}
 
 /** Monthly upkeep per installed cyberware, by rarity (GM economy handbook). */
 export const CYBERWARE_MAINTENANCE: Record<Rarity, number> = { common: 25, uncommon: 100, rare: 250, veryRare: 500, epic: 750, legendary: 1000, artifact: 2000 };

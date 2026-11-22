@@ -163,6 +163,12 @@ export interface CharacterPlanDto {
   planId: string;
   plan: PlanDefinitionDto;
   startedAt: string;
+  /** DM sponsorship: percentage off the monthly cost (100 = free). */
+  discountPercent: number;
+  /** Who pays ("Arasaka", "the fixer"), when the DM said so. */
+  sponsor: string | null;
+  /** Monthly cost after the discount: what the bill collects. */
+  monthlyDue: number;
 }
 
 /** The storefront: every item for sale at its listed price. */
@@ -182,7 +188,8 @@ export interface MonthlyBillDto {
   taxPercent: number;
   salaryGross: number;
   salaryNet: number;
-  plans: { planId: string; name: string; kind: PlanKind; cost: number }[];
+  /** `defaulted`: not held yet; the cheapest plan of a required kind, billed (and enrolled) when the month turns. */
+  plans: { planId: string; name: string; kind: PlanKind; cost: number; defaulted: boolean }[];
   maintenance: { itemId: string; name: string; rarity: Rarity; cost: number }[];
   /** Plans + upkeep. */
   total: number;
@@ -192,6 +199,8 @@ export interface MonthlyBillDto {
 
 export interface MonthlyBillResultDto extends MonthlyBillDto {
   paid: number;
+  /** Required-kind plans the character was enrolled in because they held none. */
+  defaulted: string[];
   lapsed: string[];
   maintenanceUnpaid: boolean;
 }

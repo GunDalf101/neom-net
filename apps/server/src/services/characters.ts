@@ -343,7 +343,7 @@ const SHEET_LABELS: Record<string, string> = {
   name: "name", species: "species", characterClass: "class", subclass: "subclass", faction: "faction", alignment: "alignment",
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
-  acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities", salary: "salary",
+  acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities", salary: "salary", savings: "savings",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -387,7 +387,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -395,7 +395,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   const data: Prisma.CharacterUpdateInput = { version: { increment: 1 } };
   const simple = [
     "name", "species", "characterClass", "subclass", "faction", "alignment", "background", "biography", "portraitUrl",
-    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary",
+    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary", "savings",
   ] as const;
   for (const k of simple) {
     if (input[k] !== undefined) (data as Record<string, unknown>)[k] = input[k];

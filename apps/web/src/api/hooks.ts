@@ -728,12 +728,12 @@ export function useImportCatalog(cid: string) {
   );
 }
 export const usePlans = (cid: string) => useQuery({ queryKey: qk.plans(cid), queryFn: () => api.get<PlanDefinitionDto[]>(`/campaigns/${cid}/plans`) });
-function planMutation(cid: string, path: "subscribe" | "unsubscribe", message: string) {
+function planMutation(cid: string, path: "subscribe" | "unsubscribe" | "sponsor", message: string) {
   return function usePlanMutation() {
     const qc = useQueryClient();
     return useMutation(
       withToast({
-        mutationFn: (body: { characterId: string; planId: string }) => api.post<CharacterView>(`/campaigns/${cid}/plans/${path}`, body),
+        mutationFn: (body: { characterId: string; planId: string; discountPercent?: number; sponsor?: string | null }) => api.post<CharacterView>(`/campaigns/${cid}/plans/${path}`, body),
         onSuccess: (v) => {
           qc.setQueryData(qk.character(v.character.id), v);
           qc.invalidateQueries({ queryKey: qk.shop(cid) });
@@ -745,6 +745,7 @@ function planMutation(cid: string, path: "subscribe" | "unsubscribe", message: s
 }
 export const useSubscribePlan = (cid: string) => planMutation(cid, "subscribe", "Plan taken")();
 export const useUnsubscribePlan = (cid: string) => planMutation(cid, "unsubscribe", "Plan cancelled")();
+export const useSponsorPlan = (cid: string) => planMutation(cid, "sponsor", "Sponsorship updated")();
 export function useSavePlan(cid: string) {
   const qc = useQueryClient();
   return useMutation(
@@ -766,12 +767,14 @@ export function useBillMonth(cid: string) {
   const qc = useQueryClient();
   return useMutation(
     withToast({
-      mutationFn: () => api.post<MonthlyBillResultDto[]>(`/campaigns/${cid}/plans/bill`, {}),
-      onSuccess: (r) => {
+      mutationFn: (body: { characterId?: string } = {}) => api.post<MonthlyBillResultDto[]>(`/campaigns/${cid}/plans/bill`, body),
+      onSuccess: (r, body) => {
         for (const key of [qk.bill(cid), qk.characters(cid), qk.dashboard(cid), qk.events(cid)]) qc.invalidateQueries({ queryKey: key });
         for (const b of r) qc.invalidateQueries({ queryKey: qk.character(b.characterId) });
         const lapsed = r.flatMap((b) => b.lapsed).length;
-        toast("success", "The month turned", `${r.reduce((s, b) => s + b.paid, 0).toLocaleString()} ₭ collected${lapsed ? `, ${lapsed} plan${lapsed === 1 ? "" : "s"} lapsed` : ""}`);
+        const one = body?.characterId ? r[0] : null;
+        if (one) toast("success", `${one.characterName} was paid`, `+${one.salaryNet.toLocaleString()} ₭ salary, −${one.paid.toLocaleString()} ₭ bills${one.lapsed.length ? `, lapsed: ${one.lapsed.join(", ")}` : ""}`);
+        else toast("success", "The month turned", `${r.reduce((s, b) => s + b.paid, 0).toLocaleString()} ₭ collected${lapsed ? `, ${lapsed} plan${lapsed === 1 ? "" : "s"} lapsed` : ""}`);
       },
     }),
   );

@@ -30,7 +30,7 @@ import type {
   RuleTraceDto,
   RuleVersionDto,
 } from "@neom/shared";
-import { validateRuleGraph } from "@neom/shared";
+import { planDue, validateRuleGraph } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 
 type Json = Prisma.JsonValue;
@@ -378,7 +378,7 @@ export function toPlanDto(p: Prisma.PlanDefinitionGetPayload<Record<string, neve
 }
 
 export function toCharacterPlanDto(s: Prisma.CharacterPlanGetPayload<{ include: { plan: true } }>): CharacterPlanDto {
-  return { id: s.id, planId: s.planId, plan: toPlanDto(s.plan), startedAt: iso(s.startedAt) };
+  return { id: s.id, planId: s.planId, plan: toPlanDto(s.plan), startedAt: iso(s.startedAt), discountPercent: s.discountPercent, sponsor: s.sponsor ?? null, monthlyDue: planDue(s.plan.monthlyCost, s.discountPercent) };
 }
 
 export function toEncyclopediaDto(e: Prisma.EncyclopediaEntryGetPayload<Record<string, never>>): EncyclopediaEntryDto {

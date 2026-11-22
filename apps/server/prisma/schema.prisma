@@ -591,6 +591,10 @@ model CharacterPlan {
   planId      String
   plan        PlanDefinition @relation(fields: [planId], references: [id], onDelete: Cascade)
   startedAt   DateTime       @default(now())
+  /// DM sponsorship: percentage knocked off the monthly cost (100 = free). 0 = the character pays in full.
+  discountPercent Int        @default(0)
+  /// Who foots the bill ("Arasaka", "the fixer"); shown on the plan.
+  sponsor     String?
 
   @@unique([characterId, planId])
   @@index([characterId])

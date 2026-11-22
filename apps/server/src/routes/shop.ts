@@ -1,4 +1,4 @@
-import { PlanDefinitionInputSchema, PlanSubscribeSchema, ShopBuySchema } from "@neom/shared";
+import { BillMonthSchema, PlanDefinitionInputSchema, PlanSponsorSchema, PlanSubscribeSchema, ShopBuySchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
@@ -53,11 +53,15 @@ shopRouter.post("/:campaignId/plans/unsubscribe", wrap<AuthedRequest>(async (req
   const m = await requireMember(pid(req), req.user.id);
   res.json(await plans.unsubscribe(pid(req), viewer(req, m.isDm), parseBody(PlanSubscribeSchema, req.body)));
 }));
+shopRouter.post("/:campaignId/plans/sponsor", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.json(await plans.sponsor(pid(req), req.user.id, parseBody(PlanSponsorSchema, req.body)));
+}));
 shopRouter.get("/:campaignId/plans/bill", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
   res.json(await plans.previewMonth(pid(req)));
 }));
 shopRouter.post("/:campaignId/plans/bill", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
-  res.json(await plans.billMonth(pid(req), req.user.id));
+  res.json(await plans.billMonth(pid(req), req.user.id, parseBody(BillMonthSchema, req.body).characterId));
 }));
