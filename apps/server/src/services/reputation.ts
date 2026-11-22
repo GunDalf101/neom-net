@@ -1,4 +1,4 @@
-import { DEFAULT_FACTIONS, REPUTATION_MAX, REPUTATION_MIN, reputationTier, type FactionDto, type FactionInputSchema, type ReputationChangeSchema, type ReputationEntryDto } from "@neom/shared";
+import { DEFAULT_FACTIONS, LATE_DEFAULT_FACTION_KEYS, REPUTATION_MAX, REPUTATION_MIN, reputationTier, type FactionDto, type FactionInputSchema, type ReputationChangeSchema, type ReputationEntryDto } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { prisma } from "../db.js";
@@ -15,7 +15,7 @@ export function toFactionDto(f: FactionRow): FactionDto {
 /** Installs the default seven once per campaign (marker event), so a DM who deletes them is not fought. */
 export async function ensureDefaultFactions(campaignId: string): Promise<void> {
   const count = await prisma.faction.count({ where: { campaignId } });
-  if (count > 0) return;
+  if (count > 0) return ensureLateDefaults(campaignId);
   const seeded = await prisma.campaignEvent.findFirst({ where: { campaignId, type: "factions.seeded" }, select: { id: true } });
   if (seeded) return;
   await prisma.faction.createMany({
@@ -23,6 +23,24 @@ export async function ensureDefaultFactions(campaignId: string): Promise<void> {
     skipDuplicates: true,
   });
   await logEvent({ campaignId, type: "factions.seeded", summary: `Default factions installed (${DEFAULT_FACTIONS.map((f) => f.name).join(", ")}); edit them from the Reputation page`, visibility: "dm" });
+  for (const key of LATE_DEFAULT_FACTION_KEYS) await logEvent({ campaignId, type: `factions.added.${key}`, summary: `${key} installed with the defaults`, visibility: "dm" });
+}
+
+/** Factions that joined the default list later (Dogtown) are added once to campaigns seeded before them. */
+async function ensureLateDefaults(campaignId: string): Promise<void> {
+  for (const key of LATE_DEFAULT_FACTION_KEYS) {
+    const def = DEFAULT_FACTIONS.find((f) => f.key === key);
+    if (!def) continue;
+    const marker = await prisma.campaignEvent.findFirst({ where: { campaignId, type: `factions.added.${key}` }, select: { id: true } });
+    if (marker) continue;
+    const exists = await prisma.faction.findUnique({ where: { campaignId_key: { campaignId, key } } });
+    if (!exists) {
+      const max = await prisma.faction.aggregate({ where: { campaignId }, _max: { sortOrder: true } });
+      await prisma.faction.create({ data: { campaignId, key: def.key, name: def.name, description: def.description, color: def.color, icon: def.icon, isCity: def.isCity, sortOrder: (max._max.sortOrder ?? 0) + 1 } });
+    }
+    await logEvent({ campaignId, type: `factions.added.${key}`, summary: `${def.name} joined the reputation board; edit or remove it from the Reputation page`, visibility: "dm" });
+    emitToCampaign(campaignId, "content.updated", { campaignId, kind: "factions" });
+  }
 }
 
 export async function listFactions(campaignId: string): Promise<FactionDto[]> {

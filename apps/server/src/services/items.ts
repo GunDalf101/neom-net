@@ -61,6 +61,7 @@ function definitionData(input: ItemDefinitionInput) {
     meta: input.meta as Prisma.InputJsonValue,
     forSale: input.forSale,
     stock: input.stock,
+    maintenance: input.maintenance ?? null,
   };
 }
 

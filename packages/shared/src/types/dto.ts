@@ -140,6 +140,8 @@ export interface ItemDefinitionDto {
   meta: Record<string, unknown>;
   forSale: boolean;
   stock: number | null;
+  /** Monthly upkeep set by the DM; null = default (cyberware by rarity while installed, else 0). See `itemUpkeep`. */
+  maintenance: number | null;
   createdAt: string;
   updatedAt: string;
 }

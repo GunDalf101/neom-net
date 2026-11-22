@@ -63,8 +63,8 @@ const adrenalineGraph: RuleGraph = {
   ],
 };
 
-type ItemSeed = Omit<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock"> &
-  Partial<Pick<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock">>;
+type ItemSeed = Omit<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock" | "maintenance"> &
+  Partial<Pick<ItemDefinitionInput, "requirements" | "effects" | "useEffects" | "ruleIds" | "tags" | "meta" | "forSale" | "stock" | "maintenance">>;
 
 const items: ItemSeed[] = [
   // ---- Cyberware ----
@@ -525,6 +525,7 @@ export async function seedDemo(client: PrismaClient = defaultPrisma): Promise<vo
         meta: (it.meta ?? {}) as Prisma.InputJsonValue,
         forSale: it.forSale ?? false,
         stock: it.stock ?? null,
+        maintenance: it.maintenance ?? null,
       },
     });
     defs.set(it.name, row.id);

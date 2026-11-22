@@ -235,6 +235,8 @@ model ItemDefinition {
   /// Listed in the campaign shop. `stock` null = unlimited.
   forSale          Boolean  @default(false)
   stock            Int?
+  /// Monthly upkeep in kamas, billed with the plans. null = default: cyberware by rarity (GM handbook) while installed, 0 otherwise.
+  maintenance      Int?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

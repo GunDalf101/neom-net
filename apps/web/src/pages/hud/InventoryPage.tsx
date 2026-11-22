@@ -1,4 +1,4 @@
-import { AUGMENTATION_SLOT_META, describePassiveEffect, describeRequirement, unmetRequirements, type ItemInstanceDto } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, describePassiveEffect, describeRequirement, itemUpkeep, unmetRequirements, type ItemInstanceDto } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
 import { useCampaign, useDmGrant, useItemAction, useTransferSavings, useUpdateCharacter } from "@/api/hooks";
@@ -361,6 +361,14 @@ function DetailPanel({ item, view, act, canEdit, isDm }: { item: ItemInstanceDto
         <dd className="num text-text">{d.weight} kg</dd>
         <dt className="text-muted">Value</dt>
         <dd className="num text-text">{d.price.toLocaleString()} ₭</dd>
+        {itemUpkeep(d, true) > 0 && (
+          <>
+            <dt className="text-muted">Upkeep</dt>
+            <dd className="num text-text">
+              {itemUpkeep(d, true).toLocaleString()} ₭ / month{d.category === "cyberware" && !item.installedSlot ? <span className="text-dim"> once installed</span> : null}
+            </dd>
+          </>
+        )}
         {d.price > 0 && (
           <>
             <dt className="text-muted">Sells for</dt>

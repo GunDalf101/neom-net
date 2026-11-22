@@ -1,5 +1,6 @@
 import {
   AUGMENTATION_SLOTS,
+  CYBERWARE_MAINTENANCE,
   DAMAGE_TYPES,
   DISTRICTS,
   DISTRICT_META,
@@ -102,6 +103,7 @@ const emptyItem = (): ItemDefinitionInput => ({
   meta: {},
   forSale: false,
   stock: null,
+  maintenance: null,
 });
 
 function toItemInput(d: ItemDefinitionDto): ItemDefinitionInput {
@@ -212,6 +214,9 @@ function ItemsWorkshop() {
               </Field>
               <Field label="Stock (blank = unlimited)">
                 <Input type="number" min={0} value={form.stock ?? ""} onChange={(e) => set("stock", e.target.value === "" ? null : Number(e.target.value))} />
+              </Field>
+              <Field label="Upkeep ₭ / month" hint={form.category === "cyberware" ? `Blank = handbook rate for the rarity (${(CYBERWARE_MAINTENANCE[form.rarity] ?? 0).toLocaleString()} ₭) while installed` : "Blank = none. Billed with the plans for every unit held."}>
+                <Input type="number" min={0} value={form.maintenance ?? ""} placeholder="default" onChange={(e) => set("maintenance", e.target.value === "" ? null : Number(e.target.value))} data-testid="item-maintenance" />
               </Field>
               {form.category === "cyberware" ? (
                 <>

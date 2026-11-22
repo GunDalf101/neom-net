@@ -1,4 +1,4 @@
-import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, defaultPlanFor, describePassiveEffect, netSalary, planDue, type CharacterPlanDto, type CharacterView, type ItemDefinitionDto, type District, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, DISTRICTS, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, defaultPlanFor, describePassiveEffect, itemUpkeep, netSalary, planDue, type CharacterPlanDto, type CharacterView, type ItemDefinitionDto, type District, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
 import { useBillMonth, useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSponsorPlan, useSubscribePlan, useSetTaxDistrict, useTransferSavings, useUnsubscribePlan, useUpdateCharacter } from "@/api/hooks";
@@ -43,7 +43,7 @@ export function ShopPage() {
   const { view, campaign, isDm } = useHud();
   const shop = useShop(campaign.id);
   const importCatalog = useImportCatalog(campaign.id);
-  const [shelf, setShelf] = useState<string>("weapon");
+  const [shelf, setShelf] = useState<string>("plans");
   const [search, setSearch] = useState("");
   const [rarity, setRarity] = useState<Rarity | "">("");
   const [type, setType] = useState("");
@@ -109,16 +109,16 @@ export function ShopPage() {
       {isDm && <AddItemsModal open={adding} onClose={() => setAdding(false)} campaignId={campaign.id} />}
 
       <div className="flex flex-wrap items-center gap-1" data-testid="shop-shelves">
+        <button type="button" className={clsx("hud-tab flex items-center gap-2", active === "plans" && "active")} style={active === "plans" ? { background: "var(--color-violet)", boxShadow: "0 0 12px var(--color-violet)" } : { color: "var(--color-violet)" }} onClick={() => setShelf("plans")}>
+          <Icon name="receipt" size={12} /> Plans
+          <span className="num text-[0.55rem] opacity-70">{view.plans.length}</span>
+        </button>
         {shelves.map((s) => (
           <button key={s} type="button" className={clsx("hud-tab flex items-center gap-2", active === s && "active")} onClick={() => { setShelf(s); setType(""); setCompat(""); }}>
             <Icon name={SHELF_META[s]?.icon ?? "package"} size={12} /> {SHELF_META[s]?.label ?? s}
             <span className="num text-[0.55rem] opacity-70">{items.filter((i) => shelfOf(i) === s).length}</span>
           </button>
         ))}
-        <button type="button" className={clsx("hud-tab flex items-center gap-2", active === "plans" && "active")} style={active === "plans" ? { background: "var(--color-violet)", boxShadow: "0 0 12px var(--color-violet)" } : { color: "var(--color-violet)" }} onClick={() => setShelf("plans")}>
-          <Icon name="receipt" size={12} /> Plans
-          <span className="num text-[0.55rem] opacity-70">{view.plans.length}</span>
-        </button>
       </div>
 
       {active !== "plans" && (
@@ -216,6 +216,7 @@ function ShopCard({ item: it, view, campaignId, isDm, open, onToggle }: { item: 
         {owned > 0 && <Badge color="cyan" title="Already in your inventory">owned ×{owned}</Badge>}
         {isDm && !it.visibleToPlayers && <Badge color="crimson" title="Hidden from players: they do not see this item">hidden</Badge>}
         {it.stock !== null && <Badge color={soldOut ? "crimson" : "muted"}>{soldOut ? "sold out" : `${it.stock} left`}</Badge>}
+        {itemUpkeep(it, true) > 0 && <Badge color="violet" title={it.category === "cyberware" ? "Monthly upkeep once installed, billed with your plans" : "Monthly upkeep, billed with your plans"}>{itemUpkeep(it, true).toLocaleString()} ₭/mo</Badge>}
         <span className="rarity-pill hidden sm:inline">{rarityName(it.rarity)}</span>
         <span className={clsx("num shrink-0 text-[0.95rem] font-bold", broke ? "text-dim" : "text-amber")}>{it.price.toLocaleString()} ₭</span>
         <Icon name={open ? "chevron-up" : "chevron-down"} size={14} className="text-muted" />
@@ -343,7 +344,7 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   // Downtime only: players cannot touch plans while the DM's session is live.
   const locked = !isDm && Boolean(session.data);
   const held = new Map(view.plans.map((p) => [p.plan.kind, p]));
-  const upkeep = view.items.filter((i) => i.installedSlot).map((i) => ({ name: i.customName ?? i.definition.name, cost: CYBERWARE_MAINTENANCE[i.definition.rarity] }));
+  const upkeep = view.items.map((i) => ({ name: i.customName ?? i.definition.name, cost: itemUpkeep(i.definition, Boolean(i.installedSlot)) * Math.max(1, i.quantity) })).filter((u) => u.cost > 0);
   // Required kinds are never "none": without a plan the cheapest one is billed (and taken) when the month turns.
   const defaults = PLAN_KINDS.filter((k) => PLAN_KIND_META[k].required && !held.has(k))
     .map((k) => defaultPlanFor(k, plans.data ?? []))

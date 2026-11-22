@@ -111,6 +111,7 @@ export function toItemDefinitionDto(d: Prisma.ItemDefinitionGetPayload<Record<st
     meta: obj<Record<string, unknown>>(d.meta, {}),
     forSale: d.forSale,
     stock: d.stock,
+    maintenance: d.maintenance ?? null,
     createdAt: iso(d.createdAt),
     updatedAt: iso(d.updatedAt),
   };

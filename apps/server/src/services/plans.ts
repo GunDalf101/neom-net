@@ -1,4 +1,4 @@
-import { CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, PLAN_KIND_META, REQUIRED_PLAN_KINDS, defaultPlanFor, netSalary, planDue, type CharacterView, type District, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSponsorInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
+import { DISTRICTS, DISTRICT_META, PLAN_KIND_META, REQUIRED_PLAN_KINDS, defaultPlanFor, itemUpkeep, netSalary, planDue, type CharacterView, type District, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSponsorInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
@@ -160,9 +160,10 @@ export function monthlyBill(full: FullCharacter, catalog: PlanRow[]): MonthlyBil
     const fallback = defaultPlanFor(kind, typed);
     if (fallback) plans.push({ planId: fallback.id, name: fallback.name, kind, cost: fallback.monthlyCost, defaulted: true });
   }
+  // Upkeep: installed cyberware by default, plus anything the DM gave a monthly charge (per unit held).
   const maintenance = full.items
-    .filter((i) => i.installedSlot)
-    .map((i) => ({ itemId: i.id, name: i.customName ?? i.definition.name, rarity: i.definition.rarity as Rarity, cost: CYBERWARE_MAINTENANCE[i.definition.rarity as Rarity] ?? 0 }));
+    .map((i) => ({ itemId: i.id, name: i.customName ?? i.definition.name, rarity: i.definition.rarity as Rarity, cost: itemUpkeep(i.definition, Boolean(i.installedSlot)) * Math.max(1, i.quantity) }))
+    .filter((m) => m.cost > 0);
   const total = plans.reduce((s, p) => s + p.cost, 0) + maintenance.reduce((s, m) => s + m.cost, 0);
   return { characterId: full.id, characterName: full.name, credits: full.credits, district, districtSource, taxPercent, salaryGross, salaryNet, plans, maintenance, total, balanceAfter: full.credits + salaryNet - total };
 }

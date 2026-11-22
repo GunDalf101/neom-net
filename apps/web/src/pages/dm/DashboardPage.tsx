@@ -39,10 +39,21 @@ export function DashboardPage() {
                 <button key={ch.id} type="button" onClick={() => setSelected(ch.id)} className={clsx("hud-panel flex w-full items-center gap-2 p-2 text-left transition", sel === ch.id ? "border-crimson" : "hover:brightness-125")} style={{ ["--panel-accent" as string]: sel === ch.id ? "var(--color-crimson)" : "var(--color-line-2)" }}>
                   <Portrait url={ch.portraitUrl} name={ch.name} size={44} />
                   <div className="min-w-0 flex-1 text-xs">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="truncate font-semibold text-text">{ch.name}</span>
-                      <span className="flex items-center gap-1 text-dim">
-                        <span className={ch.online ? "text-ok" : ""}>●</span> {ch.ownerUsername}
+                      <span className="flex items-center gap-2 text-dim">
+                        <span className="flex items-center gap-1">
+                          <span className={ch.online ? "text-ok" : ""}>●</span> {ch.ownerUsername}
+                        </span>
+                        <Link
+                          to={`/c/${campaign.id}/hud/${ch.id}/shop`}
+                          className="flex items-center gap-1 border border-amber/50 px-1.5 py-0.5 text-[0.6rem] uppercase tracking-wider text-amber hover:bg-amber/10"
+                          title={`Open ${ch.name}'s shop and plans`}
+                          data-testid="dash-shop-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Icon name="shopping-cart" size={11} /> Shop
+                        </Link>
                       </span>
                     </div>
                     <div className="mt-0.5 flex items-center gap-2">

@@ -357,6 +357,10 @@ await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${draftEntry.id}`);
 await dm.call("DELETE", `/api/campaigns/${cid}/encyclopedia/${npcEntry.id}`);
 check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => e.name.includes("(E2E)")), "Encyclopedia cleaned up");
 
+{
+  const shop_factions = await player.call("GET", `/api/campaigns/${cid}/factions`);
+  check(shop_factions.some((f) => f.key === "dogtown" && f.name === "Dogtown"), "Dogtown sits on the reputation board (added to campaigns seeded before it)");
+}
 console.log("    Shop: the NEOM catalog, district-taxed purchases, stock");
 const shop_imported = await dm.call("POST", `/api/campaigns/${cid}/shop/import`, {});
 check(shop_imported.items.created + shop_imported.items.updated >= 150 && shop_imported.plans.created + shop_imported.plans.updated >= 30, `Catalog shop_imported (${shop_imported.items.created} new / ${shop_imported.items.updated} refreshed items, ${shop_imported.plans.created + shop_imported.plans.updated} plans)`);
@@ -416,8 +420,12 @@ check(typeof (await player.call("GET", `/api/characters/${charId}`)).character.s
 check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { salary: 9999 }))) === 403, "Players cannot set their own salary (403)");
 view = await dm.call("PATCH", `/api/characters/${charId}`, { salary: 4000 });
 check(view.character.salary === 4000, "DM sets the monthly salary to 4,000 ₭");
+await dm.call("PUT", `/api/campaigns/${cid}/items/${yipi.id}`, { ...yipi, maintenance: 40 });
 const billPreview = await dm.call("GET", `/api/campaigns/${cid}/plans/bill`);
 const myBill = billPreview.find((b) => b.characterId === charId);
+check(myBill.maintenance.some((m) => m.name === "Yipi-9" && m.cost === 40), "DM-set upkeep on a weapon (40 ₭) is billed like cyberware upkeep");
+check(!myBill.maintenance.some((m) => m.name === "9mm magazine"), "Items without upkeep cost nothing a month");
+await dm.call("PUT", `/api/campaigns/${cid}/items/${yipi.id}`, { ...yipi, maintenance: null });
 const shop_defaults = myBill.plans.filter((p) => p.defaulted);
 check(shop_defaults.length === 2 && shop_defaults.some((p) => p.kind === "food" && p.name === "Noodles") && shop_defaults.some((p) => p.kind === "transport" && p.name === "Public Transport"), `Food and transport are not optional: ${shop_defaults.map((p) => p.name).join(" + ")} are billed by default`);
 const expectedPlans = fiber.monthlyCost + nfcFlat.monthlyCost + shop_defaults.reduce((s, p) => s + p.cost, 0);

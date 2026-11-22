@@ -242,6 +242,8 @@ export const ItemDefinitionInputSchema = z.object({
   /** Listed in the shop; `stock` null = unlimited. */
   forSale: z.boolean().default(false),
   stock: z.number().int().min(0).max(9999).nullable().default(null),
+  /** Monthly upkeep billed with the plans; null = default (cyberware by rarity while installed, else 0). */
+  maintenance: z.number().int().min(0).max(1_000_000).nullable().default(null),
 });
 
 // ---------- Shop & plans ----------

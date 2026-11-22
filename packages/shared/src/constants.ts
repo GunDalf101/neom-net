@@ -322,6 +322,18 @@ export function defaultPlanFor<T extends { kind: PlanKind; monthlyCost: number; 
   return pick ?? null;
 }
 
+/**
+ * Monthly upkeep of one item instance. The DM can set `maintenance` on any definition; left blank, installed
+ * cyberware costs the handbook rate for its rarity and everything else costs nothing.
+ */
+export function itemUpkeep(def: { category: string; rarity: string; maintenance: number | null }, installed: boolean): number {
+  if (def.maintenance !== null && def.maintenance !== undefined) {
+    return def.category === "cyberware" && !installed ? 0 : def.maintenance;
+  }
+  if (def.category === "cyberware") return installed ? (CYBERWARE_MAINTENANCE[def.rarity as Rarity] ?? 0) : 0;
+  return 0;
+}
+
 /** Monthly upkeep per installed cyberware, by rarity (GM economy handbook). */
 export const CYBERWARE_MAINTENANCE: Record<Rarity, number> = { common: 25, uncommon: 100, rare: 250, veryRare: 500, epic: 750, legendary: 1000, artifact: 2000 };
 
@@ -363,7 +375,10 @@ export const DEFAULT_FACTIONS: readonly DefaultFaction[] = [
   { key: "ms1337", name: "MS 1337", description: "Netrunner collective. If it has a signal, they already own a copy.", color: "lime", icon: "terminal", isCity: false },
   { key: "chromaticDragons", name: "Chromatic Dragons", description: "Heavy-chrome enforcers with a flair for colour-coded violence.", color: "violet", icon: "flame", isCity: false },
   { key: "vvz", name: "VVZ", description: "A syndicate nobody can spell out. Their favours come due at the worst moment.", color: "magenta", icon: "radio", isCity: false },
+  { key: "dogtown", name: "Dogtown", description: "The walled district that runs itself: cheap rooms, black markets and a militia that remembers faces.", color: "amber", icon: "dog", isCity: false },
 ];
+/** Defaults added after campaigns were already seeded: installed once each (marker event), so a DM who deletes them is not fought. */
+export const LATE_DEFAULT_FACTION_KEYS: readonly string[] = ["dogtown"];
 
 export type ReputationTier = "hunted" | "hostile" | "unfriendly" | "neutral" | "friendly" | "allied" | "family";
 
