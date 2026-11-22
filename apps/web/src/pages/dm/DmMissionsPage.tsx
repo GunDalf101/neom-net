@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { useCharacters, useItemDefinitions, useMissionOp, useMissions, useSaveMission } from "@/api/hooks";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
+import { Chips, FilterBar, matches } from "@/components/dm/Filters";
 import { EncyclopediaBoard } from "@/pages/hud/EncyclopediaPage";
 import { JournalBoard } from "@/pages/hud/JournalPage";
 import { useDm } from "./DmShell";
@@ -48,9 +49,19 @@ function MissionsBoard() {
     setForm(m === "new" ? empty(kind) : { name: m.name, description: m.description, objectives: m.objectives, status: m.status, kind: m.kind, rewards: m.rewards, assignedCharacterIds: m.assignedCharacterIds, visibleToPlayers: m.visibleToPlayers, assignedOnly: m.assignedOnly });
   };
   const kindMeta = MISSION_KIND_META[kind];
-  const inTab = (missions.data ?? []).filter((m) => m.kind === kind);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"" | MissionDto["status"]>("");
+  const [vis, setVis] = useState<"" | "visible" | "hidden">("");
+  const allOfKind = (missions.data ?? []).filter((m) => m.kind === kind);
+  const inTab = allOfKind
+    .filter((m) => matches(search, m.name, m.description, ...m.objectives.map((o) => o.text)))
+    .filter((m) => !status || m.status === status)
+    .filter((m) => (vis === "visible" ? m.visibleToPlayers : vis === "hidden" ? !m.visibleToPlayers : true));
+  const dirty = Boolean(search || status || vis);
+  const reset = () => { setSearch(""); setStatus(""); setVis(""); };
+  const charName = (id: string) => chars.data?.find((c) => c.id === id)?.name ?? "?";
   return (
-    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
+    <div className={clsx("grid grid-cols-1 gap-3", editing && "xl:grid-cols-[380px_1fr]")}>
       <Panel title="Missions" icon="target" color={kindMeta.color} actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
         <div className="mb-2 flex flex-wrap gap-1" data-testid="dm-mission-tabs">
           {MISSION_KINDS.map((k) => {
@@ -64,11 +75,53 @@ function MissionsBoard() {
           })}
         </div>
         <p className="mb-2 text-[0.65rem] text-dim">{kindMeta.blurb}</p>
-        {inTab.length === 0 && <Empty>No {kindMeta.label.toLowerCase()} missions.</Empty>}
-        <div className="space-y-1">
+        <div className="mb-2">
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search missions…" count={inTab.length} total={allOfKind.length} dirty={dirty} onReset={reset} testId="mission-filters">
+            <Chips label="Status" size="xs" value={status} onChange={setStatus} options={[{ value: "", label: "All" }, ...(["available", "active", "completed", "failed"] as const).map((s) => ({ value: s, label: s, count: allOfKind.filter((m) => m.status === s).length, color: STATUS_COLOR[s] }))]} />
+            <Chips label="Visibility" size="xs" value={vis} onChange={setVis} options={[{ value: "", label: "Any" }, { value: "visible", label: "Published" }, { value: "hidden", label: "Hidden", count: allOfKind.filter((m) => !m.visibleToPlayers).length }]} />
+          </FilterBar>
+        </div>
+        {allOfKind.length === 0 && <Empty>No {kindMeta.label.toLowerCase()} missions.</Empty>}
+        {allOfKind.length > 0 && inTab.length === 0 && <Empty>No mission matches.</Empty>}
+        <div className={clsx(editing ? "space-y-1" : "grid gap-2 md:grid-cols-2 2xl:grid-cols-3")} data-testid="mission-list">
           {inTab.map((m) => {
             const selected = editing !== "new" && editing?.id === m.id;
             const answered = m.assignments.filter((a) => a.response !== "pending").length;
+            const done = m.objectives.filter((o) => o.done).length;
+            if (!editing) {
+              return (
+                <button key={m.id} type="button" onClick={() => open(m)} className="hud-panel flex min-w-0 flex-col gap-1.5 overflow-hidden p-2.5 text-left text-xs transition hover:brightness-125" style={{ ["--panel-accent" as string]: `var(--color-${kindMeta.color})` }} data-testid="mission-card">
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate font-display text-[0.85rem] font-bold uppercase tracking-[0.05em] text-text">{m.name}</span>
+                    {!m.visibleToPlayers && <Badge color="muted">hidden</Badge>}
+                    <Badge color={STATUS_COLOR[m.status]}>{m.status}</Badge>
+                  </span>
+                  {m.description && <span className="line-clamp-2 text-muted">{m.description}</span>}
+                  {m.objectives.length > 0 && (
+                    <span className="flex items-center gap-2">
+                      <span className="h-1 flex-1 bg-bg-0">
+                        <span className="block h-full" style={{ width: `${Math.round((done / m.objectives.length) * 100)}%`, background: `var(--color-${kindMeta.color})` }} />
+                      </span>
+                      <span className="num text-[0.62rem] text-muted">
+                        {done}/{m.objectives.length} objectives
+                      </span>
+                    </span>
+                  )}
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.65rem] text-dim">
+                    <span>{m.assignedCharacterIds.length ? m.assignedCharacterIds.map(charName).join(", ") : "whole crew"}</span>
+                    {kindMeta.refusable && m.assignments.length > 0 && <span className="num">{answered}/{m.assignments.length} answered</span>}
+                    {(m.rewards.xp > 0 || m.rewards.credits > 0) && (
+                      <span className="num text-amber">
+                        {m.rewards.xp ? `${m.rewards.xp} XP` : ""}
+                        {m.rewards.xp && m.rewards.credits ? " · " : ""}
+                        {m.rewards.credits ? `${m.rewards.credits.toLocaleString()} ₭` : ""}
+                      </span>
+                    )}
+                    {m.rewardsGrantedAt && <span className="text-ok">rewards granted</span>}
+                  </span>
+                </button>
+              );
+            }
             return (
               <button key={m.id} type="button" onClick={() => (selected ? setEditing(null) : open(m))} className={clsx("hud-panel flex w-full items-center gap-2 p-2 text-left text-xs", selected && "lit")} style={{ ["--panel-accent" as string]: `var(--color-${kindMeta.color})` }} title={`${m.objectives.filter((o) => o.done).length}/${m.objectives.length} objectives · ${m.assignedCharacterIds.length} assigned${!m.visibleToPlayers ? " · hidden" : m.assignedOnly ? " · crew only" : ""}`}>
                 <span className="min-w-0 flex-1 truncate font-display text-[0.8rem] font-bold uppercase tracking-[0.05em] text-text">{m.name}</span>

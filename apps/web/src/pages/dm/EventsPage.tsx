@@ -1,10 +1,11 @@
 import type { CampaignEventDto, RuleTraceDto } from "@neom/shared";
 import { ChangeList, isChangeList } from "@/components/ChangeList";
 import clsx from "clsx";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useEvents, useRolls, useTraces } from "@/api/hooks";
+import { Chips, FilterBar, FilterSelect, matches } from "@/components/dm/Filters";
 import { RollRow } from "@/components/hud/DicePanel";
-import { Badge, Empty, Input, Panel, Spinner } from "@/components/ui";
+import { Badge, Empty, Panel, Spinner } from "@/components/ui";
 import { clock, timeAgo } from "@/lib/format";
 import { useDm } from "./DmShell";
 
@@ -14,14 +15,36 @@ export function EventsPage() {
   const rolls = useRolls(campaign.id);
   const traces = useTraces(campaign.id);
   const [filter, setFilter] = useState("");
-  const list = (events.data ?? []).filter((e) => !filter || e.type.includes(filter) || e.summary.toLowerCase().includes(filter.toLowerCase()));
+  const [group, setGroup] = useState<EventGroup | "">("");
+  const [vis, setVis] = useState<"" | CampaignEventDto["visibility"]>("");
+  const [who, setWho] = useState("");
+  const [actor, setActor] = useState("");
+  const all = events.data ?? [];
+  const characters = useMemo(() => [...new Map(all.filter((e) => e.characterId && e.characterName).map((e) => [e.characterId as string, e.characterName as string])).entries()].sort((a, b) => a[1].localeCompare(b[1])), [all]);
+  const actors = useMemo(() => [...new Set(all.map((e) => e.actorName ?? "SYSTEM"))].sort(), [all]);
+  const list = all
+    .filter((e) => matches(filter, e.type, e.summary, e.characterName, e.actorName))
+    .filter((e) => !group || eventGroup(e.type) === group)
+    .filter((e) => !vis || e.visibility === vis)
+    .filter((e) => !who || e.characterId === who)
+    .filter((e) => !actor || (e.actorName ?? "SYSTEM") === actor);
+  const dirty = Boolean(filter || group || vis || who || actor);
+  const reset = () => { setFilter(""); setGroup(""); setVis(""); setWho(""); setActor(""); };
 
   return (
     <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1fr]">
-      <Panel title="Campaign event history" icon="scroll-text" actions={<Input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} className="!w-44 !py-1 text-xs" />}>
+      <Panel title="Campaign event history" icon="scroll-text">
+        <div className="mb-2 space-y-1.5">
+          <FilterBar search={filter} onSearch={setFilter} placeholder="Search events…" count={list.length} total={all.length} dirty={dirty} onReset={reset} testId="event-filters">
+            {characters.length > 0 && <FilterSelect label="Character" value={who} onChange={setWho} options={characters.map(([id, name]) => ({ value: id, label: name }))} />}
+            {actors.length > 1 && <FilterSelect label="By" value={actor} onChange={setActor} options={actors.map((a) => ({ value: a, label: a }))} allLabel="anyone" />}
+            <Chips label="Visibility" size="xs" value={vis} onChange={setVis} options={[{ value: "", label: "Any" }, { value: "public", label: "Public" }, { value: "owner", label: "Owner", color: "crimson" }, { value: "dm", label: "DM only", color: "amber" }]} />
+          </FilterBar>
+          <Chips label="Kind" size="xs" value={group} onChange={setGroup} options={[{ value: "", label: "Everything", count: all.length }, ...EVENT_GROUPS.map((g) => ({ value: g.key, label: g.label, count: all.filter((e) => eventGroup(e.type) === g.key).length, color: g.color })).filter((o) => o.count > 0)]} />
+        </div>
         {events.isLoading && <Spinner />}
         {list.length === 0 && <Empty>No events match.</Empty>}
-        <ul className="divide-y divide-line/60">
+        <ul className="max-h-[75vh] divide-y divide-line/60 overflow-y-auto pr-1" data-testid="event-list">
           {list.map((e) => (
             <EventRow key={e.id} e={e} />
           ))}
@@ -46,6 +69,22 @@ export function EventsPage() {
       </div>
     </div>
   );
+}
+
+/** Event families for the DM log filter; the type prefix decides. */
+export type EventGroup = "combat" | "rules" | "economy" | "gear" | "reputation" | "story" | "sheet" | "session";
+export const EVENT_GROUPS: { key: EventGroup; label: string; color: string; test: RegExp }[] = [
+  { key: "combat", label: "Combat", color: "crimson", test: /^(hp\.|encounter\.|rest\.|roll|death)/ },
+  { key: "rules", label: "Rules", color: "violet", test: /^(rule\.|override\.|effect\.|condition\.|notify)/ },
+  { key: "economy", label: "Economy", color: "amber", test: /^(shop\.|plan\.|month\.|savings\.|resource\.|character\.taxDistrict)/ },
+  { key: "gear", label: "Gear", color: "cyan", test: /^(item\.|augmentation\.)/ },
+  { key: "reputation", label: "Reputation", color: "ok", test: /^(reputation\.|faction)/ },
+  { key: "story", label: "Story", color: "blue", test: /^(mission\.|encyclopedia\.|journal\.|message\.|npc\.)/ },
+  { key: "session", label: "Session", color: "lime", test: /^(session\.|campaign\.)/ },
+  { key: "sheet", label: "Sheet", color: "muted", test: /^(character\.|level|xp)/ },
+];
+export function eventGroup(type: string): EventGroup {
+  return EVENT_GROUPS.find((g) => g.test.test(type))?.key ?? "sheet";
 }
 
 const TYPE_COLOR = (type: string) => (type.startsWith("hp.damage") ? "crimson" : type.startsWith("hp.heal") ? "ok" : type.startsWith("rule") ? "violet" : type.startsWith("override") ? "amber" : type.startsWith("augmentation") || type.startsWith("item") ? "cyan" : "muted");

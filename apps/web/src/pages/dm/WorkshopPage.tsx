@@ -11,6 +11,7 @@ import {
   RARITIES,
   augmentStrain,
   describePassiveEffect,
+  itemUpkeep,
   type AbilityDto,
   type AbilityInput,
   type ConditionDefinitionDto,
@@ -44,6 +45,7 @@ import {
 } from "@/api/hooks";
 import { InstantEffectListEditor, PassiveEffectListEditor, RequirementListEditor } from "@/components/editors/EffectEditors";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
+import { Chips, FilterBar, FilterSelect, matches } from "@/components/dm/Filters";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { metaRows } from "@/lib/itemMeta";
 import { useDm } from "./DmShell";
@@ -121,34 +123,79 @@ function ItemsWorkshop() {
   const [editingId, setEditingId] = useState<string | "new" | null>(null);
   const [form, setForm] = useState<ItemDefinitionInput>(emptyItem());
   const [filter, setFilter] = useState("");
+  const [category, setCategory] = useState<string>("");
+  const [rarity, setRarity] = useState("");
+  const [flag, setFlag] = useState<"" | "forSale" | "hidden" | "upkeep" | "custom">("");
+  const [sort, setSort] = useState<"name" | "price" | "priceDesc" | "rarity">("name");
   const set = <K extends keyof ItemDefinitionInput>(k: K, v: ItemDefinitionInput[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const open = (d: ItemDefinitionDto | "new") => {
     setEditingId(d === "new" ? "new" : d.id);
     setForm(d === "new" ? emptyItem() : toItemInput(d));
   };
-  const list = (items.data ?? []).filter((d) => !filter || d.name.toLowerCase().includes(filter.toLowerCase()) || d.category.includes(filter));
+  const all = items.data ?? [];
+  const catalogNames = new Set(all.filter((d) => d.forSale).map((d) => d.name));
+  const rarityRank = (r: string) => RARITIES.indexOf(r as (typeof RARITIES)[number]);
+  const list = all
+    .filter((d) => matches(filter, d.name, d.description, d.category, d.augmentationSlot, ...d.tags))
+    .filter((d) => !category || d.category === category)
+    .filter((d) => !rarity || d.rarity === rarity)
+    .filter((d) => (flag === "forSale" ? d.forSale : flag === "hidden" ? !d.visibleToPlayers : flag === "upkeep" ? itemUpkeep(d, true) > 0 : flag === "custom" ? !catalogNames.has(d.name) || !d.forSale : true))
+    .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : sort === "price" ? a.price - b.price : sort === "priceDesc" ? b.price - a.price : rarityRank(b.rarity) - rarityRank(a.rarity) || a.name.localeCompare(b.name)));
+  const dirty = Boolean(filter || category || rarity || flag || sort !== "name");
+  const reset = () => { setFilter(""); setCategory(""); setRarity(""); setFlag(""); setSort("name"); };
+  // Grouped by category when no category is picked, so 170 rows read as shelves rather than a wall.
+  const groups = category ? [[category, list] as const] : ITEM_CATEGORIES.map((c) => [c, list.filter((d) => d.category === c)] as const).filter(([, g]) => g.length > 0);
 
   return (
-    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[380px_1fr]">
+    <div className={clsx("grid grid-cols-1 gap-3", editingId ? "xl:grid-cols-[420px_1fr]" : "")}>
       <Panel title="Catalog" icon="package" actions={<Button size="xs" icon="plus" onClick={() => open("new")}>New</Button>}>
-        <Input placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} className="mb-2 !py-1 text-xs" />
-        <div className="max-h-[70vh] space-y-1 overflow-y-auto pr-1">
-          {list.map((d) => (
-            <button key={d.id} type="button" onClick={() => open(d)} className={clsx("hud-panel flex w-full items-center gap-2 p-2 text-left text-xs", editingId === d.id && "border-crimson")} style={{ ["--panel-accent" as string]: accent(RARITY_COLOR[d.rarity]) }}>
-              <Icon name={d.icon} size={16} style={{ color: accent(RARITY_COLOR[d.rarity]) }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-text">{d.name}</span>
-                <span className="text-dim">
-                  {d.category}
-                  {d.augmentationSlot ? ` · ${d.augmentationSlot}` : ""}
-                  {!d.visibleToPlayers ? " · hidden" : ""}
-                </span>
-              </span>
-              <Badge color={RARITY_COLOR[d.rarity]}>{rarityName(d.rarity)}</Badge>
-            </button>
+        <div className="mb-2 space-y-1.5">
+          <FilterBar search={filter} onSearch={setFilter} placeholder="Search items…" count={list.length} total={all.length} dirty={dirty} onReset={reset} testId="catalog-filters">
+            <FilterSelect label="Rarity" value={rarity} onChange={setRarity} options={RARITIES.map((r) => ({ value: r, label: rarityName(r) }))} />
+            <Select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="!w-auto !py-1 text-xs" aria-label="Sort">
+              <option value="name">Name A–Z</option>
+              <option value="price">Price ↑</option>
+              <option value="priceDesc">Price ↓</option>
+              <option value="rarity">Rarity ↓</option>
+            </Select>
+          </FilterBar>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Chips label="Category" size="xs" value={category} onChange={setCategory} options={[{ value: "", label: "All", count: all.length }, ...ITEM_CATEGORIES.map((c) => ({ value: c, label: c, count: all.filter((d) => d.category === c).length })).filter((o) => o.count > 0)]} />
+            <Chips label="Flags" size="xs" value={flag} onChange={setFlag} options={[{ value: "", label: "Any" }, { value: "forSale", label: "For sale", count: all.filter((d) => d.forSale).length, color: "amber" }, { value: "hidden", label: "Hidden", count: all.filter((d) => !d.visibleToPlayers).length, color: "crimson" }, { value: "upkeep", label: "Upkeep", count: all.filter((d) => itemUpkeep(d, true) > 0).length, color: "violet" }, { value: "custom", label: "Not in shop", count: all.filter((d) => !d.forSale).length, color: "cyan" }]} />
+          </div>
+        </div>
+        <div className={clsx("max-h-[70vh] overflow-y-auto pr-1", !editingId && "grid gap-x-3 sm:grid-cols-2 2xl:grid-cols-3")} data-testid="catalog-list">
+          {groups.map(([cat, rows]) => (
+            <div key={cat} className={clsx("space-y-1", !editingId && "contents")}>
+              {!category && (
+                <div className={clsx("sticky top-0 z-[1] flex items-center justify-between bg-bg-1/95 px-1 py-1 font-display text-[0.58rem] uppercase tracking-[0.18em] text-muted backdrop-blur", !editingId && "sm:col-span-2 2xl:col-span-3")}>
+                  <span>{cat}</span>
+                  <span className="num">{rows.length}</span>
+                </div>
+              )}
+              {rows.map((d) => (
+                <button key={d.id} type="button" onClick={() => open(d)} className={clsx("hud-panel mb-1 flex w-full items-center gap-2 p-2 text-left text-xs", editingId === d.id && "border-crimson")} style={{ ["--panel-accent" as string]: accent(RARITY_COLOR[d.rarity]) }} data-testid="catalog-row">
+                  <Icon name={d.icon} size={16} style={{ color: accent(RARITY_COLOR[d.rarity]) }} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-text">{d.name}</span>
+                    <span className="text-dim">
+                      {d.category}
+                      {d.augmentationSlot ? ` · ${d.augmentationSlot}` : ""}
+                      {d.price ? ` · ${d.price.toLocaleString()} ₭` : ""}
+                      {itemUpkeep(d, true) > 0 ? ` · ${itemUpkeep(d, true)} ₭/mo` : ""}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1">
+                    {d.forSale && <Badge color="amber" title="Listed in the shop">shop</Badge>}
+                    {!d.visibleToPlayers && <Badge color="crimson">hidden</Badge>}
+                    <Badge color={RARITY_COLOR[d.rarity]}>{rarityName(d.rarity)}</Badge>
+                  </span>
+                </button>
+              ))}
+            </div>
           ))}
-          {list.length === 0 && <Empty>No definitions.</Empty>}
+          {list.length === 0 && <Empty>No definitions match.</Empty>}
         </div>
       </Panel>
 

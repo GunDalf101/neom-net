@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAbilities, useCharacters, useConditionDefinitions, useItemDefinitions, useRuleOp, useRuleVersions, useRules, useSaveRule, useSimulateRule } from "@/api/hooks";
+import { Chips, FilterBar, FilterSelect, matches } from "@/components/dm/Filters";
 import { RuleEditor, blankGraph } from "@/components/dm/RuleEditor";
 import { Badge, Button, ConfirmButton, Empty, Field, Input, Panel, Select, Spinner, Textarea } from "@/components/ui";
 import { timeAgo } from "@/lib/format";
@@ -17,35 +18,76 @@ export function RulesPage() {
   const save = useSaveRule(campaign.id);
   const op = useRuleOp(campaign.id);
   const selected = rules.data?.find((r) => r.id === ruleId) ?? null;
+  const [search, setSearch] = useState("");
+  const [state, setState] = useState<"" | "enabled" | "disabled" | "draft" | "invalid">("");
+  const [scope, setScope] = useState("");
+  const [mode, setMode] = useState("");
 
   const createNew = async () => {
     const r = await save.mutateAsync({ body: { name: "New rule", description: "", automationMode: null, enabled: false, scope: "campaign", graph: blankGraph() } });
     nav(`/c/${campaign.id}/dm/rules/${r.id}`);
   };
+  const all = rules.data ?? [];
+  const triggersOf = (r: RuleDefinitionDto) => r.graph.nodes.filter((n) => n.type.startsWith("trigger.")).map((n) => n.type.replace(/^trigger\./, "").replace(/([A-Z])/g, " $1").toLowerCase());
+  const list = all
+    .filter((r) => matches(search, r.name, r.description, ...triggersOf(r)))
+    .filter((r) => (state === "enabled" ? r.enabled : state === "disabled" ? !r.enabled : state === "draft" ? !r.publishedVersion || r.publishedVersion !== r.draftVersion : state === "invalid" ? !r.validation.valid : true))
+    .filter((r) => !scope || r.scope === scope)
+    .filter((r) => !mode || (r.automationMode ?? "default") === mode);
+  const dirty = Boolean(search || state || scope || mode);
+  const reset = () => { setSearch(""); setState(""); setScope(""); setMode(""); };
+  const versionBadge = (r: RuleDefinitionDto) => <Badge color={r.publishedVersion ? (r.publishedVersion === r.draftVersion ? "ok" : "amber") : "muted"}>{r.publishedVersion ? (r.publishedVersion === r.draftVersion ? `v${r.publishedVersion}` : `v${r.publishedVersion} · draft v${r.draftVersion}`) : "unpublished"}</Badge>;
 
   return (
-    <div className="grid grid-cols-1 gap-3 xl:grid-cols-[300px_1fr]">
+    <div className={clsx("grid grid-cols-1 gap-3", selected && "xl:grid-cols-[320px_1fr]")}>
       <Panel title="Rules" icon="git-fork" color="violet" actions={<Button size="xs" icon="plus" onClick={createNew}>New</Button>}>
+        <div className="mb-2">
+          <FilterBar search={search} onSearch={setSearch} placeholder="Search rules…" count={list.length} total={all.length} dirty={dirty} onReset={reset} testId="rule-filters">
+            <Chips<typeof state> label="State" size="xs" value={state} onChange={setState} options={([{ value: "", label: "All" }, { value: "enabled", label: "Enabled", count: all.filter((r) => r.enabled).length, color: "ok" }, { value: "disabled", label: "Disabled", count: all.filter((r) => !r.enabled).length }, { value: "draft", label: "Unpublished changes", count: all.filter((r) => !r.publishedVersion || r.publishedVersion !== r.draftVersion).length, color: "amber" }, { value: "invalid", label: "Invalid", count: all.filter((r) => !r.validation.valid).length, color: "crimson" }] as { value: typeof state; label: string; count?: number; color?: string }[]).filter((o) => o.value === "" || o.value === "enabled" || o.value === "disabled" || (o.count ?? 0) > 0)} />
+            <FilterSelect label="Scope" value={scope} onChange={setScope} options={[{ value: "campaign", label: "campaign-wide" }, { value: "attached", label: "attached" }]} />
+            <FilterSelect label="Automation" value={mode} onChange={setMode} options={[{ value: "default", label: "campaign default" }, ...AUTOMATION_MODES.map((m) => ({ value: m, label: m }))]} />
+          </FilterBar>
+        </div>
         {rules.isLoading && <Spinner />}
-        {rules.data?.length === 0 && <Empty>No rules yet.</Empty>}
-        <div className="space-y-1">
-          {rules.data?.map((r) => (
-            <Link key={r.id} to={`/c/${campaign.id}/dm/rules/${r.id}`} className={clsx("hud-panel block p-2 text-xs", ruleId === r.id && "border-violet")} style={{ ["--panel-accent" as string]: r.enabled ? "var(--color-violet)" : "var(--color-line-2)" }}>
-              <div className="flex items-center justify-between gap-1">
-                <span className="truncate text-text">{r.name}</span>
-                <span className="flex gap-1">
-                  {!r.validation.valid && <Badge color="crimson">!</Badge>}
-                  <Badge color={r.publishedVersion ? (r.publishedVersion === r.draftVersion ? "ok" : "amber") : "muted"}>{r.publishedVersion ? (r.publishedVersion === r.draftVersion ? `v${r.publishedVersion}` : `v${r.publishedVersion} · draft v${r.draftVersion}`) : "unpublished"}</Badge>
+        {all.length === 0 && <Empty>No rules yet.</Empty>}
+        {all.length > 0 && list.length === 0 && <Empty>No rule matches.</Empty>}
+        <div className={clsx(selected ? "space-y-1" : "grid gap-2 md:grid-cols-2 2xl:grid-cols-3")} data-testid="rule-list">
+          {list.map((r) =>
+            selected ? (
+              <Link key={r.id} to={`/c/${campaign.id}/dm/rules/${r.id}`} className={clsx("hud-panel block p-2 text-xs", ruleId === r.id && "border-violet")} style={{ ["--panel-accent" as string]: r.enabled ? "var(--color-violet)" : "var(--color-line-2)" }}>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="truncate text-text">{r.name}</span>
+                  <span className="flex gap-1">
+                    {!r.validation.valid && <Badge color="crimson">!</Badge>}
+                    {versionBadge(r)}
+                  </span>
+                </div>
+                <div className="mt-0.5 flex gap-1 text-dim">
+                  <span>{r.automationMode ?? "campaign default"}</span>·<span>{r.scope}</span>·<span className={r.enabled ? "text-ok" : ""}>{r.enabled ? "enabled" : "disabled"}</span>
+                </div>
+              </Link>
+            ) : (
+              <Link key={r.id} to={`/c/${campaign.id}/dm/rules/${r.id}`} className="hud-panel flex min-w-0 flex-col gap-1.5 overflow-hidden p-2.5 text-xs transition hover:brightness-125" style={{ ["--panel-accent" as string]: r.enabled ? "var(--color-violet)" : "var(--color-line-2)" }} data-testid="rule-card">
+                <span className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-display text-[0.85rem] font-bold uppercase tracking-[0.05em] text-text">{r.name}</span>
+                  {!r.validation.valid && <Badge color="crimson">invalid</Badge>}
+                  {versionBadge(r)}
                 </span>
-              </div>
-              <div className="mt-0.5 flex gap-1 text-dim">
-                <span>{r.automationMode ?? "campaign default"}</span>·<span>{r.scope}</span>·<span className={r.enabled ? "text-ok" : ""}>{r.enabled ? "enabled" : "disabled"}</span>
-              </div>
-            </Link>
-          ))}
+                {r.description && <span className="line-clamp-2 text-muted">{r.description}</span>}
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.65rem] text-dim">
+                  <span className={r.enabled ? "text-ok" : "text-crimson"}>{r.enabled ? "enabled" : "disabled"}</span>
+                  <span>{r.automationMode ?? "campaign default"}</span>
+                  <span>{r.scope}</span>
+                  <span className="num">{r.graph.nodes.length} nodes</span>
+                  {triggersOf(r).length > 0 && <span className="text-violet">on {triggersOf(r).join(", ")}</span>}
+                  <span className="ml-auto">{timeAgo(r.updatedAt)}</span>
+                </span>
+              </Link>
+            ),
+          )}
         </div>
       </Panel>
-      {selected ? <RuleWorkbench key={selected.id} rule={selected} /> : <Panel title="Rule editor" icon="git-fork" color="violet"><Empty icon="git-fork">Pick a rule or create a new one. Rules are stored as declarative graphs and interpreted by the server. Nothing here runs arbitrary code.</Empty></Panel>}
+      {selected && <RuleWorkbench key={selected.id} rule={selected} />}
       {op.isPending && <Spinner />}
     </div>
   );
