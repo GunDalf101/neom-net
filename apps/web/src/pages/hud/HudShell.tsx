@@ -30,6 +30,8 @@ const TABS = [
   { to: "inventory", label: "Inventory", icon: "package" },
   { to: "shop", label: "Shop", icon: "shopping-cart" },
   { to: "cyberware", label: "Cyberware", icon: "cpu" },
+  /** Netrunners only (the DM decides who is one); the DM always sees it to manage them. */
+  { to: "shards", label: "Shards", icon: "binary", netrunnerOnly: true },
   { to: "reputation", label: "Reputation", icon: "users-round" },
   { to: "encyclopedia", label: "Encyclopedia", icon: "book-open" },
   { to: "missions", label: "Missions", icon: "target" },
@@ -117,7 +119,7 @@ export function HudShell() {
   }
 
   const isDm = campaign.data.role === "DM";
-  const tabs = TABS.filter((t) => !("dmOnly" in t && t.dmOnly) || isDm);
+  const tabs = TABS.filter((t) => (!("dmOnly" in t && t.dmOnly) || isDm) && (!("netrunnerOnly" in t && t.netrunnerOnly) || isDm || view.data.character.isNetrunner));
   const ctx: HudContext = { view: view.data, campaign: campaign.data, me: me.data, isDm, connected };
   const myRequests = (requests.data ?? []).filter((r) => r.characterId === characterId);
   // Only sheets this operator may open: their own, or every sheet for the DM.

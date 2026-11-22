@@ -11,6 +11,7 @@ import {
   UpdateCharacterSchema,
   roll,
   type AbilityDto,
+  type ShardDto,
   type ApplyConditionInput,
   type CharacterSnapshot,
   type CharacterGlimpseDto,
@@ -49,6 +50,7 @@ import {
   toCharacterConditionDto,
   toCharacterCore,
   toCharacterPlanDto,
+  toShardDto,
   toItemInstanceDto,
   toOverrideDto,
 } from "./mappers.js";
@@ -209,6 +211,10 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
   const abilities: AbilityDto[] = abilityIds.length
     ? (await prisma.abilityDefinition.findMany({ where: { id: { in: abilityIds }, campaignId: full.campaignId } })).map(toAbilityDto)
     : [];
+  const shardIds = full.isNetrunner ? ((full.shardIds as unknown as string[]) ?? []) : [];
+  const shards: ShardDto[] = shardIds.length
+    ? (await prisma.shardDefinition.findMany({ where: { id: { in: shardIds }, campaignId: full.campaignId }, orderBy: [{ school: "asc" }, { tier: "asc" }, { sortOrder: "asc" }, { name: "asc" }] })).map(toShardDto)
+    : [];
   return {
     character: toCharacterCore(full),
     ownerUsername: full.owner.username,
@@ -218,6 +224,7 @@ export async function buildView(full: FullCharacter, viewer: { userId: string; i
     activeEffects: full.activeEffects.map(toActiveEffectDto),
     overrides: viewer.isDm || isOwner ? full.overrides.map(toOverrideDto) : [],
     abilities,
+    shards,
     plans: full.plans.map(toCharacterPlanDto),
     shareToken: viewer.isDm || isOwner ? full.shareToken : null,
     claimToken: viewer.isDm ? full.claimToken : null,
@@ -344,6 +351,7 @@ const SHEET_LABELS: Record<string, string> = {
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
   acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities", salary: "salary", savings: "savings",
+  isNetrunner: "netrunner status", ramMax: "RAM", ramUsed: "RAM used", shardIds: "known shards",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -387,7 +395,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings", "isNetrunner", "ramMax", "ramUsed", "shardIds"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -395,7 +403,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   const data: Prisma.CharacterUpdateInput = { version: { increment: 1 } };
   const simple = [
     "name", "species", "characterClass", "subclass", "faction", "alignment", "background", "biography", "portraitUrl",
-    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary", "savings",
+    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary", "savings", "isNetrunner", "ramMax", "ramUsed",
   ] as const;
   for (const k of simple) {
     if (input[k] !== undefined) (data as Record<string, unknown>)[k] = input[k];
@@ -422,6 +430,12 @@ export async function updateCharacter(characterId: string, userId: string, input
       else delete merged[k];
     }
     data.adjustments = merged;
+  }
+  if (input.shardIds) {
+    const ids = [...new Set(input.shardIds)];
+    const known = ids.length ? await prisma.shardDefinition.count({ where: { id: { in: ids }, campaignId: character.campaignId } }) : 0;
+    if (known !== ids.length) throw badRequest("One of those shards does not belong to this campaign");
+    data.shardIds = ids;
   }
   if (input.abilityIds) {
     const ids = [...new Set(input.abilityIds)];
@@ -634,6 +648,7 @@ export async function applyHpAction(characterId: string, actor: Actor, action: H
             hitDiceUsed: Math.max(0, full.hitDiceUsed - regain),
             deathSaveSuccess: 0,
             deathSaveFailure: 0,
+            ramUsed: 0,
             version: { increment: 1 },
           },
         });

@@ -1,7 +1,7 @@
 import sys, json, re
 sys.path.insert(0, sys.argv[1])
 from dump import xlsx, docx
-W = xlsx(sys.argv[2]); A = xlsx(sys.argv[3]); H = docx(sys.argv[4]); AR = xlsx(sys.argv[5])
+W = xlsx(sys.argv[2]); A = xlsx(sys.argv[3]); H = docx(sys.argv[4]); AR = xlsx(sys.argv[5]); SH = docx(sys.argv[6])
 def rows(sheet, src): 
     r = src[sheet]; head = r[0]; return [dict(zip(head, x + [""] * (len(head) - len(x)))) for x in r[1:] if any(str(c).strip() for c in x)]
 def num(s):
@@ -152,11 +152,22 @@ for name, cost, bonus in table("Connectivity")[1:]:
     plans.append({"kind": "connectivity", "name": name, "monthlyCost": num(cost), "purchasePrice": 0, "description": f"{bonus} while the subscription is paid.", "effects": [mod("special.hacking", v, name)] if v else []})
 for name, cost, effect in table("Antivirus")[1:]:
     plans.append({"kind": "antivirus", "name": name, "monthlyCost": num(cost), "purchasePrice": 0, "description": f"{effect} against hacking.", "effects": [{"kind": "trait", "name": f"ICE: {name}", "description": f"{effect} against hacking attempts."}]})
+# ---- netrunner spellbook (NeoCity_Netrunner_Shard_Tables.docx: one table per school) ----
+shards = []; school = None
+for l in SH:
+    if l.startswith("#Heading1: "): school = l.split(": ", 1)[1].replace(" Shards", "").strip().lower(); continue
+    if school and l.startswith("| "):
+        c = [x.strip() for x in l.strip("| ").split(" | ")]
+        if c[0] == "Shard" or len(c) < 8: continue
+        dur = re.sub(r"\bC$", "(concentration)", c[4])
+        shards.append({"name": c[0], "school": school, "tier": int(c[1]), "action": c[2], "range": c[3], "duration": dur, "ramCost": int(c[5]), "effect": c[6], "equivalent": c[7],
+                       "description": f"{c[6]}. Runs like {c[7]} (5e) for anything the table leaves open."})
 districts = {r[0].lower(): {"name": r[0], "tax": int(r[1].rstrip("%")), "benefits": r[2]} for r in table("Districts & Taxes")[1:]}
 maintenance = {tier[r[0]]: num(r[1]) for r in table("Cyberware Maintenance")[1:]}
 reference = {"missionPayouts": table("Mission Types"), "gangTreasury": table("Gang Treasury Rules")}
-out = {"version": 2, "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook, Neon_City_Armor_Catalogue", "weapons": weapons, "attachments": attachments, "ammo": ammo, "armor": armor, "augments": augments, "plans": plans, "districts": districts, "maintenance": maintenance, "reference": reference}
-json.dump(out, open(sys.argv[6], "w"), indent=1, ensure_ascii=False)
+out = {"version": 2, "source": "NEOM_NET_Weapons_and_Attachments_Catalog_v4, NEOM_NET_Augments_and_Shimmer_Fusions_v5, NeoCity_GM_Economy_Handbook, Neon_City_Armor_Catalogue", "weapons": weapons, "attachments": attachments, "ammo": ammo, "armor": armor, "shards": shards, "augments": augments, "plans": plans, "districts": districts, "maintenance": maintenance, "reference": reference}
+json.dump(out, open(sys.argv[7], "w"), indent=1, ensure_ascii=False)
+print("shards", len(shards), {s: len([x for x in shards if x["school"] == s]) for s in sorted({x["school"] for x in shards})})
 for a in armor: print(f"{a['name']:26} {a['rarity']:9} {a['price']:>6}  " + "; ".join(f"{e.get('target', e.get('on', e.get('damageType','')))}{(' base %d' % e['value']) if e.get('op')=='setBase' else ('%+d' % e['value']) if 'value' in e else ''}{(' dexCap %s' % e['dexCap']) if 'dexCap' in e else ''}" for e in a['effects'] if e['kind'] != 'trait') + (f"  req {a['requirements']}" if a['requirements'] else ""))
 print({k: len(v) for k, v in out.items() if isinstance(v, list)})
 for a in augments:

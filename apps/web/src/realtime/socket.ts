@@ -124,6 +124,7 @@ export function useCampaignRealtime(campaignId: string | undefined, currentUserI
         shop: qk.shop(campaignId),
         plans: qk.plans(campaignId),
         factions: qk.factions(campaignId),
+        shards: qk.shards(campaignId),
       };
       const key = map[kind];
       if (key) invalidate(key);

@@ -32,11 +32,25 @@ interface CatalogPlan {
   description: string;
   effects: PassiveEffect[];
 }
+interface CatalogShard {
+  name: string;
+  school: string;
+  tier: number;
+  action: string;
+  range: string;
+  duration: string;
+  ramCost: number;
+  effect: string;
+  equivalent: string;
+  description: string;
+}
 interface Catalog {
   version: number;
   weapons: CatalogItem[];
   attachments: CatalogItem[];
   ammo: CatalogItem[];
+  /** Neo City Netrunner Spellbook (v3). */
+  shards?: CatalogShard[];
   /** Neon City Armor Catalogue (v2). */
   armor?: CatalogItem[];
   augments: CatalogItem[];
@@ -102,6 +116,16 @@ export async function appendCatalogToImportedCampaigns(): Promise<{ campaigns: n
       created++;
     }
   }
+  // Same catch-up for the spellbook: shards the campaign does not have yet, by name.
+  const shards = c.shards ?? [];
+  for (const g of imported) {
+    const have = new Set((await prisma.shardDefinition.findMany({ where: { campaignId: g.campaignId }, select: { name: true } })).map((s) => s.name));
+    const missing = shards.filter((s) => !have.has(s.name));
+    if (missing.length === 0) continue;
+    // (campaignId, name) is unique, so two servers booting at once cannot double the spellbook.
+    const res = await prisma.shardDefinition.createMany({ data: missing.map((s, i) => ({ campaignId: g.campaignId, ...s, sortOrder: have.size + i })), skipDuplicates: true });
+    created += res.count;
+  }
   return { campaigns: imported.length, created };
 }
 
@@ -130,6 +154,12 @@ export async function importCatalog(campaignId: string): Promise<ImportResult> {
       await prisma.planDefinition.create({ data: { campaignId, ...data } });
       result.plans.created++;
     }
+  }
+  let shardOrder = 0;
+  for (const s of c.shards ?? []) {
+    const existing = await prisma.shardDefinition.findFirst({ where: { campaignId, name: s.name }, select: { id: true } });
+    if (existing) await prisma.shardDefinition.update({ where: { id: existing.id }, data: { ...s, sortOrder: shardOrder++ } });
+    else await prisma.shardDefinition.create({ data: { campaignId, ...s, sortOrder: shardOrder++ } });
   }
   // GM-only reference tables land in the encyclopedia as hidden lore.
   const lore = [

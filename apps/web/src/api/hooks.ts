@@ -26,6 +26,8 @@ import type {
   EncyclopediaEntryInput,
   GrantItemInput,
   ItemBulkInput,
+  ShardDto,
+  ShardInput,
   HpActionInput,
   ItemActionInput,
   ItemDefinitionDto,
@@ -97,6 +99,7 @@ export const qk = {
   overrides: (cid: string) => ["overrides", cid] as const,
   pushConfig: ["push", "config"] as const,
   factions: (cid: string) => ["factions", cid] as const,
+  shards: (cid: string) => ["shards", cid] as const,
   reputation: (characterId: string) => ["reputation", characterId] as const,
   shared: (token: string) => ["shared", token] as const,
   claim: (token: string) => ["claim", token] as const,
@@ -403,6 +406,24 @@ export function useDeleteCondition(cid: string) {
   const qc = useQueryClient();
   return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/conditions/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.conditions(cid) }) }));
 }
+export const useShards = (cid: string) => useQuery({ queryKey: qk.shards(cid), queryFn: () => api.get<ShardDto[]>(`/campaigns/${cid}/shards`) });
+export function useSaveShard(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: ({ id, body }: { id?: string; body: ShardInput }) => (id ? api.put<ShardDto>(`/campaigns/${cid}/shards/${id}`, body) : api.post<ShardDto>(`/campaigns/${cid}/shards`, body)),
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: qk.shards(cid) });
+        toast("success", "Shard saved");
+      },
+    }),
+  );
+}
+export function useDeleteShard(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/shards/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.shards(cid) }) }));
+}
+export const useCastShard = (id: string) => characterMutation<{ shardId: string; note?: string }>(id, (body) => api.post(`/characters/${id}/shards/cast`, body))();
 export function useSaveAbility(cid: string) {
   const qc = useQueryClient();
   return useMutation(

@@ -47,15 +47,17 @@ import {
 import { InstantEffectListEditor, PassiveEffectListEditor, RequirementListEditor } from "@/components/editors/EffectEditors";
 import { Badge, Button, ConfirmButton, Empty, Field, Icon, Input, Panel, Select, Textarea } from "@/components/ui";
 import { Chips, FilterBar, FilterSelect, matches } from "@/components/dm/Filters";
+import { ShardsWorkshop } from "@/components/dm/ShardsWorkshop";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { metaRows } from "@/lib/itemMeta";
 import { useDm } from "./DmShell";
 
-type Tab = "items" | "conditions" | "abilities" | "shop";
+type Tab = "items" | "conditions" | "abilities" | "shards" | "shop";
 
 export function WorkshopPage() {
+  const { campaign } = useDm();
   const [params] = useSearchParams();
-  const [tab, setTab] = useState<Tab>(params.get("tab") === "shop" ? "shop" : "items");
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "shop" ? "shop" : params.get("tab") === "shards" ? "shards" : "items");
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1">
@@ -64,6 +66,7 @@ export function WorkshopPage() {
             ["items", "Items & cyberware", "package"],
             ["conditions", "Conditions", "alert-triangle"],
             ["abilities", "Abilities", "zap"],
+            ["shards", "Shards", "binary"],
             ["shop", "Shop & plans", "store"],
           ] as [Tab, string, string][]
         ).map(([id, label, icon]) => (
@@ -75,6 +78,7 @@ export function WorkshopPage() {
       {tab === "items" && <ItemsWorkshop />}
       {tab === "conditions" && <ConditionsWorkshop />}
       {tab === "abilities" && <AbilitiesWorkshop />}
+      {tab === "shards" && <ShardsWorkshop campaignId={campaign.id} />}
       {tab === "shop" && <ShopWorkshop />}
     </div>
   );

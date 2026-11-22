@@ -4,6 +4,7 @@ import type {
   AttributeKey,
   CharacterConditionDto,
   CharacterCore,
+  ShardDto,
   DiceRollDto,
   EncounterDto,
   EncyclopediaEntryDto,
@@ -77,6 +78,10 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     salary: c.salary,
     savings: c.savings,
     taxDistrict: (c.taxDistrict as CharacterCore["taxDistrict"]) ?? null,
+    isNetrunner: c.isNetrunner,
+    ramMax: c.ramMax,
+    ramUsed: c.ramUsed,
+    shardIds: arr<string>(c.shardIds),
     version: c.version,
     createdAt: iso(c.createdAt),
     updatedAt: iso(c.updatedAt),
@@ -472,4 +477,8 @@ export function toSessionDto(s: Prisma.LiveSessionGetPayload<{ include: { starte
     endedAt: s.endedAt ? iso(s.endedAt) : null,
     startedByName: s.startedBy.username,
   };
+}
+
+export function toShardDto(s: Prisma.ShardDefinitionGetPayload<Record<string, never>>): ShardDto {
+  return { id: s.id, campaignId: s.campaignId, name: s.name, school: s.school as ShardDto["school"], tier: s.tier, action: s.action, range: s.range, duration: s.duration, ramCost: s.ramCost, effect: s.effect, equivalent: s.equivalent, description: s.description, visibleToPlayers: s.visibleToPlayers, sortOrder: s.sortOrder };
 }

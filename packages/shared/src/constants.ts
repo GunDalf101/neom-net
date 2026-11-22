@@ -420,3 +420,14 @@ export const CREW_HEALTH_META: Record<"healthy" | "wounded" | "critical" | "down
   critical: { label: "Critical", color: "crimson" },
   down: { label: "Down", color: "muted" },
 };
+
+// ---------- Netrunner shards (hacks) ----------
+export const SHARD_SCHOOLS = ["offensive", "defensive", "illusionist", "controller", "booster"] as const;
+export type ShardSchool = (typeof SHARD_SCHOOLS)[number];
+export const SHARD_SCHOOL_META: Record<ShardSchool, { label: string; icon: string; color: string; blurb: string }> = {
+  offensive: { label: "Offensive", icon: "zap", color: "crimson", blurb: "Burn, spike and crash the target." },
+  defensive: { label: "Defensive", icon: "shield", color: "blue", blurb: "Firewalls, patches and restores." },
+  illusionist: { label: "Illusionist", icon: "eye-off", color: "violet", blurb: "Deepfakes, phantoms and cloaks." },
+  controller: { label: "Controller", icon: "joystick", color: "amber", blurb: "Hijack machines and lock people down." },
+  booster: { label: "Booster", icon: "rocket", color: "lime", blurb: "Overclock yourself and the crew." },
+};

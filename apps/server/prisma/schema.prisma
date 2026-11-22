@@ -53,6 +53,7 @@ model Campaign {
   conditionDefs   ConditionDefinition[]
   rules           RuleDefinition[]
   abilities       AbilityDefinition[]
+  shardDefinitions ShardDefinition[]
   npcs            NpcDefinition[]
   encounters      Encounter[]
   missions        Mission[]
@@ -168,6 +169,12 @@ model Character {
   salary           Int     @default(3000)
   /// Savings account: the balance left when a session ends is swept here. Shopping and bills use `credits` (the balance).
   savings          Int     @default(0)
+  /// Netrunner: the DM decides who casts shards (hacks). RAM is the casting pool; a long rest clears `ramUsed`.
+  isNetrunner      Boolean @default(false)
+  ramMax           Int     @default(0)
+  ramUsed          Int     @default(0)
+  /// Shard definitions this netrunner knows.
+  shardIds         Json    @default("[]")
   /// Tax district the player chose while they have no housing plan (dogtown | wca | nfc). Housing overrides it; null = Dogtown.
   taxDistrict      String?
   /// Flat DM adjustments keyed by stat target (`skill.athletics`: 2). Shown as a "DM adjustment" breakdown line.
@@ -434,6 +441,31 @@ model PendingAction {
 // ============================================================
 // Progression
 // ============================================================
+
+/// Netrunner shard (hack / spell): a row of the Neo City Netrunner Spellbook, editable by the DM.
+model ShardDefinition {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  /// offensive | defensive | illusionist | controller | booster
+  school           String
+  tier             Int      @default(1)
+  action           String   @default("Action")
+  range            String   @default("")
+  duration         String   @default("")
+  ramCost          Int      @default(1)
+  effect           String   @default("")
+  /// The 5e spell it mirrors, for rules lookups.
+  equivalent       String   @default("")
+  description      String   @default("")
+  visibleToPlayers Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@unique([campaignId, name])
+  @@index([campaignId])
+}
 
 model AbilityDefinition {
   id             String   @id @default(cuid())

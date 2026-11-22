@@ -5,6 +5,7 @@ import type {
   AutomationMode,
   DamageType,
   District,
+  ShardSchool,
   EncyclopediaKind,
   EquipmentSlot,
   ItemCategory,
@@ -105,6 +106,12 @@ export interface CharacterCore {
   salary: number;
   /** Savings account: swept from the balance when a session ends. Not spendable in the shop. */
   savings: number;
+  /** Netrunner: can cast shards (DM decides), with a RAM pool that a long rest refills. */
+  isNetrunner: boolean;
+  ramMax: number;
+  ramUsed: number;
+  /** Shard definitions this character knows. */
+  shardIds: string[];
   /** Tax district chosen while homeless (owner or DM sets it). A housing plan overrides it; null means Dogtown. */
   taxDistrict: District | null;
   version: number;
@@ -156,6 +163,23 @@ export interface PlanDefinitionDto {
   monthlyCost: number;
   purchasePrice: number;
   effects: PassiveEffect[];
+  visibleToPlayers: boolean;
+  sortOrder: number;
+}
+
+export interface ShardDto {
+  id: string;
+  campaignId: string;
+  name: string;
+  school: ShardSchool;
+  tier: number;
+  action: string;
+  range: string;
+  duration: string;
+  ramCost: number;
+  effect: string;
+  equivalent: string;
+  description: string;
   visibleToPlayers: boolean;
   sortOrder: number;
 }
@@ -287,6 +311,8 @@ export interface CharacterView {
   activeEffects: ActiveEffectDto[];
   overrides: OverrideDto[];
   abilities: AbilityDto[];
+  /** Shards this character knows (empty unless they are a netrunner). */
+  shards: ShardDto[];
   /** Subscriptions held (housing, food, transport, connectivity, antivirus). */
   plans: CharacterPlanDto[];
   /** Active share-link token (`/s/<token>`); only sent to the owner and the DM. */

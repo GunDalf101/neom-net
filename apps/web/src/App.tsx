@@ -26,6 +26,7 @@ import { JournalPage } from "@/pages/hud/JournalPage";
 import { MissionsPage } from "@/pages/hud/MissionsPage";
 import { LogPage } from "@/pages/hud/LogPage";
 import { ReputationPage } from "@/pages/hud/ReputationPage";
+import { ShardsPage } from "@/pages/hud/ShardsPage";
 import { ShopPage } from "@/pages/hud/ShopPage";
 
 function RequireAuth() {
@@ -59,6 +60,7 @@ export function App() {
             <Route path="shop" element={<ShopPage />} />
             <Route path="cyberware" element={<CyberwarePage />} />
             <Route path="reputation" element={<ReputationPage />} />
+            <Route path="shards" element={<ShardsPage />} />
             <Route path="encyclopedia" element={<EncyclopediaPage />} />
             {/* Personal notes left the main nav for the Encyclopedia; still reachable from the gear menu. */}
             <Route path="journal" element={<JournalPage />} />

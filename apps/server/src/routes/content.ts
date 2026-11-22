@@ -1,4 +1,4 @@
-import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemBulkSchema, ItemDefinitionInputSchema } from "@neom/shared";
+import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemBulkSchema, ItemDefinitionInputSchema, ShardInputSchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
@@ -6,6 +6,7 @@ import { parseBody } from "../middleware/validate.js";
 import { requireDm, requireMember } from "../services/access.js";
 import * as conditions from "../services/conditions.js";
 import * as items from "../services/items.js";
+import * as shards from "../services/shards.js";
 import * as progression from "../services/progression.js";
 
 export const contentRouter = Router();
@@ -38,6 +39,25 @@ contentRouter.post("/:campaignId/items/bulk", wrap<AuthedRequest>(async (req, re
 contentRouter.post("/:campaignId/items/grant", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
   res.json(await items.grantItem(pid(req), req.user.id, parseBody(GrantItemSchema, req.body)));
+}));
+
+// Netrunner shards
+contentRouter.get("/:campaignId/shards", wrap<AuthedRequest>(async (req, res) => {
+  const m = await requireMember(pid(req), req.user.id);
+  res.json(await shards.listShards(pid(req), { userId: req.user.id, isDm: m.isDm }));
+}));
+contentRouter.post("/:campaignId/shards", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.status(201).json(await shards.createShard(pid(req), parseBody(ShardInputSchema, req.body)));
+}));
+contentRouter.put("/:campaignId/shards/:id", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.json(await shards.updateShard(pid(req), id(req), parseBody(ShardInputSchema, req.body)));
+}));
+contentRouter.delete("/:campaignId/shards/:id", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  await shards.deleteShard(pid(req), id(req));
+  res.json({ ok: true });
 }));
 
 // Conditions

@@ -361,6 +361,34 @@ check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => 
   const shop_factions = await player.call("GET", `/api/campaigns/${cid}/factions`);
   check(shop_factions.some((f) => f.key === "dogtown" && f.name === "Dogtown"), "Dogtown sits on the reputation board (added to campaigns seeded before it)");
 }
+console.log("    Netrunner shards: DM-gated casters, RAM, spellbook CRUD");
+{
+  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], ramMax: 0, ramUsed: 0 });
+  const sh_book = await dm.call("GET", `/api/campaigns/${cid}/shards`);
+  const sh_kill = sh_book.find((s) => s.name === "Kill Process");
+  const sh_bolt = sh_book.find((s) => s.name === "Cyber Bolt");
+  const sh_other = sh_book.find((s) => s.name === "Deepfake");
+  check(sh_book.length >= 59 && sh_kill?.school === "offensive" && sh_kill.tier === 3 && sh_kill.ramCost === 3 && sh_kill.effect === "8d6 Fire", `Spellbook loaded (${sh_book.length} shards; Kill Process: tier 3, 3 RAM, 8d6 Fire)`);
+  check((await player.call("GET", `/api/campaigns/${cid}/shards`)).length === 0, "A player who is not a netrunner sees no shards at all");
+  check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { isNetrunner: true }))) === 403, "Players cannot make themselves netrunners (403)");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id }))) === 422, "Non-netrunners cannot cast (422)");
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: true, ramMax: 4, shardIds: [sh_bolt.id, sh_kill.id] });
+  check(view.character.isNetrunner && view.character.ramMax === 4 && view.shards.length === 2, "DM makes the character a netrunner with 4 RAM and two shards");
+  check((await player.call("GET", `/api/campaigns/${cid}/shards`)).length >= 59, "The netrunner's player now sees the spellbook");
+  view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id });
+  view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_kill.id });
+  check(view.character.ramUsed === 4, "Casting Cyber Bolt (1) and Kill Process (3) spends 4 RAM");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id }))) === 422, "Out of RAM: the next cast is refused (422)");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_other.id }))) === 422, "Unknown shards cannot be cast (422)");
+  check((await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).some((e) => e.type === "shard.cast" && /Kill Process/.test(e.summary)), "The cast is in the log");
+  check((await status(() => player.call("POST", `/api/campaigns/${cid}/shards`, { name: "Nope", school: "offensive" }))) === 403, "Players cannot add shards (403)");
+  const sh_new = await dm.call("POST", `/api/campaigns/${cid}/shards`, { name: "E2E Ping", school: "controller", tier: 1, ramCost: 0, effect: "Locate device" });
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { shardIds: [sh_bolt.id, sh_new.id] });
+  await dm.call("DELETE", `/api/campaigns/${cid}/shards/${sh_new.id}`);
+  view = await player.call("GET", `/api/characters/${charId}`);
+  check(!view.character.shardIds.includes(sh_new.id) && view.shards.length === 1, "DM adds a custom shard and removes it; it leaves the sheet too");
+  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], ramMax: 0, ramUsed: 0 });
+}
 console.log("    Shop: the NEOM catalog, district-taxed purchases, stock");
 const shop_imported = await dm.call("POST", `/api/campaigns/${cid}/shop/import`, {});
 check(shop_imported.items.created + shop_imported.items.updated >= 150 && shop_imported.plans.created + shop_imported.plans.updated >= 30, `Catalog shop_imported (${shop_imported.items.created} new / ${shop_imported.items.updated} refreshed items, ${shop_imported.plans.created + shop_imported.plans.updated} plans)`);

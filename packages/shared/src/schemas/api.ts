@@ -10,6 +10,7 @@ import {
   MISSION_KINDS,
   PLAN_KINDS,
   DISTRICTS,
+  SHARD_SCHOOLS,
   RARITIES,
   ROLL_CATEGORIES,
   ROLL_VISIBILITIES,
@@ -153,6 +154,11 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   abilityIds: z.array(z.string().min(1)).max(50).optional(),
   /** DM only: monthly salary in kamas, taxed by district when the month turns. */
   salary: z.number().int().min(0).max(1_000_000).optional(),
+  /** DM only: whether this character casts netrunner shards, their RAM pool, and the shards they know. */
+  isNetrunner: z.boolean().optional(),
+  ramMax: z.number().int().min(0).max(999).optional(),
+  ramUsed: z.number().int().min(0).max(999).optional(),
+  shardIds: z.array(z.string().min(1)).max(300).optional(),
   /** DM only: set the savings account outright (players move money with the savings transfer). */
   savings: z.number().int().min(0).max(100_000_000).optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
@@ -275,6 +281,22 @@ export const PlanSponsorSchema = z.object({ characterId: z.string().min(1), plan
 /** DM turns the month for everyone, or pays one character's month with `characterId`. */
 export const BillMonthSchema = z.object({ characterId: z.string().min(1).optional() });
 
+/** Netrunner shard definition (DM). */
+export const ShardInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  school: z.enum(SHARD_SCHOOLS),
+  tier: z.number().int().min(0).max(9).default(1),
+  action: z.string().trim().max(30).default("Action"),
+  range: z.string().trim().max(60).default(""),
+  duration: z.string().trim().max(60).default(""),
+  ramCost: z.number().int().min(0).max(99).default(1),
+  effect: z.string().trim().max(200).default(""),
+  equivalent: z.string().trim().max(80).default(""),
+  description: z.string().max(2000).default(""),
+  visibleToPlayers: z.boolean().default(true),
+  sortOrder: z.number().int().min(0).max(9999).default(0),
+});
+export const ShardCastSchema = z.object({ shardId: z.string().min(1), note: z.string().max(200).default("") });
 /** DM shop management: the same shelf change for many item definitions at once. */
 export const ItemBulkSchema = z
   .object({
@@ -572,6 +594,8 @@ export type RollRequestInput = z.infer<typeof RollRequestSchema>;
 export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
 export type ItemBulkInput = z.infer<typeof ItemBulkSchema>;
+export type ShardInput = z.infer<typeof ShardInputSchema>;
+export type ShardCastInput = z.infer<typeof ShardCastSchema>;
 export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
 export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;
 export type TaxDistrictInput = z.infer<typeof TaxDistrictSchema>;
