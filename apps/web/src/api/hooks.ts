@@ -25,6 +25,7 @@ import type {
   EncyclopediaEntryDto,
   EncyclopediaEntryInput,
   GrantItemInput,
+  ItemBulkInput,
   HpActionInput,
   ItemActionInput,
   ItemDefinitionDto,
@@ -360,6 +361,19 @@ export function useSaveItemDefinition(cid: string) {
 export function useDeleteItemDefinition(cid: string) {
   const qc = useQueryClient();
   return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/items/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.items(cid) }) }));
+}
+export function useBulkItems(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: (body: ItemBulkInput) => api.post<{ updated: number }>(`/campaigns/${cid}/items/bulk`, body),
+      onSuccess: (r) => {
+        qc.invalidateQueries({ queryKey: qk.items(cid) });
+        qc.invalidateQueries({ queryKey: qk.shop(cid) });
+        toast("success", `${r.updated} item${r.updated === 1 ? "" : "s"} updated`);
+      },
+    }),
+  );
 }
 export function useGrantItem(cid: string) {
   const qc = useQueryClient();

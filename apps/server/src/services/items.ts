@@ -2,6 +2,7 @@ import {
   unmetRequirements,
   type CharacterView,
   type GrantItemInput,
+  type ItemBulkInput,
   type InstantEffect,
   type ItemAction,
   type ItemDefinitionDto,
@@ -80,6 +81,29 @@ export async function updateItemDefinition(campaignId: string, id: string, input
   const owners = await prisma.itemInstance.findMany({ where: { definitionId: id }, select: { characterId: true }, distinct: ["characterId"] });
   for (const o of owners) emitCharacterUpdated(campaignId, o.characterId);
   return toItemDefinitionDto(row);
+}
+
+/** DM shop management: one shelf change (listing, visibility, stock, upkeep, price) across many definitions. */
+export async function bulkUpdateItemDefinitions(campaignId: string, input: ItemBulkInput): Promise<{ updated: number }> {
+  const rows = await prisma.itemDefinition.findMany({ where: { campaignId, id: { in: input.ids } }, select: { id: true, price: true } });
+  if (rows.length === 0) throw notFound("Item definition");
+  const { price, ...flat } = input.patch;
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(flat).length) await tx.itemDefinition.updateMany({ where: { id: { in: rows.map((r) => r.id) } }, data: flat });
+    if (price !== undefined || input.pricePercent !== undefined) {
+      for (const r of rows) {
+        const base = price ?? r.price;
+        const next = input.pricePercent !== undefined ? Math.max(0, Math.round((base * (100 + input.pricePercent)) / 100)) : base;
+        if (next !== r.price) await tx.itemDefinition.update({ where: { id: r.id }, data: { price: next } });
+      }
+    }
+  });
+  emitToCampaign(campaignId, "content.updated", { campaignId, kind: "items" });
+  if (input.patch.maintenance !== undefined) {
+    const owners = await prisma.itemInstance.findMany({ where: { definitionId: { in: rows.map((r) => r.id) } }, select: { characterId: true }, distinct: ["characterId"] });
+    for (const o of owners) emitCharacterUpdated(campaignId, o.characterId);
+  }
+  return { updated: rows.length };
 }
 
 export async function deleteItemDefinition(campaignId: string, id: string): Promise<void> {

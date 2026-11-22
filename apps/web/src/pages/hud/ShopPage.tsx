@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useMemo, useState } from "react";
 import { useBillMonth, useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSponsorPlan, useSubscribePlan, useSetTaxDistrict, useTransferSavings, useUnsubscribePlan, useUpdateCharacter } from "@/api/hooks";
 import { Link } from "react-router-dom";
+import { ShopManager } from "@/components/dm/ShopManager";
 import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
 import { SHELF_META, SHELF_ORDER, metaRows, shelfOf, toItemInput } from "@/lib/itemMeta";
@@ -52,6 +53,8 @@ export function ShopPage() {
   const [sort, setSort] = useState<SortKey>("price");
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  // The DM lands on the storefront like a player; "Manage" swaps it for the editable table of every item.
+  const [manage, setManage] = useState(false);
   const items = shop.data?.items ?? [];
   const shelves = useMemo(() => SHELF_ORDER.filter((s) => items.some((i) => shelfOf(i) === s)), [items]);
   const active = shelves.includes(shelf) ? shelf : shelf === "plans" ? "plans" : (shelves[0] ?? "plans");
@@ -99,6 +102,9 @@ export function ShopPage() {
         </span>
         {isDm && (
           <span className="flex flex-wrap items-center gap-1" data-testid="shop-dm-tools">
+            <Button size="xs" color="crimson" variant={manage ? "solid" : "outline"} icon={manage ? "store" : "sliders-horizontal"} onClick={() => setManage((m) => !m)} data-testid="shop-manage-toggle">
+              {manage ? "Back to storefront" : "Manage shop"}
+            </Button>
             <Button size="xs" color="amber" icon="plus" onClick={() => setAdding(true)}>
               Add items
             </Button>
@@ -108,7 +114,8 @@ export function ShopPage() {
       </section>
       {isDm && <AddItemsModal open={adding} onClose={() => setAdding(false)} campaignId={campaign.id} />}
 
-      <div className="flex flex-wrap items-center gap-1" data-testid="shop-shelves">
+      {isDm && manage && <ShopManager campaignId={campaign.id} grantTo={{ id: view.character.id, name: view.character.name }} />}
+      <div className={clsx("flex flex-wrap items-center gap-1", isDm && manage && "hidden")} data-testid="shop-shelves">
         <button type="button" className={clsx("hud-tab flex items-center gap-2", active === "plans" && "active")} style={active === "plans" ? { background: "var(--color-violet)", boxShadow: "0 0 12px var(--color-violet)" } : { color: "var(--color-violet)" }} onClick={() => setShelf("plans")}>
           <Icon name="receipt" size={12} /> Plans
           <span className="num text-[0.55rem] opacity-70">{view.plans.length}</span>
@@ -121,7 +128,7 @@ export function ShopPage() {
         ))}
       </div>
 
-      {active !== "plans" && (
+      {active !== "plans" && !(isDm && manage) && (
         <div className="hud-panel flex flex-wrap items-center gap-2 px-2 py-1.5 text-xs" style={{ ["--panel-accent" as string]: "var(--color-line-2)" }} data-testid="shop-filters">
           <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="!w-36 !py-1 text-xs" aria-label="Search the shop" />
           <span className="flex items-center gap-1" role="group" aria-label="Rarity">
@@ -173,7 +180,7 @@ export function ShopPage() {
       )}
 
       {shop.isLoading && <Spinner />}
-      {active === "plans" ? (
+      {isDm && manage ? null : active === "plans" ? (
         <PlansPanel view={view} campaignId={campaign.id} isDm={isDm} />
       ) : (
         <>
@@ -280,7 +287,7 @@ function ShopCard({ item: it, view, campaignId, isDm, open, onToggle }: { item: 
               <Button size="xs" variant="ghost" icon={it.visibleToPlayers ? "eye-off" : "eye"} disabled={save.isPending} onClick={() => setShelf({ visibleToPlayers: !it.visibleToPlayers })}>
                 {it.visibleToPlayers ? "Hide" : "Show"}
               </Button>
-              <Link to={`/c/${campaignId}/dm/workshop`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]" title="Edit stats, effects and description in the workshop">
+              <Link to={`/c/${campaignId}/dm/workshop?item=${it.id}`} className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.55rem]" title="Edit stats, effects and description in the workshop">
                 <Icon name="hammer" size={11} /> Edit
               </Link>
               <ConfirmButton size="xs" color="crimson" variant="outline" label="Remove from shop" confirmLabel="Take it off the shelf?" disabled={save.isPending} onConfirm={() => setShelf({ forSale: false })} />

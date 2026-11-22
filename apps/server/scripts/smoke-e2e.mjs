@@ -396,6 +396,18 @@ check(shopView.items.some((i) => i.category === "attachment") && shopView.items.
   if (shop_prevArmor) view = await player.call("POST", `/api/characters/${charId}/items/${shop_prevArmor.id}/action`, { action: "equip" });
   check(view.derived.ac.value === shop_acBefore, `Old armor back on (${shop_prevArmor?.definition.name ?? "none"}): AC ${view.derived.ac.value} as before`);
 }
+{
+  const bulk_ids = shopView.items.filter((i) => i.category === "ammo").slice(0, 3).map((i) => i.id);
+  const bulk_before = shopView.items.filter((i) => bulk_ids.includes(i.id));
+  check((await status(() => player.call("POST", `/api/campaigns/${cid}/items/bulk`, { ids: bulk_ids, patch: { forSale: false } }))) === 403, "Players cannot bulk-edit the shop (403)");
+  const bulk_res = await dm.call("POST", `/api/campaigns/${cid}/items/bulk`, { ids: bulk_ids, patch: { stock: 5 }, pricePercent: 10 });
+  const bulk_after = (await player.call("GET", `/api/campaigns/${cid}/shop`)).items.filter((i) => bulk_ids.includes(i.id));
+  check(bulk_res.updated === 3 && bulk_after.every((i) => i.stock === 5 && i.price === Math.round(bulk_before.find((b) => b.id === i.id).price * 1.1)), "DM bulk edit: stock 5 and +10% on three ammo types");
+  await dm.call("POST", `/api/campaigns/${cid}/items/bulk`, { ids: bulk_ids, patch: { forSale: false } });
+  check(!(await player.call("GET", `/api/campaigns/${cid}/shop`)).items.some((i) => bulk_ids.includes(i.id)), "Bulk unlist takes them off the shelves");
+  for (const b of bulk_before) await dm.call("POST", `/api/campaigns/${cid}/items/bulk`, { ids: [b.id], patch: { forSale: true, stock: null, price: b.price } });
+  check((await player.call("GET", `/api/campaigns/${cid}/shop`)).items.filter((i) => bulk_ids.includes(i.id)).every((i) => i.stock === null && i.price === bulk_before.find((b) => b.id === i.id).price), "Shelves restored");
+}
 const shimmerStrain = shopView.items.filter((i) => i.category === "cyberware" && i.meta.shimmer === true).map((i) => `${i.rarity}:${i.capacityCost}`);
 check(shimmerStrain.every((x) => x === "uncommon:20" || x === "rare:40") && shopView.items.some((i) => i.name === "Combat Predictor" && i.capacityCost === 20), "Shimmer fusions cost twice the strain of a normal augment of their tier (uncommon 20, rare 40)");
 const creditsAtShop = (await player.call("GET", `/api/characters/${charId}`)).character.credits;

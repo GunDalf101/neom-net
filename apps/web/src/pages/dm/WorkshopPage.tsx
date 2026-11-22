@@ -23,7 +23,9 @@ import {
   type PlanKind,
 } from "@neom/shared";
 import clsx from "clsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ShopManager } from "@/components/dm/ShopManager";
 import {
   useAbilities,
   useBillMonth,
@@ -53,7 +55,8 @@ import { useDm } from "./DmShell";
 type Tab = "items" | "conditions" | "abilities" | "shop";
 
 export function WorkshopPage() {
-  const [tab, setTab] = useState<Tab>("items");
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "shop" ? "shop" : "items");
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-1">
@@ -127,6 +130,18 @@ function ItemsWorkshop() {
   const [rarity, setRarity] = useState("");
   const [flag, setFlag] = useState<"" | "forSale" | "hidden" | "upkeep" | "custom">("");
   const [sort, setSort] = useState<"name" | "price" | "priceDesc" | "rarity">("name");
+  // Deep link from the shop: /dm/workshop?item=<id> opens that definition once the catalog has loaded.
+  const [params, setParams] = useSearchParams();
+  const wanted = params.get("item");
+  useEffect(() => {
+    if (!wanted || !items.data) return;
+    const d = items.data.find((x) => x.id === wanted);
+    if (d) {
+      setEditingId(d.id);
+      setForm(toItemInput(d));
+    }
+    setParams({}, { replace: true });
+  }, [wanted, items.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = <K extends keyof ItemDefinitionInput>(k: K, v: ItemDefinitionInput[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const open = (d: ItemDefinitionDto | "new") => {
@@ -621,6 +636,9 @@ function ShopWorkshop() {
 
   return (
     <div className="space-y-3">
+      <Panel title="Shop shelves" icon="store" color="amber">
+        <ShopManager campaignId={campaign.id} />
+      </Panel>
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Catalog" icon="store" color="amber">
           <p className="text-xs text-muted">

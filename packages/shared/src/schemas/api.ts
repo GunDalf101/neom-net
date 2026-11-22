@@ -275,6 +275,23 @@ export const PlanSponsorSchema = z.object({ characterId: z.string().min(1), plan
 /** DM turns the month for everyone, or pays one character's month with `characterId`. */
 export const BillMonthSchema = z.object({ characterId: z.string().min(1).optional() });
 
+/** DM shop management: the same shelf change for many item definitions at once. */
+export const ItemBulkSchema = z
+  .object({
+    ids: z.array(z.string().min(1)).min(1).max(500),
+    patch: z
+      .object({
+        forSale: z.boolean().optional(),
+        visibleToPlayers: z.boolean().optional(),
+        stock: z.number().int().min(0).max(9999).nullable().optional(),
+        maintenance: z.number().int().min(0).max(1_000_000).nullable().optional(),
+        price: z.number().int().min(0).max(100_000_000).optional(),
+      })
+      .default({}),
+    /** Multiply each price: +10 = 10% dearer, −25 = a quarter off. Applied after `patch.price`. */
+    pricePercent: z.number().int().min(-90).max(500).optional(),
+  })
+  .refine((v) => Object.keys(v.patch).length > 0 || v.pricePercent !== undefined, { message: "Nothing to change" });
 export const GrantItemSchema = z.object({
   characterId: z.string().min(1),
   definitionId: z.string().min(1),
@@ -554,6 +571,7 @@ export type UpdateCharacterInput = z.infer<typeof UpdateCharacterSchema>;
 export type RollRequestInput = z.infer<typeof RollRequestSchema>;
 export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
+export type ItemBulkInput = z.infer<typeof ItemBulkSchema>;
 export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
 export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;
 export type TaxDistrictInput = z.infer<typeof TaxDistrictSchema>;

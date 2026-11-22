@@ -1,4 +1,4 @@
-import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemDefinitionInputSchema } from "@neom/shared";
+import { AbilityInputSchema, ConditionDefinitionInputSchema, GrantItemSchema, ItemBulkSchema, ItemDefinitionInputSchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
@@ -30,6 +30,10 @@ contentRouter.delete("/:campaignId/items/:id", wrap<AuthedRequest>(async (req, r
   await requireDm(pid(req), req.user.id);
   await items.deleteItemDefinition(pid(req), id(req));
   res.json({ ok: true });
+}));
+contentRouter.post("/:campaignId/items/bulk", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(pid(req), req.user.id);
+  res.json(await items.bulkUpdateItemDefinitions(pid(req), parseBody(ItemBulkSchema, req.body)));
 }));
 contentRouter.post("/:campaignId/items/grant", wrap<AuthedRequest>(async (req, res) => {
   await requireDm(pid(req), req.user.id);
