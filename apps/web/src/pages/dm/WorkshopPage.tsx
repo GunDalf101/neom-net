@@ -25,7 +25,6 @@ import {
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ShopManager } from "@/components/dm/ShopManager";
 import {
   useAbilities,
   useBillMonth,
@@ -636,9 +635,6 @@ function ShopWorkshop() {
 
   return (
     <div className="space-y-3">
-      <Panel title="Shop shelves" icon="store" color="amber">
-        <ShopManager campaignId={campaign.id} />
-      </Panel>
       <div className="grid gap-3 lg:grid-cols-2">
         <Panel title="Catalog" icon="store" color="amber">
           <p className="text-xs text-muted">
