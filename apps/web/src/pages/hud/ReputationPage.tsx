@@ -153,8 +153,8 @@ export function ReputationPage() {
   const events = useEvents(campaign.id, view.character.id);
   const history = (events.data ?? []).filter((e) => e.type === "reputation.changed").slice(0, 12);
   const factions = (rep.data ?? []).map((r) => r.faction);
-  const city = rep.data?.find((r) => r.faction.isCity);
-  const gangs = (rep.data ?? []).filter((r) => !r.faction.isCity);
+  // Ranked by how much the standing matters: biggest absolute score first, ties keep the city on top.
+  const ranked = [...(rep.data ?? [])].sort((a, b) => Math.abs(b.value) - Math.abs(a.value) || Number(b.faction.isCity) - Number(a.faction.isCity));
 
   return (
     <div className="mx-auto max-w-6xl space-y-3" data-testid="reputation-page">
@@ -173,8 +173,7 @@ export function ReputationPage() {
       {!rep.isLoading && (rep.data?.length ?? 0) === 0 && <Empty icon="users-round">No factions defined. {isDm ? "Add one below." : "Ask the DM."}</Empty>}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
         <div className="space-y-2">
-          {city && <FactionRow entry={city} isDm={isDm} busy={change.isPending} onChange={(b) => change.mutate({ factionId: city.faction.id, ...b })} />}
-          {gangs.map((r) => (
+          {ranked.map((r) => (
             <FactionRow key={r.faction.id} entry={r} isDm={isDm} busy={change.isPending} onChange={(b) => change.mutate({ factionId: r.faction.id, ...b })} />
           ))}
         </div>

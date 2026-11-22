@@ -665,6 +665,13 @@ export interface ReputationEntryDto {
   updatedAt: string | null;
 }
 
+/** Result of a bulk reputation change: who moved, who already stood there. */
+export interface ReputationBulkResultDto {
+  faction: FactionDto;
+  changed: { characterId: string; characterName: string; from: number; to: number }[];
+  unchanged: { characterId: string; characterName: string; value: number }[];
+}
+
 export interface ApiError {
   error: string;
   code?: string;

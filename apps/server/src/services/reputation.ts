@@ -1,4 +1,4 @@
-import { DEFAULT_FACTIONS, LATE_DEFAULT_FACTION_KEYS, REPUTATION_MAX, REPUTATION_MIN, reputationTier, type FactionDto, type FactionInputSchema, type ReputationChangeSchema, type ReputationEntryDto } from "@neom/shared";
+import { DEFAULT_FACTIONS, LATE_DEFAULT_FACTION_KEYS, REPUTATION_MAX, REPUTATION_MIN, reputationTier, type FactionDto, type FactionInputSchema, type ReputationBulkInput, type ReputationBulkResultDto, type ReputationChangeSchema, type ReputationEntryDto } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { prisma } from "../db.js";
@@ -122,4 +122,38 @@ export async function changeReputation(campaignId: string, dmUserId: string, cha
   });
   emitCharacterUpdated(campaignId, characterId);
   return getReputation(campaignId, characterId);
+}
+
+/** DM: one change applied to several PCs (all of them when `characterIds` is omitted). Characters already at the value are reported, not failed. */
+export async function changeReputationBulk(campaignId: string, dmUserId: string, input: ReputationBulkInput): Promise<ReputationBulkResultDto> {
+  const faction = await prisma.faction.findFirst({ where: { id: input.factionId, campaignId } });
+  if (!faction) throw badRequest("Unknown faction");
+  const characters = await prisma.character.findMany({
+    where: { campaignId, ...(input.characterIds ? { id: { in: input.characterIds } } : {}) },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  if (input.characterIds && characters.length !== new Set(input.characterIds).size) throw notFound("Character");
+  const result: ReputationBulkResultDto = { faction: toFactionDto(faction), changed: [], unchanged: [] };
+  for (const ch of characters) {
+    const before = (await prisma.reputation.findUnique({ where: { characterId_factionId: { characterId: ch.id, factionId: faction.id } } }))?.value ?? 0;
+    const next = clamp(input.value !== undefined ? input.value : before + (input.delta ?? 0));
+    if (next === before) {
+      result.unchanged.push({ characterId: ch.id, characterName: ch.name, value: before });
+      continue;
+    }
+    await changeReputation(campaignId, dmUserId, ch.id, { factionId: faction.id, value: next, reason: input.reason });
+    result.changed.push({ characterId: ch.id, characterName: ch.name, from: before, to: next });
+  }
+  if (result.changed.length > 1) {
+    await logEvent({
+      campaignId,
+      type: "reputation.bulk",
+      actorUserId: dmUserId,
+      summary: `${faction.name} standing changed for ${result.changed.length} characters${input.reason ? ` — ${input.reason}` : ""}`,
+      payload: { factionId: faction.id, changed: result.changed },
+      visibility: "dm",
+    });
+  }
+  return result;
 }

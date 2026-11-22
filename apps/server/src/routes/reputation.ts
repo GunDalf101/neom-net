@@ -1,4 +1,4 @@
-import { FactionInputSchema, ReputationChangeSchema } from "@neom/shared";
+import { FactionInputSchema, ReputationBulkSchema, ReputationChangeSchema } from "@neom/shared";
 import { Router } from "express";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
 import { wrap } from "../errors.js";
@@ -27,6 +27,11 @@ reputationRouter.delete("/campaigns/:campaignId/factions/:id", wrap<AuthedReques
   await requireDm(req.params.campaignId as string, req.user.id);
   await rep.deleteFaction(req.params.campaignId as string, req.user.id, req.params.id as string);
   res.status(204).end();
+}));
+
+reputationRouter.post("/campaigns/:campaignId/reputation", wrap<AuthedRequest>(async (req, res) => {
+  await requireDm(req.params.campaignId as string, req.user.id);
+  res.json(await rep.changeReputationBulk(req.params.campaignId as string, req.user.id, parseBody(ReputationBulkSchema, req.body)));
 }));
 
 reputationRouter.get("/characters/:characterId/reputation", wrap<AuthedRequest>(async (req, res) => {

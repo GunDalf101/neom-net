@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCancelRollRequest, useDashboard, useResolvePending } from "@/api/hooks";
 import { LiveControls } from "@/components/dm/LiveControls";
+import { BulkReputation } from "@/components/dm/BulkReputation";
 import { MessagePlayers } from "@/components/dm/MessagePlayers";
 import { RollRow } from "@/components/hud/DicePanel";
 import { Portrait } from "@/components/hud/Portrait";
@@ -118,6 +119,7 @@ export function DashboardPage() {
             </div>
           </Panel>
 
+          <BulkReputation campaignId={campaign.id} characters={d.characters} />
           <MessagePlayers campaign={campaign} meId={me.id} />
         </div>
 

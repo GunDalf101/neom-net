@@ -10,6 +10,7 @@ import type {
   CharacterListEntryDto,
   CharacterSummaryDto,
   CharacterView,
+  ReputationBulkResultDto,
   ReputationEntryDto,
   FactionInput,
   FactionDto,
@@ -656,6 +657,19 @@ export function useChangeReputation(characterId: string) {
     withToast({
       mutationFn: (body: { factionId: string; delta?: number; value?: number; reason?: string }) => api.post<ReputationEntryDto[]>(`/characters/${characterId}/reputation`, body),
       onSuccess: (rows) => qc.setQueryData(qk.reputation(characterId), rows),
+    }),
+  );
+}
+export function useBulkReputation(cid: string) {
+  const qc = useQueryClient();
+  return useMutation(
+    withToast({
+      mutationFn: (body: { characterIds?: string[]; factionId: string; delta?: number; value?: number; reason?: string }) => api.post<ReputationBulkResultDto>(`/campaigns/${cid}/reputation`, body),
+      onSuccess: (r) => {
+        for (const c of r.changed) qc.invalidateQueries({ queryKey: qk.reputation(c.characterId) });
+        qc.invalidateQueries({ queryKey: qk.events(cid) });
+        toast("success", `${r.faction.name}: ${r.changed.length} changed`, r.unchanged.length ? `${r.unchanged.map((u) => u.characterName).join(", ")} already there` : r.changed.map((c) => `${c.characterName} ${c.from} → ${c.to}`).join(", "));
+      },
     }),
   );
 }

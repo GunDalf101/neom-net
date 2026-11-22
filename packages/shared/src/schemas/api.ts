@@ -478,6 +478,16 @@ export const ReputationChangeSchema = z
     reason: z.string().max(200).default(""),
   })
   .refine((v) => v.delta !== undefined || v.value !== undefined, { message: "delta or value is required" });
+/** DM: the same nudge or value for several characters at once; omit `characterIds` for every PC of the campaign. */
+export const ReputationBulkSchema = z
+  .object({
+    characterIds: z.array(z.string().min(1)).min(1).max(50).optional(),
+    factionId: z.string().min(1),
+    delta: z.number().int().min(-200).max(200).optional(),
+    value: z.number().int().min(-100).max(100).optional(),
+    reason: z.string().max(200).default(""),
+  })
+  .refine((v) => v.delta !== undefined || v.value !== undefined, { message: "delta or value is required" });
 
 /** DM-written world knowledge: an NPC, a location, an item or a piece of lore. */
 export const EncyclopediaEntryInputSchema = z.object({
@@ -560,6 +570,7 @@ export type JournalInput = z.infer<typeof JournalInputSchema>;
 export type EncyclopediaEntryInput = z.infer<typeof EncyclopediaEntryInputSchema>;
 export type FactionInput = z.infer<typeof FactionInputSchema>;
 export type ReputationChangeInput = z.infer<typeof ReputationChangeSchema>;
+export type ReputationBulkInput = z.infer<typeof ReputationBulkSchema>;
 export type AbilityInput = z.infer<typeof AbilityInputSchema>;
 export type ApplyConditionInput = z.infer<typeof ApplyConditionSchema>;
 export type CampaignSettingsInput = z.infer<typeof CampaignSettingsSchema>;

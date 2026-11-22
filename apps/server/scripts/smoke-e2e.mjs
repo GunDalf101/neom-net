@@ -557,6 +557,18 @@ const repEvt = (await player.call("GET", `/api/campaigns/${cid}/events?limit=10&
 check(Boolean(repEvt), "Player sees the reputation change with the reason in their log");
 rep = await dm.call("POST", `/api/characters/${charId}/reputation`, { factionId: brokers.id, value: before });
 check(rep.find((r) => r.faction.id === brokers.id).value === before, "Standing restored");
+{
+  const dogtown = factions.find((f) => f.key === "dogtown");
+  check((await status(() => player.call("POST", `/api/campaigns/${cid}/reputation`, { factionId: dogtown.id, delta: 5 }))) === 403, "Players cannot bulk-change reputation (403)");
+  const rep_all = await dm.call("POST", `/api/campaigns/${cid}/reputation`, { factionId: dogtown.id, delta: 15, reason: "Held the gate (E2E)" });
+  const rep_roster = await dm.call("GET", `/api/campaigns/${cid}/characters`);
+  check(rep_all.faction.id === dogtown.id && rep_all.changed.length === rep_roster.length && rep_all.changed.every((c) => c.to === c.from + 15), `Everyone +15 with Dogtown (${rep_all.changed.length} characters)`);
+  const rep_mine = (await player.call("GET", `/api/characters/${charId}/reputation`)).find((r) => r.faction.id === dogtown.id);
+  check(rep_mine.value === rep_all.changed.find((c) => c.characterId === charId).to, `My Dogtown standing is now ${rep_mine.value}`);
+  const rep_set = await dm.call("POST", `/api/campaigns/${cid}/reputation`, { characterIds: [charId], factionId: dogtown.id, value: rep_mine.value });
+  check(rep_set.changed.length === 0 && rep_set.unchanged.length === 1, "Setting the value they already have reports unchanged, not an error");
+  for (const c of rep_all.changed) await dm.call("POST", `/api/characters/${c.characterId}/reputation`, { factionId: dogtown.id, value: c.from, reason: "e2e cleanup" }).catch(() => {});
+}
 
 console.log("    Push subscriptions register per device");
 const pushCfg = await player.call("GET", "/api/push/config");
