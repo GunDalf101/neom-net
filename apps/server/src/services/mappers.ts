@@ -76,6 +76,7 @@ export function toCharacterCore(c: Prisma.CharacterGetPayload<Record<string, nev
     abilityIds: arr<string>(c.abilityIds),
     salary: c.salary,
     savings: c.savings,
+    taxDistrict: (c.taxDistrict as CharacterCore["taxDistrict"]) ?? null,
     version: c.version,
     createdAt: iso(c.createdAt),
     updatedAt: iso(c.updatedAt),

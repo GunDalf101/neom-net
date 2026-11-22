@@ -1,4 +1,4 @@
-import { CYBERWARE_MAINTENANCE, DISTRICT_META, netSalary, type CharacterView, type District, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
+import { CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, netSalary, type CharacterView, type District, type MonthlyBillDto, type MonthlyBillResultDto, type PlanDefinitionDto, type PlanDefinitionInput, type PlanSubscribeInput, type Rarity } from "@neom/shared";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
@@ -100,14 +100,16 @@ export async function unsubscribe(campaignId: string, actor: { userId: string; i
 
 // ---------- Monthly billing ----------
 
-/** A character lives where their housing plan is; Dogtown without one. */
-export function districtOf(full: Pick<FullCharacter, "plans">): District {
+/** A character pays tax where their housing is; without housing, where they chose to register; Dogtown by default. */
+export function districtOf(full: Pick<FullCharacter, "plans" | "taxDistrict">): { district: District; source: MonthlyBillDto["districtSource"] } {
   const housing = full.plans.find((p) => p.plan.kind === "housing" && p.plan.district);
-  return (housing?.plan.district as District | undefined) ?? "dogtown";
+  if (housing) return { district: housing.plan.district as District, source: "housing" };
+  if (full.taxDistrict && (DISTRICTS as readonly string[]).includes(full.taxDistrict)) return { district: full.taxDistrict as District, source: "chosen" };
+  return { district: "dogtown", source: "default" };
 }
 
 export function monthlyBill(full: FullCharacter): MonthlyBillDto {
-  const district = districtOf(full);
+  const { district, source: districtSource } = districtOf(full);
   const taxPercent = DISTRICT_META[district].taxPercent;
   const salaryGross = full.salary;
   const salaryNet = netSalary(salaryGross, taxPercent);
@@ -116,7 +118,7 @@ export function monthlyBill(full: FullCharacter): MonthlyBillDto {
     .filter((i) => i.installedSlot)
     .map((i) => ({ itemId: i.id, name: i.customName ?? i.definition.name, rarity: i.definition.rarity as Rarity, cost: CYBERWARE_MAINTENANCE[i.definition.rarity as Rarity] ?? 0 }));
   const total = plans.reduce((s, p) => s + p.cost, 0) + maintenance.reduce((s, m) => s + m.cost, 0);
-  return { characterId: full.id, characterName: full.name, credits: full.credits, district, taxPercent, salaryGross, salaryNet, plans, maintenance, total, balanceAfter: full.credits + salaryNet - total };
+  return { characterId: full.id, characterName: full.name, credits: full.credits, district, districtSource, taxPercent, salaryGross, salaryNet, plans, maintenance, total, balanceAfter: full.credits + salaryNet - total };
 }
 
 /** What every character would pay if the month turned now. */

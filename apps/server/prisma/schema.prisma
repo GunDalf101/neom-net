@@ -168,6 +168,8 @@ model Character {
   salary           Int     @default(3000)
   /// Savings account: the balance left when a session ends is swept here. Shopping and bills use `credits` (the balance).
   savings          Int     @default(0)
+  /// Tax district the player chose while they have no housing plan (dogtown | wca | nfc). Housing overrides it; null = Dogtown.
+  taxDistrict      String?
   /// Flat DM adjustments keyed by stat target (`skill.athletics`: 2). Shown as a "DM adjustment" breakdown line.
   adjustments      Json    @default("{}")
   /// Abilities the DM granted directly (AbilityDefinition ids); items and conditions can grant more through effects.

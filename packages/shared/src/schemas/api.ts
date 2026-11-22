@@ -503,6 +503,9 @@ export const AbilityInputSchema = z.object({
 /** Owner or DM moves kamas between the balance and the savings account. */
 export const SavingsTransferSchema = z.object({ direction: z.enum(["deposit", "withdraw"]), amount: z.number().int().min(1).max(100_000_000) });
 
+/** Owner or DM: the tax district while there is no housing plan; null goes back to Dogtown. Housing overrides it. */
+export const TaxDistrictSchema = z.object({ district: z.enum(DISTRICTS).nullable() });
+
 /** DM hands a sheet to another campaign member (ownership transfer). */
 export const AssignCharacterSchema = z.object({ userId: z.string().min(1) });
 /** Portrait only: allowed for owners in DM-controlled mode when `playersManagePortrait` is on. */
@@ -529,6 +532,7 @@ export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
 export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
 export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;
+export type TaxDistrictInput = z.infer<typeof TaxDistrictSchema>;
 export type PlanDefinitionInput = z.infer<typeof PlanDefinitionInputSchema>;
 export type PlanSubscribeInput = z.infer<typeof PlanSubscribeSchema>;
 export type RuleDefinitionInput = z.infer<typeof RuleDefinitionInputSchema>;

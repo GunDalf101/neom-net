@@ -1,5 +1,6 @@
 import type {
   AbilityDto,
+  District,
   AbilityInput,
   AddParticipantInput,
   ApplyConditionInput,
@@ -231,6 +232,7 @@ export const useApplyCondition = (id: string) => characterMutation<ApplyConditio
 export const useRemoveCondition = (id: string) => characterMutation<string>(id, (condId) => api.delete(`/characters/${id}/conditions/${condId}`))();
 export const useItemAction = (id: string) => characterMutation<{ itemId: string; action: ItemActionInput }>(id, ({ itemId, action }) => api.post(`/characters/${id}/items/${itemId}/action`, action))();
 export const useUseAbility = (id: string) => characterMutation<string>(id, (abilityId) => api.post(`/characters/${id}/abilities/${abilityId}/use`))();
+export const useSetTaxDistrict = (id: string) => characterMutation<District | null>(id, (district) => api.post(`/characters/${id}/tax-district`, { district }))();
 export const useTransferSavings = (id: string) => characterMutation<{ direction: "deposit" | "withdraw"; amount: number }>(id, (body) => api.post(`/characters/${id}/savings`, body))();
 export const useClearEffect = (id: string) => characterMutation<string>(id, (effectId) => api.delete(`/characters/${id}/effects/${effectId}`))();
 export const useResetCharacter = (id: string) => characterMutation<void>(id, () => api.post(`/characters/${id}/reset`, { confirm: true }), "Character reset")();

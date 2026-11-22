@@ -1,4 +1,4 @@
-import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, SavingsTransferSchema, SetPortraitSchema, ShareLinkSchema, UpdateCharacterSchema } from "@neom/shared";
+import { AssignCharacterSchema, ApplyConditionSchema, CreateCharacterSchema, HpActionSchema, ItemActionSchema, SavingsTransferSchema, SetPortraitSchema, TaxDistrictSchema, ShareLinkSchema, UpdateCharacterSchema } from "@neom/shared";
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, type AuthedRequest } from "../auth/auth.js";
@@ -60,6 +60,7 @@ charactersRouter.post("/:characterId/abilities/:abilityId/use", wrap<AuthedReque
   res.json(await useAbility(cid(req), actor(req, membership.isDm), req.params.abilityId as string));
 }));
 
+charactersRouter.post("/:characterId/tax-district", wrap<AuthedRequest>(async (req, res) => res.json(await characters.setTaxDistrict(cid(req), req.user.id, parseBody(TaxDistrictSchema, req.body).district))));
 charactersRouter.post("/:characterId/savings", wrap<AuthedRequest>(async (req, res) => res.json(await characters.transferSavings(cid(req), req.user.id, parseBody(SavingsTransferSchema, req.body)))));
 charactersRouter.post("/:characterId/assign", wrap<AuthedRequest>(async (req, res) => {
   const body = parseBody(AssignCharacterSchema, req.body);

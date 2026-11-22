@@ -1,5 +1,7 @@
 import {
   ATTRIBUTES,
+  DISTRICT_META,
+  type District,
   abilityModifier,
   applyDamage,
   computeDerivedStats,
@@ -38,6 +40,7 @@ import { prisma, type Db } from "../db.js";
 import { badRequest, conflict, forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign, emitToUser } from "../realtime/io.js";
 import { campaignSettings, getMembership, requireCharacterAccess, requireCharacterEdit, requireMember } from "./access.js";
+import { getActiveSession } from "./campaigns.js";
 import { findConditionDefinition } from "./conditions.js";
 import { logEvent } from "./events.js";
 import {
@@ -881,6 +884,33 @@ export async function resetCharacter(characterId: string, userId: string): Promi
     }),
   ]);
   await logEvent({ campaignId: character.campaignId, type: "character.reset", actorUserId: userId, characterId, summary: `${character.name} was reset to level 1` });
+  emitCharacterUpdated(character.campaignId, characterId);
+  const full = await loadFull(characterId);
+  return buildView(full, { userId, isDm: membership.isDm });
+}
+
+// ---------- Tax district ----------
+
+/**
+ * Owner or DM picks where a homeless character is registered for tax (a housing plan overrides it).
+ * Downtime business like plans: not a sheet edit, so it works in DM-controlled campaigns, but players
+ * cannot change it while a live session runs.
+ */
+export async function setTaxDistrict(characterId: string, userId: string, district: District | null): Promise<CharacterView> {
+  const { character, membership, isOwner } = await requireCharacterAccess(characterId, userId);
+  if (!isOwner && !membership.isDm) throw forbidden("You can only register your own character");
+  if (!membership.isDm && (await getActiveSession(character.campaignId))) throw forbidden("The tax district is locked while the session is live. Change it between sessions.");
+  await prisma.character.update({ where: { id: characterId }, data: { taxDistrict: district, version: { increment: 1 } } });
+  await logEvent({
+    campaignId: character.campaignId,
+    type: "character.taxDistrict",
+    actorUserId: userId,
+    characterId,
+    summary: `${character.name} is registered for tax in ${district ? DISTRICT_META[district].name : "Dogtown (default)"}`,
+    payload: { district },
+    visibility: "owner",
+    ownerUserId: character.ownerUserId,
+  });
   emitCharacterUpdated(character.campaignId, characterId);
   const full = await loadFull(characterId);
   return buildView(full, { userId, isDm: membership.isDm });

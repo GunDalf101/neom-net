@@ -105,6 +105,8 @@ export interface CharacterCore {
   salary: number;
   /** Savings account: swept from the balance when a session ends. Not spendable in the shop. */
   savings: number;
+  /** Tax district chosen while homeless (owner or DM sets it). A housing plan overrides it; null means Dogtown. */
+  taxDistrict: District | null;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -173,8 +175,10 @@ export interface MonthlyBillDto {
   characterId: string;
   characterName: string;
   credits: number;
-  /** Where they live (housing plan; Dogtown without one) and the tax withheld from the salary there. */
+  /** Where they pay tax: the housing plan's district, else the district they chose, else Dogtown. */
   district: District;
+  /** How the district was decided. */
+  districtSource: "housing" | "chosen" | "default";
   taxPercent: number;
   salaryGross: number;
   salaryNet: number;

@@ -1,7 +1,7 @@
-import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
+import { AUGMENTATION_SLOT_META, CYBERWARE_MAINTENANCE, DISTRICTS, DISTRICT_META, PLAN_KINDS, PLAN_KIND_META, RARITIES, describePassiveEffect, netSalary, type CharacterView, type ItemDefinitionDto, type District, type PlanDefinitionDto, type PlanKind, type Rarity } from "@neom/shared";
 import clsx from "clsx";
 import { useMemo, useState } from "react";
-import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useTransferSavings, useUnsubscribePlan } from "@/api/hooks";
+import { useBuy, useImportCatalog, useItemDefinitions, usePlans, useSaveItemDefinition, useSession, useShop, useSubscribePlan, useSetTaxDistrict, useTransferSavings, useUnsubscribePlan } from "@/api/hooks";
 import { Link } from "react-router-dom";
 import { Badge, Button, ConfirmButton, Empty, Icon, Input, Modal, Select, Spinner } from "@/components/ui";
 import { RARITY_COLOR, accent, rarityName } from "@/lib/format";
@@ -334,6 +334,7 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const subscribe = useSubscribePlan(campaignId);
   const unsubscribe = useUnsubscribePlan(campaignId);
   const transfer = useTransferSavings(view.character.id);
+  const setDistrict = useSetTaxDistrict(view.character.id);
   const [move, setMove] = useState("");
   const canMove = view.permissions.isOwner || isDm;
   // Downtime only: players cannot touch plans while the DM's session is live.
@@ -343,8 +344,11 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
   const planTotal = view.plans.reduce((s, p) => s + p.plan.monthlyCost, 0);
   const upkeepTotal = upkeep.reduce((s, u) => s + u.cost, 0);
   const total = planTotal + upkeepTotal;
-  const district = (held.get("housing")?.plan.district ?? "dogtown") as keyof typeof DISTRICT_META;
+  // Housing decides the tax district; without housing the player registers wherever they like (Dogtown by default).
+  const housingDistrict = (held.get("housing")?.plan.district ?? null) as District | null;
+  const district: District = housingDistrict ?? view.character.taxDistrict ?? "dogtown";
   const tax = DISTRICT_META[district].taxPercent;
+  const canPickDistrict = !housingDistrict && canMove && !locked;
   const net = netSalary(view.character.salary, tax);
   const monthNet = net - total;
   const balanceAfter = view.character.credits + monthNet;
@@ -413,8 +417,29 @@ function PlansPanel({ view, campaignId, isDm }: { view: CharacterView; campaignI
             <span className="text-text">Salary</span>
             <span className="num text-text">{view.character.salary.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between gap-2 text-muted">
-            <span>{DISTRICT_META[district].name} tax {tax}%</span>
+          <div className="flex items-center justify-between gap-2 text-muted">
+            {canPickDistrict ? (
+              <label className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0">Taxed in</span>
+                <Select
+                  className="!w-auto !py-0.5 text-[0.75rem]"
+                  value={district}
+                  title="No housing: pick the district you are registered in. A housing plan will set it for you."
+                  data-testid="tax-district"
+                  onChange={(e) => setDistrict.mutate(e.target.value as District)}
+                >
+                  {DISTRICTS.map((d) => (
+                    <option key={d} value={d}>
+                      {DISTRICT_META[d].name} · {DISTRICT_META[d].taxPercent}%
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            ) : (
+              <span title={housingDistrict ? "Set by your housing plan" : locked ? "Locked while the session is live" : undefined} data-testid="tax-district-label">
+                {DISTRICT_META[district].name} tax {tax}%{housingDistrict ? " · housing" : ""}
+              </span>
+            )}
             <span className="num">−{(view.character.salary - net).toLocaleString()}</span>
           </div>
           <div className="flex justify-between gap-2">

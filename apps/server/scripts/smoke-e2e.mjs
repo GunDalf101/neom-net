@@ -401,6 +401,14 @@ view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { char
 check(view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.hacking.value === hackingBefore + 1, `Standard ISP: Hacking ${hackingBefore} → ${view.derived.specialSkills.hacking.value}`);
 view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: fiber.id });
 check(!view.plans.some((p) => p.planId === isp.id) && view.derived.specialSkills.hacking.value === hackingBefore + 2, "Fiber Network replaces the ISP (one connectivity plan at a time), Hacking +2");
+// No housing yet: the player picks the district they are taxed in.
+view = await player.call("POST", `/api/characters/${charId}/tax-district`, { district: "wca" });
+check(view.character.taxDistrict === "wca", "Without housing the player registers in WCA for tax");
+check((await status(() => player.call("POST", `/api/characters/${charId}/tax-district`, { district: "atlantis" }))) === 400, "Unknown districts are rejected (400)");
+{
+  const shop_wcaBill = (await dm.call("GET", `/api/campaigns/${cid}/plans/bill`)).find((b) => b.characterId === charId);
+  check(shop_wcaBill.district === "wca" && shop_wcaBill.districtSource === "chosen" && shop_wcaBill.taxPercent === 25, "Bill preview taxes the chosen district: WCA 25%");
+}
 view = await player.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: nfcFlat.id });
 shopView = await player.call("GET", `/api/campaigns/${cid}/shop`);
 check(view.plans.some((p) => p.planId === nfcFlat.id) && shopView.items.find((i) => i.id === yipi.id).price === 1500, "Housing never changes shop prices (Yipi-9 still 1,500 ₭ from NFC)");
@@ -413,6 +421,7 @@ const myBill = billPreview.find((b) => b.characterId === charId);
 const expectedPlans = fiber.monthlyCost + nfcFlat.monthlyCost;
 check(myBill && myBill.plans.reduce((s, p) => s + p.cost, 0) === expectedPlans && myBill.maintenance.length >= 1 && myBill.total === expectedPlans + myBill.maintenance.reduce((s, m) => s + m.cost, 0), `Bill preview: plans ${expectedPlans} + upkeep ${myBill?.maintenance.reduce((s, m) => s + m.cost, 0)} = ${myBill?.total} ₭`);
 check(myBill.district === "nfc" && myBill.taxPercent === 35 && myBill.salaryGross === 4000 && myBill.salaryNet === 2600 && myBill.balanceAfter === myBill.credits + 2600 - myBill.total, "Living in NFC taxes the salary 35%: 4,000 → 2,600 ₭ net");
+check(myBill.districtSource === "housing", "Housing overrides the chosen district (NFC flat beats WCA registration)");
 check((await status(() => player.call("POST", `/api/campaigns/${cid}/plans/bill`, {}))) === 403, "Only the DM turns the month (403)");
 const creditsBeforeMonth = (await player.call("GET", `/api/characters/${charId}`)).character.credits;
 if (creditsBeforeMonth + myBill.salaryNet < myBill.total) await dm.call("POST", `/api/campaigns/${cid}/dm/grant`, { characterId: charId, resource: "credits", amount: myBill.total - myBill.salaryNet - creditsBeforeMonth + 100, note: "e2e rent" });
@@ -747,6 +756,8 @@ check(enc.status === "active" && enc.round === 1, "Encounter active, round 1");
   const asDm = await dm.call("POST", `/api/campaigns/${cid}/plans/subscribe`, { characterId: charId, planId: lockPlan.id });
   check(asDm.plans.some((p) => p.planId === lockPlan.id), "The DM still can");
   await dm.call("POST", `/api/campaigns/${cid}/plans/unsubscribe`, { characterId: charId, planId: lockPlan.id });
+  check((await status(() => player.call("POST", `/api/characters/${charId}/tax-district`, { district: "nfc" }))) === 403, "Players cannot change their tax district while the session is live (403)");
+  await dm.call("POST", `/api/characters/${charId}/tax-district`, { district: null });
 }
 const playerEnc = await player.call("GET", `/api/campaigns/${cid}/encounters/${enc.id}`);
 check(playerEnc.participants.every((p) => !p.isNpc || p.hpMax === 2), "Player sees NPC health only as a coarse state");
