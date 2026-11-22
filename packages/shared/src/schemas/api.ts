@@ -131,6 +131,28 @@ export const CreateCharacterSchema = CharacterIdentitySchema.partial().extend({
   hitDieSize: z.union([z.literal(6), z.literal(8), z.literal(10), z.literal(12)]).optional(),
 });
 
+/**
+ * A custom counter on one sheet: a class or subclass resource the app has no model for (a propaganda bard's
+ * followers, ki, favours owed). Milestones switch passive effects on once the value reaches `at`.
+ */
+export const TrackerSchema = z.object({
+  id: z.string().min(1).max(40).optional(),
+  name: z.string().trim().min(1).max(40),
+  icon: z.string().max(40).default("hash"),
+  color: z.string().max(20).default("cyan"),
+  value: z.number().int().min(0).max(1_000_000_000).default(0),
+  /** null = no ceiling (a follower count); a number makes it a pool (3 / 5). */
+  max: z.number().int().min(1).max(1_000_000_000).nullable().default(null),
+  /** May the owner change it, or only the DM? */
+  playerEditable: z.boolean().default(false),
+  /** Pools refill on a rest (to `max`, or to 0 without one). */
+  resetOn: z.enum(["never", "short", "long"]).default("never"),
+  note: z.string().max(200).default(""),
+  milestones: z.array(z.object({ at: z.number().int().min(1).max(1_000_000_000), label: z.string().trim().max(60).default(""), effects: PassiveEffectListSchema.default([]) })).max(12).default([]),
+});
+export const TrackerChangeSchema = z
+  .object({ delta: z.number().int().min(-1_000_000_000).max(1_000_000_000).optional(), value: z.number().int().min(0).max(1_000_000_000).optional(), reason: z.string().max(200).default("") })
+  .refine((v) => v.delta !== undefined || v.value !== undefined, { message: "delta or value is required" });
 /** Slots per RAM level: {"1": 4, "2": 2}. */
 export const ShardSlotsSchema = z.record(z.string().regex(/^[1-9]$/), z.number().int().min(0).max(20));
 export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
@@ -161,6 +183,8 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   shardSlots: ShardSlotsSchema.optional(),
   shardSlotsUsed: ShardSlotsSchema.optional(),
   shardIds: z.array(z.string().min(1)).max(300).optional(),
+  /** DM only: the custom trackers on this sheet (replaces the whole list; ids are kept, new ones are assigned). */
+  trackers: z.array(TrackerSchema).max(12).optional(),
   /** DM only: set the savings account outright (players move money with the savings transfer). */
   savings: z.number().int().min(0).max(100_000_000).optional(),
   credits: z.number().int().min(0).max(100_000_000).optional(),
@@ -599,6 +623,8 @@ export type ItemDefinitionInput = z.infer<typeof ItemDefinitionInputSchema>;
 export type GrantItemInput = z.infer<typeof GrantItemSchema>;
 export type ItemBulkInput = z.infer<typeof ItemBulkSchema>;
 export type ShardInput = z.infer<typeof ShardInputSchema>;
+export type TrackerInput = z.infer<typeof TrackerSchema>;
+export type TrackerChangeInput = z.infer<typeof TrackerChangeSchema>;
 export type ShardCastInput = z.infer<typeof ShardCastSchema>;
 export type ShopBuyInput = z.infer<typeof ShopBuySchema>;
 export type SavingsTransferInput = z.infer<typeof SavingsTransferSchema>;

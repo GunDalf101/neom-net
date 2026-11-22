@@ -176,6 +176,8 @@ model Character {
   shardSlotsUsed   Json    @default("{}")
   /// Shard definitions this netrunner knows.
   shardIds         Json    @default("[]")
+  /// Custom counters the DM attaches to this sheet (followers, ki, favours…) with optional milestone effects.
+  trackers         Json    @default("[]")
   /// Tax district the player chose while they have no housing plan (dogtown | wca | nfc). Housing overrides it; null = Dogtown.
   taxDistrict      String?
   /// Flat DM adjustments keyed by stat target (`skill.athletics`: 2). Shown as a "DM adjustment" breakdown line.

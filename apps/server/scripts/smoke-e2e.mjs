@@ -361,6 +361,29 @@ check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => 
   const shop_factions = await player.call("GET", `/api/campaigns/${cid}/factions`);
   check(shop_factions.some((f) => f.key === "dogtown" && f.name === "Dogtown"), "Dogtown sits on the reputation board (added to campaigns seeded before it)");
 }
+console.log("    Trackers: custom counters on a sheet (followers), milestones, rests");
+{
+  check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { trackers: [{ name: "Followers" }] }))) === 403, "Players cannot define trackers (403)");
+  const tr_persBefore = (await player.call("GET", `/api/characters/${charId}`)).derived.skills.persuasion.value;
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { trackers: [
+    { name: "Followers", icon: "megaphone", color: "magenta", value: 900, milestones: [{ at: 1000, label: "Local celebrity", effects: [{ kind: "modifier", target: "skill.persuasion", value: 1, op: "add" }] }] },
+    { name: "Ki", value: 1, max: 3, playerEditable: true, resetOn: "short" },
+  ] });
+  const tr_fol = view.character.trackers.find((t) => t.name === "Followers");
+  const tr_ki = view.character.trackers.find((t) => t.name === "Ki");
+  check(tr_fol?.id && tr_fol.value === 900 && tr_ki?.max === 3 && view.derived.skills.persuasion.value === tr_persBefore, "DM adds Followers (900) and a Ki pool to the sheet; no milestone yet");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/trackers/${tr_fol.id}`, { delta: 500 }))) === 403, "A DM-only tracker cannot be changed by the player (403)");
+  view = await dm.call("POST", `/api/characters/${charId}/trackers/${tr_fol.id}`, { delta: 150, reason: "Viral broadcast (E2E)" });
+  check(view.character.trackers.find((t) => t.id === tr_fol.id).value === 1050 && view.derived.skills.persuasion.value === tr_persBefore + 1 && view.derived.skills.persuasion.breakdown.some((b) => /Followers 1,000\+/.test(b.label)), `1,050 followers: the milestone grants +1 Persuasion (${tr_persBefore} → ${view.derived.skills.persuasion.value})`);
+  check((await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).some((e) => e.type === "tracker.changed" && /Viral broadcast/.test(e.summary) && /Local celebrity/.test(e.summary)), "The change is logged with the reason and the milestone reached");
+  view = await player.call("POST", `/api/characters/${charId}/trackers/${tr_ki.id}`, { delta: 5 });
+  check(view.character.trackers.find((t) => t.id === tr_ki.id).value === 3, "A player-editable pool is changed by its owner and clamps at its maximum (3)");
+  view = await player.call("POST", `/api/characters/${charId}/trackers/${tr_ki.id}`, { value: 0 });
+  view = await dm.call("POST", `/api/characters/${charId}/hp`, { action: "rest", kind: "short" });
+  check(view.character.trackers.find((t) => t.id === tr_ki.id).value === 3 && view.character.trackers.find((t) => t.id === tr_fol.id).value === 1050, "A short rest refills the Ki pool and leaves the followers alone");
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { trackers: [] });
+  check(view.character.trackers.length === 0 && view.derived.skills.persuasion.value === tr_persBefore, "Removing the trackers removes the milestone bonus");
+}
 console.log("    Netrunner shards: DM-gated casters, RAM, spellbook CRUD");
 {
   await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], shardSlots: {}, shardSlotsUsed: {} });

@@ -112,6 +112,8 @@ export interface CharacterCore {
   shardSlotsUsed: Record<string, number>;
   /** Shard definitions this character knows. */
   shardIds: string[];
+  /** Custom counters on this sheet (followers, ki…), defined by the DM. */
+  trackers: TrackerDto[];
   /** Tax district chosen while homeless (owner or DM sets it). A housing plan overrides it; null means Dogtown. */
   taxDistrict: District | null;
   version: number;
@@ -165,6 +167,19 @@ export interface PlanDefinitionDto {
   effects: PassiveEffect[];
   visibleToPlayers: boolean;
   sortOrder: number;
+}
+
+export interface TrackerDto {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  value: number;
+  max: number | null;
+  playerEditable: boolean;
+  resetOn: "never" | "short" | "long";
+  note: string;
+  milestones: { at: number; label: string; effects: PassiveEffect[] }[];
 }
 
 export interface ShardDto {

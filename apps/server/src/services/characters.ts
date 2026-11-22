@@ -12,6 +12,8 @@ import {
   roll,
   type AbilityDto,
   type ShardDto,
+  type TrackerChangeInput,
+  type TrackerDto,
   type ApplyConditionInput,
   type CharacterSnapshot,
   type CharacterGlimpseDto,
@@ -129,6 +131,12 @@ export function buildSnapshot(full: FullCharacter): CharacterSnapshot {
   }
   for (const eff of full.activeEffects) {
     sources.push({ id: eff.id, kind: "temporary", name: eff.label, active: true, effects: (eff.effects as unknown as PassiveEffect[]) ?? [] });
+  }
+  // Tracker milestones (1,000 followers: +1 Persuasion) switch on once the count reaches them.
+  for (const t of (full.trackers as unknown as TrackerDto[] | null) ?? []) {
+    for (const m of t.milestones ?? []) {
+      if (t.value >= m.at && m.effects?.length) sources.push({ id: `${t.id}:${m.at}`, kind: "tracker", name: `${t.name} ${m.at.toLocaleString()}+${m.label ? ` (${m.label})` : ""}`, active: true, effects: m.effects });
+    }
   }
   // Subscriptions (connectivity, diet…) are passive sources while held; the month-end billing drops the unpaid ones.
   for (const sub of full.plans) {
@@ -351,7 +359,7 @@ const SHEET_LABELS: Record<string, string> = {
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
   acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities", salary: "salary", savings: "savings",
-  isNetrunner: "netrunner status", shardSlots: "RAM slots", shardSlotsUsed: "RAM slots used", shardIds: "known shards",
+  isNetrunner: "netrunner status", shardSlots: "RAM slots", shardSlotsUsed: "RAM slots used", shardIds: "known shards", trackers: "trackers",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -395,7 +403,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings", "isNetrunner", "shardSlots", "shardSlotsUsed", "shardIds"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings", "isNetrunner", "shardSlots", "shardSlotsUsed", "shardIds", "trackers"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -430,6 +438,9 @@ export async function updateCharacter(characterId: string, userId: string, input
       else delete merged[k];
     }
     data.adjustments = merged;
+  }
+  if (input.trackers) {
+    data.trackers = input.trackers.map((t) => ({ ...t, id: t.id ?? randomBytes(6).toString("hex"), value: t.max !== null ? Math.min(t.value, t.max) : t.value, milestones: [...t.milestones].sort((a, b) => a.at - b.at) })) as unknown as Prisma.InputJsonValue;
   }
   // Slots: drop zero entries; spent slots can never exceed what the character owns.
   const clean = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0));
@@ -663,6 +674,10 @@ export async function applyHpAction(characterId: string, actor: Actor, action: H
         await prisma.activeEffect.deleteMany({ where: { characterId, durationTurns: { not: null } } });
         await prisma.characterCondition.deleteMany({ where: { characterId, durationTurns: { not: null } } });
       }
+      // Tracker pools refill on their rest: a long rest also covers the short-rest ones.
+      const trackers = ((full.trackers as unknown as TrackerDto[] | null) ?? []);
+      const refilled = trackers.map((t) => (t.resetOn === "short" || (t.resetOn === "long" && action.kind === "long") ? { ...t, value: t.max ?? 0 } : t));
+      if (refilled.some((t, i) => t.value !== trackers[i]!.value)) await prisma.character.update({ where: { id: characterId }, data: { trackers: refilled as unknown as Prisma.InputJsonValue } });
       await prisma.ruleUsage.deleteMany({ where: { characterId, usageKey: { contains: ":rest:" } } });
       await logEvent({ ...base, type: `rest.${action.kind}`, summary: `${full.name} completed a ${action.kind} rest` });
       break;
@@ -910,6 +925,40 @@ export async function resetCharacter(characterId: string, userId: string): Promi
   emitCharacterUpdated(character.campaignId, characterId);
   const full = await loadFull(characterId);
   return buildView(full, { userId, isDm: membership.isDm });
+}
+
+// ---------- Trackers ----------
+
+/**
+ * Nudge or set one tracker. The DM always can; the owner only when the tracker is player-editable. Not a sheet
+ * edit, so it works in DM-controlled campaigns, like spending a resource at the table.
+ */
+export async function changeTracker(characterId: string, userId: string, trackerId: string, input: TrackerChangeInput): Promise<CharacterView> {
+  const { character, membership, isOwner } = await requireCharacterAccess(characterId, userId);
+  const trackers = ((character.trackers as unknown as TrackerDto[] | null) ?? []);
+  const t = trackers.find((x) => x.id === trackerId);
+  if (!t) throw notFound("Tracker");
+  if (!membership.isDm && !(isOwner && t.playerEditable)) throw forbidden(`Only the DM changes ${t.name}`);
+  const raw = input.value !== undefined ? input.value : t.value + (input.delta ?? 0);
+  const next = Math.max(0, t.max !== null ? Math.min(raw, t.max) : raw);
+  if (next === t.value) throw ruleViolation(`${t.name} is already ${t.value.toLocaleString()}`);
+  const moved = await prisma.character.updateMany({ where: { id: characterId, version: character.version }, data: { trackers: trackers.map((x) => (x.id === trackerId ? { ...x, value: next } : x)) as unknown as Prisma.InputJsonValue, version: { increment: 1 } } });
+  if (moved.count === 0) throw conflict("The sheet changed: try again");
+  const crossedUp = (t.milestones ?? []).filter((m) => t.value < m.at && next >= m.at);
+  const crossedDown = (t.milestones ?? []).filter((m) => t.value >= m.at && next < m.at);
+  const diff = next - t.value;
+  await logEvent({
+    campaignId: character.campaignId,
+    type: "tracker.changed",
+    actorUserId: userId,
+    characterId,
+    summary: `${character.name}'s ${t.name}: ${t.value.toLocaleString()} → ${next.toLocaleString()} (${diff > 0 ? "+" : ""}${diff.toLocaleString()})${crossedUp.length ? `, reached ${crossedUp.map((m) => m.label || m.at.toLocaleString()).join(", ")}` : ""}${crossedDown.length ? `, lost ${crossedDown.map((m) => m.label || m.at.toLocaleString()).join(", ")}` : ""}${input.reason ? ` — ${input.reason}` : ""}`,
+    payload: { trackerId, name: t.name, from: t.value, to: next, delta: diff, reason: input.reason },
+    visibility: "owner",
+    ownerUserId: character.ownerUserId,
+  });
+  emitCharacterUpdated(character.campaignId, characterId);
+  return buildView(await loadFull(characterId), { userId, isDm: membership.isDm });
 }
 
 // ---------- Tax district ----------

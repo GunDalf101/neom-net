@@ -8,6 +8,7 @@ import { fmtMod } from "@/lib/format";
 import { breakdownText } from "@/lib/hud";
 import { useUi } from "@/store/ui";
 import { ConditionsPanel } from "./ConditionsPanel";
+import { TrackerRows } from "./Trackers";
 
 type Tab = "combat" | "status";
 
@@ -237,6 +238,7 @@ function CombatTab({ view }: { view: CharacterView }) {
             )}
           </span>
         </Row>
+        <TrackerRows view={view} />
         {canEdit && (
           <div className="flex justify-end gap-1 border-b border-line/50 py-1.5">
             <button type="button" className="hud-btn hud-btn-ghost !px-2 !py-1 !text-[0.5rem]" onClick={() => hp.mutate({ action: "rest", kind: "short" })}>
