@@ -61,7 +61,7 @@ export function ShardsWorkshop({ campaignId }: { campaignId: string }) {
                   </span>
                 </span>
                 {!s.visibleToPlayers && <Badge color="crimson">hidden</Badge>}
-                <Badge color="cyan" title="RAM cost">{s.ramCost} RAM</Badge>
+                <Badge color={s.ramCost === 0 ? "ok" : "cyan"} title="RAM level = spell slot level">{s.ramCost === 0 ? "cantrip" : `RAM ${s.ramCost}`}</Badge>
               </button>
             );
           })}
@@ -100,8 +100,8 @@ export function ShardsWorkshop({ campaignId }: { campaignId: string }) {
                   ))}
                 </Select>
               </Field>
-              <Field label="RAM cost">
-                <Input type="number" min={0} max={99} value={form.ramCost} onChange={(e) => set("ramCost", Number(e.target.value))} />
+              <Field label="RAM level" hint="Slot level, 0 = cantrip">
+                <Input type="number" min={0} max={9} value={form.ramCost} onChange={(e) => set("ramCost", Number(e.target.value))} />
               </Field>
               <Field label="Range">
                 <Input value={form.range} onChange={(e) => set("range", e.target.value)} placeholder="120 ft" />

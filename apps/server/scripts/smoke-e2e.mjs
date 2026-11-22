@@ -363,7 +363,7 @@ check(!(await dm.call("GET", `/api/campaigns/${cid}/encyclopedia`)).some((e) => 
 }
 console.log("    Netrunner shards: DM-gated casters, RAM, spellbook CRUD");
 {
-  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], ramMax: 0, ramUsed: 0 });
+  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], shardSlots: {}, shardSlotsUsed: {} });
   const sh_book = await dm.call("GET", `/api/campaigns/${cid}/shards`);
   const sh_kill = sh_book.find((s) => s.name === "Kill Process");
   const sh_bolt = sh_book.find((s) => s.name === "Cyber Bolt");
@@ -372,13 +372,23 @@ console.log("    Netrunner shards: DM-gated casters, RAM, spellbook CRUD");
   check((await player.call("GET", `/api/campaigns/${cid}/shards`)).length === 0, "A player who is not a netrunner sees no shards at all");
   check((await status(() => player.call("PATCH", `/api/characters/${charId}`, { isNetrunner: true }))) === 403, "Players cannot make themselves netrunners (403)");
   check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id }))) === 422, "Non-netrunners cannot cast (422)");
-  view = await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: true, ramMax: 4, shardIds: [sh_bolt.id, sh_kill.id] });
-  check(view.character.isNetrunner && view.character.ramMax === 4 && view.shards.length === 2, "DM makes the character a netrunner with 4 RAM and two shards");
+  const sh_hyper = sh_book.find((s) => s.name === "Hyperfocus");
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: true, shardSlots: { 1: 2, 3: 1 }, shardIds: [sh_bolt.id, sh_kill.id, sh_hyper.id] });
+  check(view.character.isNetrunner && view.character.shardSlots["1"] === 2 && view.character.shardSlots["3"] === 1 && view.shards.length === 3, "DM makes the character a netrunner with RAM slots (2 × L1, 1 × L3) and three shards");
   check((await player.call("GET", `/api/campaigns/${cid}/shards`)).length >= 59, "The netrunner's player now sees the spellbook");
+  view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_hyper.id });
+  check(Object.keys(view.character.shardSlotsUsed).length === 0, "Cantrips (RAM 0) cost no slot");
   view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id });
+  check(view.character.shardSlotsUsed["1"] === 1, "A level 1 shard burns a level 1 slot");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_kill.id, slotLevel: 1 }))) === 422, "A level 3 shard cannot be run from a level 1 slot (422)");
+  view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id, slotLevel: 3 });
+  check(view.character.shardSlotsUsed["3"] === 1 && view.character.shardSlotsUsed["1"] === 1, "Upcasting Cyber Bolt spends the level 3 slot");
+  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_kill.id }))) === 422, "No level 3 slot left: Kill Process is refused (422)");
+  view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id });
+  check(view.character.shardSlotsUsed["1"] === 2 && (await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id }))) === 422, "Slots run out; the next cast is refused (422)");
+  view = await dm.call("PATCH", `/api/characters/${charId}`, { shardSlotsUsed: {} });
+  check(Object.keys(view.character.shardSlotsUsed).length === 0, "DM refills the RAM slots");
   view = await player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_kill.id });
-  check(view.character.ramUsed === 4, "Casting Cyber Bolt (1) and Kill Process (3) spends 4 RAM");
-  check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_bolt.id }))) === 422, "Out of RAM: the next cast is refused (422)");
   check((await status(() => player.call("POST", `/api/characters/${charId}/shards/cast`, { shardId: sh_other.id }))) === 422, "Unknown shards cannot be cast (422)");
   check((await player.call("GET", `/api/campaigns/${cid}/events?limit=10&characterId=${charId}`)).some((e) => e.type === "shard.cast" && /Kill Process/.test(e.summary)), "The cast is in the log");
   check((await status(() => player.call("POST", `/api/campaigns/${cid}/shards`, { name: "Nope", school: "offensive" }))) === 403, "Players cannot add shards (403)");
@@ -387,7 +397,7 @@ console.log("    Netrunner shards: DM-gated casters, RAM, spellbook CRUD");
   await dm.call("DELETE", `/api/campaigns/${cid}/shards/${sh_new.id}`);
   view = await player.call("GET", `/api/characters/${charId}`);
   check(!view.character.shardIds.includes(sh_new.id) && view.shards.length === 1, "DM adds a custom shard and removes it; it leaves the sheet too");
-  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], ramMax: 0, ramUsed: 0 });
+  await dm.call("PATCH", `/api/characters/${charId}`, { isNetrunner: false, shardIds: [], shardSlots: {}, shardSlotsUsed: {} });
 }
 console.log("    Shop: the NEOM catalog, district-taxed purchases, stock");
 const shop_imported = await dm.call("POST", `/api/campaigns/${cid}/shop/import`, {});

@@ -169,10 +169,11 @@ model Character {
   salary           Int     @default(3000)
   /// Savings account: the balance left when a session ends is swept here. Shopping and bills use `credits` (the balance).
   savings          Int     @default(0)
-  /// Netrunner: the DM decides who casts shards (hacks). RAM is the casting pool; a long rest clears `ramUsed`.
+  /// Netrunner: the DM decides who casts shards (hacks). RAM is the spell level: slots per level, as in 5e.
+  /// `shardSlots` = {"1": 4, "2": 2} slots owned; `shardSlotsUsed` = spent since the last long rest.
   isNetrunner      Boolean @default(false)
-  ramMax           Int     @default(0)
-  ramUsed          Int     @default(0)
+  shardSlots       Json    @default("{}")
+  shardSlotsUsed   Json    @default("{}")
   /// Shard definitions this netrunner knows.
   shardIds         Json    @default("[]")
   /// Tax district the player chose while they have no housing plan (dogtown | wca | nfc). Housing overrides it; null = Dogtown.

@@ -351,7 +351,7 @@ const SHEET_LABELS: Record<string, string> = {
   background: "background", biography: "biography", portraitUrl: "portrait", level: "level", xp: "XP", hpMaxBase: "base max HP",
   baseSpeed: "base speed", hitDieSize: "hit die", inspiration: "inspiration", credits: "credits", progressionPoints: "points",
   acBase: "base AC", acBonus: "AC adjustment", cyberpsychosis: "cyberpsychosis points", adjustments: "adjustment", abilityIds: "granted abilities", salary: "salary", savings: "savings",
-  isNetrunner: "netrunner status", ramMax: "RAM", ramUsed: "RAM used", shardIds: "known shards",
+  isNetrunner: "netrunner status", shardSlots: "RAM slots", shardSlotsUsed: "RAM slots used", shardIds: "known shards",
 };
 
 /** Field-level before/after list for the change log. Nested sheet maps (attributes, skills…) diff per key. */
@@ -395,7 +395,7 @@ export async function updateCharacter(characterId: string, userId: string, input
     for (const k of ["level", "xp"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (!isDm) {
-    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings", "isNetrunner", "ramMax", "ramUsed", "shardIds"] as const) if (input[k] !== undefined) restricted.push(k);
+    for (const k of ["credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "adjustments", "abilityIds", "salary", "savings", "isNetrunner", "shardSlots", "shardSlotsUsed", "shardIds"] as const) if (input[k] !== undefined) restricted.push(k);
   }
   if (restricted.length) throw forbidden(`This campaign does not let players edit: ${restricted.join(", ")}`);
   if (!isOwner && !isDm) throw forbidden();
@@ -403,7 +403,7 @@ export async function updateCharacter(characterId: string, userId: string, input
   const data: Prisma.CharacterUpdateInput = { version: { increment: 1 } };
   const simple = [
     "name", "species", "characterClass", "subclass", "faction", "alignment", "background", "biography", "portraitUrl",
-    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary", "savings", "isNetrunner", "ramMax", "ramUsed",
+    "level", "xp", "hpMaxBase", "baseSpeed", "hitDieSize", "inspiration", "credits", "progressionPoints", "acBase", "acBonus", "cyberpsychosis", "salary", "savings", "isNetrunner",
   ] as const;
   for (const k of simple) {
     if (input[k] !== undefined) (data as Record<string, unknown>)[k] = input[k];
@@ -430,6 +430,14 @@ export async function updateCharacter(characterId: string, userId: string, input
       else delete merged[k];
     }
     data.adjustments = merged;
+  }
+  // Slots: drop zero entries; spent slots can never exceed what the character owns.
+  const clean = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0));
+  if (input.shardSlots) data.shardSlots = clean(input.shardSlots);
+  if (input.shardSlots || input.shardSlotsUsed) {
+    const max = input.shardSlots ? clean(input.shardSlots) : ((character.shardSlots as Record<string, number> | null) ?? {});
+    const used = input.shardSlotsUsed ?? ((character.shardSlotsUsed as Record<string, number> | null) ?? {});
+    data.shardSlotsUsed = clean(Object.fromEntries(Object.entries(used).map(([l, n]) => [l, Math.min(n, max[l] ?? 0)])));
   }
   if (input.shardIds) {
     const ids = [...new Set(input.shardIds)];
@@ -648,7 +656,7 @@ export async function applyHpAction(characterId: string, actor: Actor, action: H
             hitDiceUsed: Math.max(0, full.hitDiceUsed - regain),
             deathSaveSuccess: 0,
             deathSaveFailure: 0,
-            ramUsed: 0,
+            shardSlotsUsed: {},
             version: { increment: 1 },
           },
         });

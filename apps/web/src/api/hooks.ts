@@ -423,7 +423,7 @@ export function useDeleteShard(cid: string) {
   const qc = useQueryClient();
   return useMutation(withToast({ mutationFn: (id: string) => api.delete(`/campaigns/${cid}/shards/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: qk.shards(cid) }) }));
 }
-export const useCastShard = (id: string) => characterMutation<{ shardId: string; note?: string }>(id, (body) => api.post(`/characters/${id}/shards/cast`, body))();
+export const useCastShard = (id: string) => characterMutation<{ shardId: string; slotLevel?: number; note?: string }>(id, (body) => api.post(`/characters/${id}/shards/cast`, body))();
 export function useSaveAbility(cid: string) {
   const qc = useQueryClient();
   return useMutation(

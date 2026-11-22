@@ -106,10 +106,10 @@ export interface CharacterCore {
   salary: number;
   /** Savings account: swept from the balance when a session ends. Not spendable in the shop. */
   savings: number;
-  /** Netrunner: can cast shards (DM decides), with a RAM pool that a long rest refills. */
+  /** Netrunner: can cast shards (DM decides). RAM level = spell level; slots per level refill on a long rest. */
   isNetrunner: boolean;
-  ramMax: number;
-  ramUsed: number;
+  shardSlots: Record<string, number>;
+  shardSlotsUsed: Record<string, number>;
   /** Shard definitions this character knows. */
   shardIds: string[];
   /** Tax district chosen while homeless (owner or DM sets it). A housing plan overrides it; null means Dogtown. */

@@ -1,4 +1,4 @@
-import { SHARD_SCHOOLS, SHARD_SCHOOL_META, type ShardDto, type ShardSchool } from "@neom/shared";
+import { SHARD_SCHOOLS, SHARD_SCHOOL_META, casterSlots, lowestFreeSlot, slotsFree, type ShardDto, type ShardSchool } from "@neom/shared";
 import clsx from "clsx";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -29,7 +29,11 @@ export function ShardsPage() {
   const pool: ShardDto[] = isDm && scope === "all" ? (book.data ?? []) : view.shards;
   const list = pool.filter((s) => matches(search, s.name, s.effect, s.equivalent, s.description)).filter((s) => !school || s.school === school).filter((s) => tier === "" || String(s.tier) === tier);
   const tiers = [...new Set(pool.map((s) => s.tier))].sort((a, b) => a - b);
-  const free = Math.max(0, c.ramMax - c.ramUsed);
+  const slots = c.shardSlots;
+  const used = c.shardSlotsUsed;
+  const levels = Object.keys(slots).map(Number).filter((l) => (slots[String(l)] ?? 0) > 0).sort((a, b) => a - b);
+  const anyUsed = Object.values(used).some((n) => n > 0);
+  const setSlot = (level: number, n: number) => update.mutate({ shardSlots: { ...slots, [String(level)]: n } });
   const setKnown = (ids: string[]) => update.mutate({ shardIds: ids });
   const toggleKnown = (id: string) => setKnown(known.has(id) ? c.shardIds.filter((x) => x !== id) : [...c.shardIds, id]);
 
@@ -39,29 +43,49 @@ export function ShardsPage() {
     <div className="mx-auto max-w-[1200px] space-y-3" data-testid="shards-page">
       <section className="hud-panel flex flex-wrap items-center gap-3 px-3 py-2" style={{ ["--panel-accent" as string]: "var(--color-violet)" }}>
         <span className="font-display text-[1.1rem] font-black uppercase tracking-[0.08em] text-violet glow-text">Shards</span>
-        <span className="text-xs text-muted">{c.isNetrunner ? `${view.shards.length} known · hacks cost RAM, a long rest clears it` : `${c.name} is not a netrunner`}</span>
-        <span className="ml-auto flex items-center gap-2 border border-cyan/50 bg-bg-0/60 px-3 py-1" data-testid="ram-meter">
+        <span className="text-xs text-muted">{c.isNetrunner ? `${view.shards.length} known · RAM level is the spell level; slots come back on a long rest` : `${c.name} is not a netrunner`}</span>
+        <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 border border-cyan/50 bg-bg-0/60 px-3 py-1" data-testid="ram-meter">
           <Icon name="memory-stick" size={14} className="text-cyan" />
-          <span className={clsx("num text-[1.1rem] font-black", free === 0 && c.ramMax > 0 ? "text-crimson" : "text-cyan")}>
-            {free}
-            <span className="text-muted"> / {c.ramMax}</span>
-          </span>
-          <span className="text-[0.6rem] uppercase tracking-wider text-muted">RAM free</span>
+          {levels.length === 0 && <span className="text-xs text-muted">no RAM slots{isDm ? ": set them below" : ""}</span>}
+          {levels.map((l) => {
+            const free = slotsFree(slots, used, l);
+            return (
+              <span key={l} className="flex items-center gap-1" title={`Level ${l} RAM: ${free} of ${slots[String(l)]} slots free`} data-testid={`ram-level-${l}`}>
+                <span className="font-display text-[0.55rem] tracking-wider text-muted">L{l}</span>
+                <span className="flex gap-0.5">
+                  {Array.from({ length: slots[String(l)] ?? 0 }, (_, i) => (
+                    <span key={i} className={clsx("inline-block h-2.5 w-2.5 border", i < free ? "border-cyan bg-cyan shadow-[0_0_6px_var(--color-cyan)]" : "border-line-2 bg-transparent")} />
+                  ))}
+                </span>
+              </span>
+            );
+          })}
         </span>
         {isDm && (
           <span className="flex flex-wrap items-center gap-2 text-xs" data-testid="shard-dm-tools">
             <Toggle on={c.isNetrunner} onChange={(v) => update.mutate({ isNetrunner: v })} color="violet" label={c.isNetrunner ? "Netrunner" : "Not a netrunner"} />
-            <label className="flex items-center gap-1 text-muted">
-              RAM max
-              <input className="valbox !text-[0.85rem] w-14" key={`m${c.ramMax}`} defaultValue={c.ramMax} inputMode="numeric" aria-label="RAM max" data-testid="ram-max" onBlur={(e) => { const n = Number(e.target.value.replace(/[^0-9]/g, "")); if (Number.isFinite(n) && n !== c.ramMax) update.mutate({ ramMax: n, ramUsed: Math.min(c.ramUsed, n) }); }} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
-            </label>
-            <Button size="xs" variant="ghost" icon="rotate-ccw" disabled={c.ramUsed === 0 || update.isPending} onClick={() => update.mutate({ ramUsed: 0 })}>
+            <Button size="xs" variant="ghost" icon="rotate-ccw" disabled={!anyUsed || update.isPending} onClick={() => update.mutate({ shardSlotsUsed: {} })}>
               Refill RAM
             </Button>
           </span>
         )}
       </section>
 
+      {isDm && c.isNetrunner && (
+        <div className="hud-panel flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 text-xs" style={{ ["--panel-accent" as string]: "var(--color-crimson)" }} data-testid="slot-editor">
+          <span className="font-display text-[0.5rem] tracking-[0.2em] text-crimson">DM</span>
+          <span className="text-muted">RAM slots per level (5e spell slots)</span>
+          {Array.from({ length: 9 }, (_, i) => i + 1).map((l) => (
+            <label key={l} className="flex items-center gap-1 text-muted">
+              L{l}
+              <input className="valbox !text-[0.8rem] w-10" key={`s${l}-${slots[String(l)] ?? 0}`} defaultValue={slots[String(l)] ?? 0} inputMode="numeric" aria-label={`Level ${l} RAM slots`} data-testid={`slot-max-${l}`} onBlur={(e) => { const n = Math.min(20, Number(e.target.value.replace(/[^0-9]/g, "")) || 0); if (n !== (slots[String(l)] ?? 0)) setSlot(l, n); }} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+            </label>
+          ))}
+          <Button size="xs" color="violet" icon="wand-sparkles" disabled={update.isPending} title={`5e full-caster slots for a level ${c.level} character`} onClick={() => update.mutate({ shardSlots: casterSlots(c.level), shardSlotsUsed: {} })} data-testid="slot-preset">
+            Full caster · level {c.level}
+          </Button>
+        </div>
+      )}
       {isDm && !c.isNetrunner && <div className="border border-amber/50 bg-amber/5 px-3 py-2 text-xs text-amber">Switch "Netrunner" on to give {c.name} this tab, a RAM pool and shards. Players who are not netrunners never see any of it.</div>}
 
       <div className="space-y-1.5">
@@ -106,7 +130,10 @@ export function ShardsPage() {
           const m = SHARD_SCHOOL_META[s.school];
           const open = openId === s.id;
           const isKnown = known.has(s.id);
-          const short = s.ramCost > free;
+          const level = s.ramCost;
+          const slot = level === 0 ? 0 : lowestFreeSlot(slots, used, level);
+          const short = slot === null;
+          const upcasts = level === 0 ? [] : levels.filter((l) => l > (slot ?? level) && slotsFree(slots, used, l) > 0);
           return (
             <article key={s.id} className={clsx("hud-panel min-w-0 overflow-hidden", open && "lit", isDm && scope === "all" && !isKnown && "opacity-70")} style={{ ["--panel-accent" as string]: `var(--color-${m.color})` }} data-testid="shard-card" data-known={isKnown}>
               <button type="button" className="flex w-full items-center gap-2 p-2.5 text-left" onClick={() => setOpenId(open ? null : s.id)} aria-expanded={open}>
@@ -116,11 +143,11 @@ export function ShardsPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[0.9rem] font-semibold text-text">{s.name}</span>
                   <span className="block truncate text-[0.68rem] text-muted">
-                    {m.label} · tier {s.tier} · {s.action}
+                    {m.label} · {level === 0 ? "cantrip" : `level ${level}`} · {s.action}
                   </span>
                 </span>
                 <span className="num shrink-0 text-[0.8rem] font-bold text-violet">{s.effect}</span>
-                <Badge color={short ? "crimson" : "cyan"} title="RAM cost">{s.ramCost} RAM</Badge>
+                <Badge color={short ? "crimson" : level === 0 ? "ok" : "cyan"} title={level === 0 ? "Cantrip: no RAM slot needed" : `Needs a level ${level} RAM slot (or higher)`}>{level === 0 ? "free" : `RAM ${level}`}</Badge>
               </button>
               {open && (
                 <div className="space-y-2 border-t border-line/60 p-3 text-xs" data-testid="shard-details">
@@ -148,9 +175,16 @@ export function ShardsPage() {
                   </Button>
                 )}
                 {c.isNetrunner && (isKnown || isDm) && canCast && (
-                  <Button size="xs" variant="solid" color="violet" icon="zap" disabled={short || cast.isPending} title={short ? `Needs ${s.ramCost} RAM, ${free} free` : undefined} onClick={() => cast.mutate({ shardId: s.id })} data-testid="shard-cast">
-                    {short ? "No RAM" : "Run"}
-                  </Button>
+                  <>
+                    {open && upcasts.map((l) => (
+                      <Button key={l} size="xs" variant="ghost" color="violet" disabled={cast.isPending} title={`Upcast with a level ${l} slot`} onClick={() => cast.mutate({ shardId: s.id, slotLevel: l })}>
+                        L{l}
+                      </Button>
+                    ))}
+                    <Button size="xs" variant="solid" color="violet" icon="zap" disabled={short || cast.isPending} title={short ? `No RAM slot of level ${level} or higher left` : slot ? `Spends a level ${slot} slot` : "Cantrip"} onClick={() => cast.mutate({ shardId: s.id })} data-testid="shard-cast">
+                      {short ? "No slot" : slot && slot > level ? `Run · L${slot}` : "Run"}
+                    </Button>
+                  </>
                 )}
               </div>
             </article>

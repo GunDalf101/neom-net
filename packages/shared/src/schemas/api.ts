@@ -131,6 +131,8 @@ export const CreateCharacterSchema = CharacterIdentitySchema.partial().extend({
   hitDieSize: z.union([z.literal(6), z.literal(8), z.literal(10), z.literal(12)]).optional(),
 });
 
+/** Slots per RAM level: {"1": 4, "2": 2}. */
+export const ShardSlotsSchema = z.record(z.string().regex(/^[1-9]$/), z.number().int().min(0).max(20));
 export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   level: z.number().int().min(1).max(20).optional(),
   xp: z.number().int().min(0).max(10_000_000).optional(),
@@ -154,10 +156,10 @@ export const UpdateCharacterSchema = CharacterIdentitySchema.partial().extend({
   abilityIds: z.array(z.string().min(1)).max(50).optional(),
   /** DM only: monthly salary in kamas, taxed by district when the month turns. */
   salary: z.number().int().min(0).max(1_000_000).optional(),
-  /** DM only: whether this character casts netrunner shards, their RAM pool, and the shards they know. */
+  /** DM only: whether this character casts netrunner shards, their RAM slots per level (5e spell slots) and the shards they know. */
   isNetrunner: z.boolean().optional(),
-  ramMax: z.number().int().min(0).max(999).optional(),
-  ramUsed: z.number().int().min(0).max(999).optional(),
+  shardSlots: ShardSlotsSchema.optional(),
+  shardSlotsUsed: ShardSlotsSchema.optional(),
   shardIds: z.array(z.string().min(1)).max(300).optional(),
   /** DM only: set the savings account outright (players move money with the savings transfer). */
   savings: z.number().int().min(0).max(100_000_000).optional(),
@@ -289,14 +291,16 @@ export const ShardInputSchema = z.object({
   action: z.string().trim().max(30).default("Action"),
   range: z.string().trim().max(60).default(""),
   duration: z.string().trim().max(60).default(""),
-  ramCost: z.number().int().min(0).max(99).default(1),
+  /** RAM level = spell slot level needed (0 = cantrip). */
+  ramCost: z.number().int().min(0).max(9).default(1),
   effect: z.string().trim().max(200).default(""),
   equivalent: z.string().trim().max(80).default(""),
   description: z.string().max(2000).default(""),
   visibleToPlayers: z.boolean().default(true),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
-export const ShardCastSchema = z.object({ shardId: z.string().min(1), note: z.string().max(200).default("") });
+/** `slotLevel` upcasts: spend a higher slot than the shard's RAM level. Omitted = the lowest free slot that fits. */
+export const ShardCastSchema = z.object({ shardId: z.string().min(1), slotLevel: z.number().int().min(1).max(9).optional(), note: z.string().max(200).default("") });
 /** DM shop management: the same shelf change for many item definitions at once. */
 export const ItemBulkSchema = z
   .object({

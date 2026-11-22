@@ -1,4 +1,4 @@
-import type { CharacterView, ShardCastInput, ShardDto, ShardInput } from "@neom/shared";
+import { lowestFreeSlot, slotsFree, type CharacterView, type ShardCastInput, type ShardDto, type ShardInput, type ShardSlots } from "@neom/shared";
 import { prisma } from "../db.js";
 import { forbidden, notFound, ruleViolation } from "../errors.js";
 import { emitCharacterUpdated, emitToCampaign } from "../realtime/io.js";
@@ -71,19 +71,26 @@ export async function castShard(characterId: string, userId: string, input: Shar
   if (!shard) throw notFound("Shard");
   const known = ((character.shardIds as unknown as string[]) ?? []).includes(shard.id);
   if (!known && !membership.isDm) throw ruleViolation(`${character.name} does not know ${shard.name}`);
-  const free = character.ramMax - character.ramUsed;
-  if (shard.ramCost > free) throw ruleViolation(`Not enough RAM: ${shard.name} needs ${shard.ramCost}, ${Math.max(0, free)} free`, { ramCost: shard.ramCost, free });
-  if (shard.ramCost > 0) {
-    const spent = await prisma.character.updateMany({ where: { id: characterId, ramUsed: { lte: character.ramMax - shard.ramCost } }, data: { ramUsed: { increment: shard.ramCost }, version: { increment: 1 } } });
-    if (spent.count === 0) throw ruleViolation("Not enough RAM");
+  // RAM level = spell level. Tier-0 shards are cantrips; anything else burns a slot of its level or higher.
+  const level = shard.ramCost;
+  const slots = (character.shardSlots as ShardSlots | null) ?? {};
+  const used = (character.shardSlotsUsed as ShardSlots | null) ?? {};
+  let slot: number | null = null;
+  if (level > 0) {
+    if (input.slotLevel !== undefined && input.slotLevel < level) throw ruleViolation(`${shard.name} needs a level ${level} RAM slot or higher`);
+    slot = input.slotLevel ?? lowestFreeSlot(slots, used, level);
+    if (slot === null || slotsFree(slots, used, slot) <= 0) throw ruleViolation(input.slotLevel ? `No level ${input.slotLevel} RAM slot left` : `No RAM slot of level ${level} or higher left`, { level, slots, used });
+    // Optimistic on the sheet version: two casts racing cannot spend the same slot.
+    const spent = await prisma.character.updateMany({ where: { id: characterId, version: character.version }, data: { shardSlotsUsed: { ...used, [String(slot)]: (used[String(slot)] ?? 0) + 1 }, version: { increment: 1 } } });
+    if (spent.count === 0) throw ruleViolation("The sheet changed while casting: try again");
   }
   await logEvent({
     campaignId: character.campaignId,
     type: "shard.cast",
     actorUserId: userId,
     characterId,
-    summary: `${character.name} ran ${shard.name} (${shard.school}, tier ${shard.tier}${shard.ramCost ? `, ${shard.ramCost} RAM` : ""})${shard.effect ? `: ${shard.effect}` : ""}${input.note ? ` — ${input.note}` : ""}`,
-    payload: { shardId: shard.id, name: shard.name, school: shard.school, tier: shard.tier, ramCost: shard.ramCost, effect: shard.effect, range: shard.range, duration: shard.duration },
+    summary: `${character.name} ran ${shard.name} (${shard.school}, ${level === 0 ? "cantrip" : `level ${level}${slot && slot > level ? ` upcast with a level ${slot} slot` : ""}`})${shard.effect ? `: ${shard.effect}` : ""}${input.note ? ` — ${input.note}` : ""}`,
+    payload: { shardId: shard.id, name: shard.name, school: shard.school, tier: shard.tier, ramCost: shard.ramCost, slotLevel: slot, effect: shard.effect, range: shard.range, duration: shard.duration },
     visibility: "public",
   });
   emitCharacterUpdated(character.campaignId, characterId);

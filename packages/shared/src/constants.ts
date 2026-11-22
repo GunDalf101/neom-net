@@ -431,3 +431,25 @@ export const SHARD_SCHOOL_META: Record<ShardSchool, { label: string; icon: strin
   controller: { label: "Controller", icon: "joystick", color: "amber", blurb: "Hijack machines and lock people down." },
   booster: { label: "Booster", icon: "rocket", color: "lime", blurb: "Overclock yourself and the crew." },
 };
+
+/** 5e full-caster spell slots by character level (index 0 = level 1): slots for spell levels 1..9. RAM level = spell level. */
+export const FULL_CASTER_SLOTS: readonly (readonly number[])[] = [
+  [2], [3], [4, 2], [4, 3], [4, 3, 2], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 2], [4, 3, 3, 3, 1], [4, 3, 3, 3, 2],
+  [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1, 1], [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 3, 2, 2, 1, 1],
+];
+export type ShardSlots = Record<string, number>;
+/** Slots a full caster of this character level has, keyed by RAM level. */
+export function casterSlots(level: number): ShardSlots {
+  const row = FULL_CASTER_SLOTS[Math.max(1, Math.min(20, level)) - 1] ?? [];
+  return Object.fromEntries(row.map((n, i) => [String(i + 1), n]));
+}
+/** Free slots at one RAM level. */
+export function slotsFree(slots: ShardSlots, used: ShardSlots, level: number): number {
+  return Math.max(0, (slots[String(level)] ?? 0) - (used[String(level)] ?? 0));
+}
+/** Lowest RAM level at or above `level` with a free slot, or null. Tier 0 shards (cantrips) need none. */
+export function lowestFreeSlot(slots: ShardSlots, used: ShardSlots, level: number): number | null {
+  for (let l = Math.max(1, level); l <= 9; l++) if (slotsFree(slots, used, l) > 0) return l;
+  return null;
+}
